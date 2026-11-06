@@ -1,0 +1,21 @@
+# NetPilot code style for the Eclipse JDT formatter (used by Spotless).
+# 4-space indentation, 120-character lines, 8-space continuation indent.
+org.eclipse.jdt.core.formatter.tabulation.char=space
+org.eclipse.jdt.core.formatter.tabulation.size=4
+org.eclipse.jdt.core.formatter.indentation.size=4
+org.eclipse.jdt.core.formatter.continuation_indentation=2
+org.eclipse.jdt.core.formatter.continuation_indentation_for_array_initializer=2
+org.eclipse.jdt.core.formatter.lineSplit=120
+org.eclipse.jdt.core.formatter.comment.line_length=120
+org.eclipse.jdt.core.formatter.join_wrapped_lines=false
+org.eclipse.jdt.core.formatter.join_lines_in_comments=false
+org.eclipse.jdt.core.formatter.comment.format_block_comments=false
+org.eclipse.jdt.core.formatter.comment.format_javadoc_comments=false
+org.eclipse.jdt.core.formatter.comment.format_line_comments=false
+org.eclipse.jdt.core.formatter.blank_lines_before_first_class_body_declaration=1
+org.eclipse.jdt.core.formatter.number_of_empty_lines_to_preserve=1
+org.eclipse.jdt.core.formatter.keep_empty_lines_at_beginning_of_type_declaration=1
+org.eclipse.jdt.core.formatter.use_on_off_tags=true
+org.eclipse.jdt.core.compiler.source=25
+org.eclipse.jdt.core.compiler.compliance=25
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=25

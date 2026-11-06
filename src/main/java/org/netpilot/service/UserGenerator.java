@@ -1,10 +1,5 @@
 package org.netpilot.service;
 
-import org.netpilot.model.GenerationSettings;
-import org.netpilot.model.HotspotUser;
-import org.netpilot.model.PasswordMode;
-import org.netpilot.model.UsernameMode;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,11 +7,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.random.RandomGenerator;
+import org.netpilot.model.GenerationSettings;
+import org.netpilot.model.HotspotUser;
+import org.netpilot.model.PasswordMode;
+import org.netpilot.model.UsernameMode;
 
 /**
  * Generates batches of hotspot users with guaranteed-unique usernames.
  */
-public class UserGenerator {
+public final class UserGenerator {
 
     private static final String DIGITS = "0123456789";
     /** Letters and digits without look-alikes (0/O/o, 1/l/I) so printed vouchers are easy to type. */

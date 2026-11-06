@@ -1,26 +1,25 @@
 package org.netpilot.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.UsernameMode;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 class UserGeneratorTest {
 
     private final UserGenerator generator = new UserGenerator(new Random(42));
 
     private static GenerationSettings settings(int count, UsernameMode um, int ul, int us,
-                                               PasswordMode pm, int pl, int ps, String prefix) {
+            PasswordMode pm, int pl, int ps, String prefix) {
         return new GenerationSettings(count, um, ul, us, pm, pl, ps, prefix, "2M", "all", "1h");
     }
 

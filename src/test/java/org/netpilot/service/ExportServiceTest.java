@@ -1,11 +1,8 @@
 package org.netpilot.service;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.netpilot.model.AppSettings;
-import org.netpilot.model.GenerationSettings;
-import org.netpilot.model.HotspotUser;
-import org.netpilot.repository.HistoryRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,10 +10,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.netpilot.model.AppSettings;
+import org.netpilot.model.GenerationSettings;
+import org.netpilot.model.HotspotUser;
+import org.netpilot.repository.HistoryRepository;
 
 class ExportServiceTest {
 

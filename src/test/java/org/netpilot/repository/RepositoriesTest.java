@@ -1,5 +1,13 @@
 package org.netpilot.repository;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.netpilot.model.AppSettings;
@@ -7,15 +15,6 @@ import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HistoryRecord;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.UsernameMode;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RepositoriesTest {
 
@@ -57,7 +56,8 @@ class RepositoriesTest {
     void historyAppendsReadsNewestFirstAndClears() throws Exception {
         HistoryRepository repo = new HistoryRepository(dir.resolve("history.csv"));
         HistoryRecord older = new HistoryRecord(LocalDateTime.of(2026, 1, 1, 10, 0), 20, "2M", dir.resolve("a"));
-        HistoryRecord newer = new HistoryRecord(LocalDateTime.of(2026, 2, 1, 10, 0), 30, "My, Profile", dir.resolve("b"));
+        HistoryRecord newer = new HistoryRecord(LocalDateTime.of(2026, 2, 1, 10, 0), 30, "My, Profile",
+                dir.resolve("b"));
 
         repo.append(older);
         repo.append(newer);

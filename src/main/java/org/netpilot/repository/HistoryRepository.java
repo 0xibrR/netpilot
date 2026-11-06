@@ -1,8 +1,5 @@
 package org.netpilot.repository;
 
-import org.netpilot.model.HistoryRecord;
-import org.netpilot.service.Csv;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,6 +9,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.netpilot.model.HistoryRecord;
+import org.netpilot.service.Csv;
 
 /**
  * Append-only export history in a CSV file. Unreadable lines are skipped, never fatal.
@@ -27,7 +26,7 @@ public class HistoryRepository {
     }
 
     public synchronized void append(HistoryRecord record) throws IOException {
-        Files.createDirectories(file.toAbsolutePath().getParent());
+        FileSupport.createParentDirectories(file);
         String line = Csv.line(
                 record.createdAt().toString(),
                 String.valueOf(record.userCount()),

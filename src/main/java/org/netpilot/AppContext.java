@@ -1,5 +1,6 @@
 package org.netpilot;
 
+import java.time.Clock;
 import javafx.application.HostServices;
 import org.netpilot.repository.AppPaths;
 import org.netpilot.repository.HistoryRepository;
@@ -10,8 +11,6 @@ import org.netpilot.service.PdfVoucherGenerator;
 import org.netpilot.service.QrCodeService;
 import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
-
-import java.time.Clock;
 
 /**
  * Wires the application's objects together (manual dependency injection).

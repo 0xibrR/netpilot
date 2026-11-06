@@ -1,5 +1,12 @@
 package org.netpilot.service;
 
+import java.awt.Color;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 import org.netpilot.model.HotspotUser;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
@@ -13,18 +20,10 @@ import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
 
-import java.awt.Color;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-
 /**
  * Renders printable A4 voucher sheets, optionally with an auto-login QR code per voucher.
  */
-public class PdfVoucherGenerator {
+public final class PdfVoucherGenerator {
 
     private static final float PAGE_MARGIN = 18f;
     private static final Color BORDER = new Color(0x9E, 0x9E, 0x9E);
@@ -122,6 +121,7 @@ public class PdfVoucherGenerator {
 
     /** Font and QR sizes that scale with the voucher width. */
     private record Layout(float titleSize, float textSize, float qrSize, float minHeight) {
+
         static Layout forWidth(float cellWidth) {
             float text = Math.clamp(cellWidth / 14f, 6f, 10f);
             float qr = Math.min(cellWidth * 0.62f, 90f);
