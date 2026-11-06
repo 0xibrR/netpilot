@@ -16,6 +16,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.model.AddressInput;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.service.router.CertificateFingerprints;
@@ -78,6 +79,11 @@ public class RouterConnectionController {
             updateCertificateLabel();
         });
         hostField.textProperty().addListener((obs, old, value) -> updateCertificateLabel());
+        hostField.focusedProperty().addListener((obs, was, focused) -> {
+            if (!focused) {
+                normalizeAddressField();
+            }
+        });
         portField.textProperty().addListener((obs, old, value) -> updateCertificateLabel());
     }
 
@@ -226,7 +232,20 @@ public class RouterConnectionController {
 
     // ------------------------------------------------------------------ form helpers
 
+    /** Turns a pasted URL such as {@code http://10.0.0.1/} into host, HTTPS and port fields. */
+    private void normalizeAddressField() {
+        String text = hostField.getText();
+        AddressInput input = AddressInput.parse(text);
+        if (!input.hadExtras(text)) {
+            return;
+        }
+        input.https().ifPresent(httpsCheck::setSelected); // may switch the default port
+        input.port().ifPresent(port -> portField.setText(String.valueOf(port)));
+        hostField.setText(input.host());
+    }
+
     private Optional<RouterEndpoint> readEndpoint() {
+        normalizeAddressField();
         int port;
         try {
             port = Integer.parseInt(portField.getText());
