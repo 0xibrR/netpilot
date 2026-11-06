@@ -1,5 +1,7 @@
 # NetPilot
 
+[![Build](https://github.com/0xibrR/netpilot/actions/workflows/build.yml/badge.svg)](https://github.com/0xibrR/netpilot/actions/workflows/build.yml)
+
 Network management toolkit. It currently generates MikroTik Hotspot users, printable QR vouchers, and RouterOS import scripts.
 
 Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
@@ -33,11 +35,14 @@ On Windows (cmd / PowerShell):
 mvnw.cmd javafx:run
 ```
 
-## Test
+## Test and quality checks
 
 ```bash
-./mvnw test
+./mvnw verify
 ```
+
+This runs the unit tests and checks formatting, coverage (≥ 80%) and SpotBugs. Format the code with `./mvnw spotless:apply`.
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the workflow and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
 
 ## Import users to MikroTik
 
