@@ -18,6 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <main.module>org.netpilot</main.module>
         <main.class>org.netpilot.Launcher</main.class>
 
         <javafx.version>27</javafx.version>
@@ -105,7 +106,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>${main.class}</mainClass>
+                    <mainClass>${main.module}/${main.class}</mainClass>
                     <options>
                         <option>--enable-native-access=javafx.graphics</option>
                     </options>
