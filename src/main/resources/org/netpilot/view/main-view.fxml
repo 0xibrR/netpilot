@@ -19,6 +19,12 @@
                     <SeparatorMenuItem/>
                     <MenuItem text="Exit" onAction="#onExit"/>
                 </Menu>
+                <Menu text="_Router">
+                    <MenuItem text="Connect…" onAction="#onConnectRouter" accelerator="Shortcut+R"/>
+                    <MenuItem fx:id="refreshRouterItem" text="Reload Profiles and Servers" onAction="#onRefreshRouter"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="disconnectRouterItem" text="Disconnect" onAction="#onDisconnectRouter"/>
+                </Menu>
                 <Menu text="_Tools">
                     <MenuItem text="Export History…" onAction="#onShowHistory"/>
                     <MenuItem text="Reset Settings" onAction="#onResetSettings"/>
@@ -148,6 +154,12 @@
     <bottom>
         <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="10">
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="20" prefHeight="20"/>
+            <Label fx:id="routerStatusLabel" styleClass="router-status" onMouseClicked="#onRouterStatusClicked">
+                <tooltip>
+                    <Tooltip text="Click to connect to a router"/>
+                </tooltip>
+            </Label>
+            <Separator orientation="VERTICAL"/>
             <Label fx:id="statusLabel" text="Ready" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="History" onAction="#onShowHistory"/>

@@ -11,6 +11,7 @@ import org.netpilot.service.PdfVoucherGenerator;
 import org.netpilot.service.QrCodeService;
 import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
+import org.netpilot.service.router.RouterConnector;
 
 /**
  * Wires the application's objects together (manual dependency injection).
@@ -20,6 +21,7 @@ public record AppContext(
         ExportService exportService,
         SettingsRepository settingsRepository,
         HistoryRepository historyRepository,
+        RouterConnector routerConnector,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -35,6 +37,7 @@ public record AppContext(
                 export,
                 new SettingsRepository(AppPaths.settingsFile()),
                 history,
+                new RouterConnector(),
                 hostServices);
     }
 }

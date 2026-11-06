@@ -29,7 +29,7 @@ class ExportServiceTest {
         ExportService service = new ExportService(new CsvExporter(), new RscExporter("t"),
                 new PdfVoucherGenerator(new QrCodeService()), history, clock);
         AppSettings settings = new AppSettings(GenerationSettings.defaults(), "http://10.10.0.1/login", 5,
-                dir.resolve("out"));
+                dir.resolve("out"), null);
         List<HotspotUser> users = List.of(new HotspotUser("u1", "p1", "2M/x", "all", "1h"));
 
         ExportService.ExportResult first = service.export(users, settings);

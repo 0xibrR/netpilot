@@ -7,10 +7,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.PasswordMode;
+import org.netpilot.model.RouterEndpoint;
+import org.netpilot.model.RouterSettings;
 import org.netpilot.model.UsernameMode;
 
 /**
@@ -24,6 +29,9 @@ public class SettingsRepository {
     public static final String DEFAULT_LOGIN_URL = "http://10.10.0.1/login";
     public static final int DEFAULT_PER_ROW = 5;
 
+    private static final String TRUST_PREFIX = "router.trustedCertificate.";
+    private static final Pattern FINGERPRINT = Pattern.compile("^[0-9a-f]{64}$");
+
     private final Path file;
 
     public SettingsRepository(Path file) {
@@ -32,7 +40,7 @@ public class SettingsRepository {
 
     public AppSettings defaults() {
         return new AppSettings(GenerationSettings.defaults(), DEFAULT_LOGIN_URL, DEFAULT_PER_ROW,
-                AppPaths.defaultOutputDirectory());
+                AppPaths.defaultOutputDirectory(), RouterSettings.defaults());
     }
 
     public AppSettings load() {
@@ -76,7 +84,29 @@ public class SettingsRepository {
                 generation,
                 p.getProperty("loginUrl", d.loginUrl()),
                 intValue(p, "vouchersPerRow", d.vouchersPerRow()),
-                output);
+                output,
+                loadRouter(p, d.router()));
+    }
+
+    /** Router password is never part of the settings; only the endpoint and trusted certificates are. */
+    private static RouterSettings loadRouter(Properties p, RouterSettings defaults) {
+        RouterEndpoint d = defaults.lastEndpoint();
+        RouterEndpoint endpoint = new RouterEndpoint(
+                p.getProperty("router.host", d.host()),
+                intValue(p, "router.port", d.port()),
+                Boolean.parseBoolean(p.getProperty("router.https", String.valueOf(d.https()))),
+                p.getProperty("router.username", d.username()));
+
+        Map<String, String> trusted = new HashMap<>();
+        for (String key : p.stringPropertyNames()) {
+            if (key.startsWith(TRUST_PREFIX)) {
+                String fingerprint = p.getProperty(key).strip();
+                if (FINGERPRINT.matcher(fingerprint).matches()) {
+                    trusted.put(key.substring(TRUST_PREFIX.length()), fingerprint);
+                }
+            }
+        }
+        return new RouterSettings(endpoint, trusted);
     }
 
     public void save(AppSettings settings) throws IOException {
@@ -96,6 +126,14 @@ public class SettingsRepository {
         p.setProperty("loginUrl", settings.loginUrl());
         p.setProperty("vouchersPerRow", String.valueOf(settings.vouchersPerRow()));
         p.setProperty("outputDirectory", settings.outputDirectory().toString());
+
+        RouterEndpoint router = settings.router().lastEndpoint();
+        p.setProperty("router.host", router.host());
+        p.setProperty("router.port", String.valueOf(router.port()));
+        p.setProperty("router.https", String.valueOf(router.https()));
+        p.setProperty("router.username", router.username());
+        settings.router().trustedFingerprints()
+                .forEach((address, fingerprint) -> p.setProperty(TRUST_PREFIX + address, fingerprint));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

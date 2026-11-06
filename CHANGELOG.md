@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 1, router connection (RouterOS 7 REST API):
+  - **Router → Connect…** dialog with Test and Connect; status bar shows the connected router
+  - Hotspot profiles and servers are loaded from the router into the form
+  - HTTPS with certificate pinning (trust on first use); a changed certificate is refused
+  - The router password is never saved; only address, port, user and trusted fingerprints are
+  - Clear messages for wrong password, missing policy, unreachable router, timeouts and HTTPS problems
+  - `docs/ROUTER_SETUP.md`: limited router user, HTTPS certificate, troubleshooting
 - Phase 0, quality foundation:
   - GitHub Actions builds and checks every push and pull request on Linux and Windows
   - Spotless code formatting, JaCoCo coverage gate (80%), SpotBugs static analysis

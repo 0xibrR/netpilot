@@ -8,12 +8,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HistoryRecord;
 import org.netpilot.model.PasswordMode;
+import org.netpilot.model.RouterEndpoint;
+import org.netpilot.model.RouterSettings;
 import org.netpilot.model.UsernameMode;
 
 class RepositoriesTest {
@@ -27,11 +30,28 @@ class RepositoriesTest {
         AppSettings saved = new AppSettings(
                 new GenerationSettings(50, UsernameMode.PROFILE_BASED, 7, 100,
                         PasswordMode.PREFIX_USERNAME, 8, 9000, "vip", "10M", "hotspot1", "1d"),
-                "http://192.168.88.1/login", 4, dir.resolve("out"));
+                "http://192.168.88.1/login", 4, dir.resolve("out"),
+                new RouterSettings(new RouterEndpoint("10.0.0.1", 8443, true, "netpilot"), Map.of(
+                        "10.0.0.1:8443", "ab".repeat(32),
+                        "[fe80::1]:443", "cd".repeat(32))));
 
         repo.save(saved);
 
         assertEquals(saved, repo.load());
+        String stored = Files.readString(dir.resolve("sub/settings.properties"));
+        assertTrue(!stored.toLowerCase().contains("password="), "router passwords are never stored");
+    }
+
+    @Test
+    void invalidTrustedFingerprintsAreIgnored() throws Exception {
+        Path file = dir.resolve("settings.properties");
+        Files.writeString(file, "router.trustedCertificate.10.0.0.1\\:443=not-a-fingerprint\nrouter.port=x\n",
+                StandardCharsets.UTF_8);
+
+        AppSettings loaded = new SettingsRepository(file).load();
+
+        assertTrue(loaded.router().trustedFingerprints().isEmpty());
+        assertEquals(RouterEndpoint.defaults().port(), loaded.router().lastEndpoint().port());
     }
 
     @Test

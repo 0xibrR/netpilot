@@ -10,6 +10,9 @@ module org.netpilot {
     requires javafx.fxml;
     requires java.desktop;
     requires java.logging; // backs System.Logger and writes the log files (see AppLogging)
+    requires java.net.http; // RouterOS REST API client
+
+    requires tools.jackson.databind; // parses REST API responses
 
     requires com.github.librepdf.openpdf;
     requires com.google.zxing;
