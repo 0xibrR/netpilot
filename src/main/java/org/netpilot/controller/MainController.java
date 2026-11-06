@@ -137,6 +137,11 @@ public class MainController {
     private MenuItem refreshRouterItem;
     @FXML
     private MenuItem disconnectRouterItem;
+    @FXML
+    private MenuItem manageUsersItem;
+
+    /** The open Router Users window, if any (one at a time). */
+    private Stage routerUsersStage;
 
     @FXML
     private Button sendButton;
@@ -180,6 +185,7 @@ public class MainController {
                 this::showOfflineSuggestions);
         refreshRouterItem.disableProperty().bind(router.connectedProperty().not());
         disconnectRouterItem.disableProperty().bind(router.connectedProperty().not());
+        manageUsersItem.disableProperty().bind(router.connectedProperty().not());
 
         BooleanBinding noUsers = Bindings.isEmpty(users);
         generateButton.disableProperty().bind(busy);
@@ -217,6 +223,34 @@ public class MainController {
         router.disconnect();
     }
 
+    /** Opens the Router Users window, or brings it to the front if it is already open. */
+    @FXML
+    private void onManageUsers() {
+        Optional<RouterClient> client = router.client();
+        if (client.isEmpty()) {
+            return;
+        }
+        if (routerUsersStage != null && routerUsersStage.isShowing()) {
+            routerUsersStage.toFront();
+            return;
+        }
+        try {
+            FXMLLoader loader = NetPilotApp.loader("view/router-users-view.fxml", context);
+            Parent root = loader.load();
+            RouterUsersController controller = loader.getController();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            routerUsersStage = new Stage();
+            routerUsersStage.initOwner(window()); // not modal: it can stay open next to the main window
+            routerUsersStage.setScene(scene);
+            routerUsersStage.show();
+            controller.start(client.get(), router.displayName(), this::exportUsers);
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open Router Users", e);
+            Dialogs.error(window(), "Cannot open Router Users", e.getMessage());
+        }
+    }
+
     @FXML
     private void onRouterStatusClicked() {
         onConnectRouter();
@@ -248,6 +282,10 @@ public class MainController {
     }
 
     private void showOfflineSuggestions() {
+        if (routerUsersStage != null) {
+            routerUsersStage.close(); // its session is gone
+            routerUsersStage = null;
+        }
         String profile = comboText(profileBox);
         String server = comboText(serverBox);
         profileBox.getItems().setAll(PROFILE_SUGGESTIONS);

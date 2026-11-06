@@ -5,7 +5,6 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -35,10 +34,6 @@ import org.netpilot.service.router.RouterException.Kind;
 public final class RouterUploadService {
 
     private static final System.Logger LOG = System.getLogger(RouterUploadService.class.getName());
-
-    /** Failures that will affect every remaining user, so continuing is pointless. */
-    private static final Set<Kind> STOPPING = EnumSet.of(Kind.AUTHENTICATION, Kind.PERMISSION, Kind.UNREACHABLE,
-            Kind.TIMEOUT, Kind.CERTIFICATE_UNTRUSTED, Kind.CERTIFICATE_CHANGED, Kind.TLS_FAILURE, Kind.NOT_SUPPORTED);
 
     /** Stop after this many users in a row failed for the same reason. */
     static final int MAX_CONSECUTIVE_FAILURES = 5;
@@ -128,7 +123,7 @@ public final class RouterUploadService {
                 deleted++;
             } catch (RouterException e) {
                 problems.add(created.user().username() + ": " + e.getMessage());
-                if (STOPPING.contains(e.kind())) {
+                if (e.affectsEveryRequest()) {
                     break;
                 }
             }
@@ -214,7 +209,7 @@ public final class RouterUploadService {
 
         private boolean recordFailure(HotspotUser user, RouterException e) {
             failed.add(new UploadReport.Failure(user, e.getMessage()));
-            if (STOPPING.contains(e.kind())) {
+            if (e.affectsEveryRequest()) {
                 stopReason = e.kind() == Kind.TIMEOUT
                         ? e.getMessage() + " The last user may or may not have been created."
                         : e.getMessage();

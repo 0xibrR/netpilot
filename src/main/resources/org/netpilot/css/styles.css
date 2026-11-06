@@ -148,3 +148,13 @@
 .summary-error {
     -fx-text-fill: #b3261e;
 }
+
+/* Router Users window */
+.button.danger {
+    -fx-text-fill: #b3261e;
+}
+
+.table-cell.online-dot {
+    -fx-text-fill: #1e7e34;
+    -fx-alignment: center;
+}

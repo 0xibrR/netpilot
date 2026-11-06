@@ -13,6 +13,7 @@ import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
 import org.netpilot.service.router.RouterConnector;
 import org.netpilot.service.router.RouterUploadService;
+import org.netpilot.service.router.RouterUserActions;
 
 /**
  * Wires the application's objects together (manual dependency injection).
@@ -24,6 +25,7 @@ public record AppContext(
         HistoryRepository historyRepository,
         RouterConnector routerConnector,
         RouterUploadService routerUploadService,
+        RouterUserActions routerUserActions,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -42,6 +44,7 @@ public record AppContext(
                 history,
                 new RouterConnector(),
                 new RouterUploadService(generator),
+                new RouterUserActions(),
                 hostServices);
     }
 }

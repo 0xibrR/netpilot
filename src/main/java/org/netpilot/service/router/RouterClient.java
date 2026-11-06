@@ -1,12 +1,16 @@
 package org.netpilot.service.router;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
+import org.netpilot.model.RouterUser;
 
 /**
  * An authenticated session with one router.
@@ -38,6 +42,24 @@ public interface RouterClient extends AutoCloseable {
 
     /** Deletes the hotspot user with the given router id. Succeeds if it is already gone. */
     void deleteHotspotUser(String routerId) throws RouterException;
+
+    /** All hotspot users, without passwords. */
+    List<RouterUser> hotspotUsers() throws RouterException;
+
+    /** Users logged in right now. */
+    List<ActiveSession> activeSessions() throws RouterException;
+
+    void setHotspotUserDisabled(String routerId, boolean disabled) throws RouterException;
+
+    /** Ends an active session (the user can log in again). Succeeds if it already ended. */
+    void disconnect(String sessionId) throws RouterException;
+
+    /**
+     * Reads passwords, only for printing vouchers. Never log the result.
+     *
+     * @return password per router id; ids that no longer exist are missing from the map
+     */
+    Map<String, String> hotspotPasswords(Collection<String> routerIds) throws RouterException;
 
     @Override
     void close();

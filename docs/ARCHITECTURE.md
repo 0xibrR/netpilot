@@ -41,9 +41,9 @@ This document explains how the code is organized and **why**, so it stays easy t
 | `org.netpilot` | `Launcher` (entry point), `NetPilotApp` (JavaFX app), `AppContext` (wiring), `AppLogging` |
 | `org.netpilot.model` | `HotspotUser`, `GenerationSettings` (+ validation), `AppSettings`, `HistoryRecord`, mode enums; router data: `RouterEndpoint`, `RouterSettings`, `RouterInfo`, `HotspotProfile`, `HotspotServer` |
 | `org.netpilot.service` | `UserGenerator`, `ExportService`, and the exporters (CSV, RSC, PDF, QR) |
-| `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException` |
+| `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException`, `RouterUploadService` (send a batch), `RouterUserActions` (bulk enable/disable/delete/disconnect/reprint) |
 | `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `Dialogs` |
+| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `Dialogs` |
 
 ## Main flows
 
@@ -62,6 +62,8 @@ A first HTTPS connection fails with `CERTIFICATE_UNTRUSTED`. The dialog shows th
 4. Connection problems, or 5 identical failures in a row, stop the upload.
 
 The resulting `UploadReport` drives the summary. **Print** exports only the created users. **Undo** deletes them by their router ids, and the preview then shows exactly what is on the router.
+
+**Manage users:** `RouterUsersController` loads `hotspotUsers()` (without passwords) and `activeSessions()` in one background `Task`, then filters locally with `UserFilter`, so typing never sends requests. Bulk buttons call `RouterUserActions`, which works item by item and stops on errors that affect every request (`RouterException.affectsEveryRequest()`); the list then refreshes. **Print vouchers** reads passwords with one request, for the selected users only, and hands them to the main window's export.
 
 ## Where data lives
 

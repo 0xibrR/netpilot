@@ -19,3 +19,5 @@ org.eclipse.jdt.core.formatter.use_on_off_tags=true
 org.eclipse.jdt.core.compiler.source=25
 org.eclipse.jdt.core.compiler.compliance=25
 org.eclipse.jdt.core.compiler.codegen.targetPlatform=25
+# One enum constant per line, so enum lists stay easy to scan
+org.eclipse.jdt.core.formatter.alignment_for_enum_constants=49

@@ -7,16 +7,22 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
+import org.netpilot.model.RouterUser;
 import org.netpilot.service.router.RouterException.Kind;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,6 +37,7 @@ import tools.jackson.databind.node.ObjectNode;
 final class RestRouterClient implements RouterClient {
 
     private static final String USERS = "/ip/hotspot/user";
+    private static final String ACTIVE = "/ip/hotspot/active";
     private static final Pattern ROUTER_ID = Pattern.compile("^\\*[0-9A-Fa-f]{1,16}$");
     private static final JsonMapper JSON = JsonMapper.shared();
 
@@ -126,17 +133,93 @@ final class RestRouterClient implements RouterClient {
 
     @Override
     public void deleteHotspotUser(String routerId) throws RouterException {
-        // the id goes into the URL path, so accept only RouterOS ids like "*1A"
-        if (!ROUTER_ID.matcher(routerId).matches()) {
-            throw new IllegalArgumentException("Not a RouterOS id: " + routerId);
+        deleteIgnoringMissing(USERS, routerId);
+    }
+
+    @Override
+    public List<RouterUser> hotspotUsers() throws RouterException {
+        List<RouterUser> users = new ArrayList<>();
+        JsonNode list = get(USERS, ".id,name,profile,server,uptime,limit-uptime,bytes-in,bytes-out,disabled,comment");
+        for (JsonNode item : array(list, "hotspot users")) {
+            String id = text(item, ".id");
+            String name = text(item, "name");
+            if (ROUTER_ID.matcher(id).matches() && !name.isEmpty()) {
+                users.add(new RouterUser(id, name, text(item, "profile"), text(item, "server"),
+                        RouterDuration.parse(text(item, "uptime")).orElse(Duration.ZERO),
+                        text(item, "limit-uptime"), number(item, "bytes-in"), number(item, "bytes-out"),
+                        "true".equals(text(item, "disabled")), text(item, "comment")));
+            }
         }
+        return List.copyOf(users);
+    }
+
+    @Override
+    public List<ActiveSession> activeSessions() throws RouterException {
+        List<ActiveSession> sessions = new ArrayList<>();
+        for (JsonNode item : array(get(ACTIVE, ".id,user,address,mac-address,uptime"), "active sessions")) {
+            String id = text(item, ".id");
+            String user = text(item, "user");
+            if (ROUTER_ID.matcher(id).matches() && !user.isEmpty()) {
+                sessions.add(new ActiveSession(id, user, text(item, "address"), text(item, "mac-address"),
+                        RouterDuration.parse(text(item, "uptime")).orElse(Duration.ZERO)));
+            }
+        }
+        return List.copyOf(sessions);
+    }
+
+    @Override
+    public void setHotspotUserDisabled(String routerId, boolean disabled) throws RouterException {
+        requireRouterId(routerId);
+        byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("disabled", String.valueOf(disabled)));
+        // RouterOS REST: PATCH on an item changes only the given properties
+        send(USERS + "/" + routerId, HttpRequest.newBuilder(URI.create(baseUri + USERS + "/" + routerId))
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofByteArray(body)));
+    }
+
+    @Override
+    public void disconnect(String sessionId) throws RouterException {
+        deleteIgnoringMissing(ACTIVE, sessionId);
+    }
+
+    @Override
+    public Map<String, String> hotspotPasswords(Collection<String> routerIds) throws RouterException {
+        Set<String> wanted = Set.copyOf(routerIds);
+        Map<String, String> passwords = new HashMap<>();
+        // one request for the whole list is much faster than one per user
+        for (JsonNode item : array(get(USERS, ".id,password"), "hotspot users")) {
+            String id = text(item, ".id");
+            if (wanted.contains(id)) {
+                passwords.put(id, item.path("password").asString(""));
+            }
+        }
+        return passwords;
+    }
+
+    /** Deletes an item; succeeds if it is already gone (404), e.g. removed in WinBox meanwhile. */
+    private void deleteIgnoringMissing(String menu, String routerId) throws RouterException {
+        requireRouterId(routerId);
         try {
-            send(USERS + "/" + routerId, HttpRequest.newBuilder(URI.create(baseUri + USERS + "/" + routerId)).DELETE());
+            send(menu + "/" + routerId, HttpRequest.newBuilder(URI.create(baseUri + menu + "/" + routerId)).DELETE());
         } catch (RouterException e) {
-            // 404: the user is already gone (e.g. removed in WinBox), which is what the caller wanted
             if (e.kind() != Kind.NOT_SUPPORTED) {
                 throw e;
             }
+        }
+    }
+
+    /** Ids go into URL paths, so accept only RouterOS ids like "*1A". */
+    private static void requireRouterId(String routerId) {
+        if (routerId == null || !ROUTER_ID.matcher(routerId).matches()) {
+            throw new IllegalArgumentException("Not a RouterOS id: " + routerId);
+        }
+    }
+
+    private static long number(JsonNode node, String field) {
+        try {
+            return Long.parseLong(text(node, field));
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 

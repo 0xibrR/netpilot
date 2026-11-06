@@ -23,19 +23,29 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * A minimal stand-in for a RouterOS REST API, served by the JDK's built-in HTTP(S) server.
  * Answers 401 unless the expected Basic credentials are sent, like a real router, and keeps
- * hotspot users in memory ({@code GET/PUT/DELETE /rest/ip/hotspot/user}).
+ * hotspot users ({@code /rest/ip/hotspot/user}) and active sessions
+ * ({@code /rest/ip/hotspot/active}) in memory.
  */
 final class FakeRouter implements AutoCloseable {
 
     record Reply(int status, String body, Map<String, String> headers) {
     }
 
-    /** A hotspot user as stored by the fake router. */
+    /** A hotspot user as stored by the fake router. Durations use RouterOS text like {@code 1h20m}. */
     record StoredUser(String id, String name, String password, String profile, String server, String limitUptime,
-            String comment) {
+            String comment, String uptime, long bytesIn, long bytesOut, boolean disabled) {
+
+        StoredUser withDisabled(boolean value) {
+            return new StoredUser(id, name, password, profile, server, limitUptime, comment, uptime, bytesIn, bytesOut,
+                    value);
+        }
+    }
+
+    record StoredSession(String id, String user, String address, String mac, String uptime) {
     }
 
     private static final String USERS = "/rest/ip/hotspot/user";
+    private static final String ACTIVE = "/rest/ip/hotspot/active";
     private static final JsonMapper JSON = JsonMapper.shared();
 
     private final HttpServer server;
@@ -43,6 +53,7 @@ final class FakeRouter implements AutoCloseable {
     private final Map<String, Reply> routes = new ConcurrentHashMap<>();
     private final Map<String, String> lastQuery = new ConcurrentHashMap<>();
     private final Map<String, StoredUser> users = new LinkedHashMap<>();
+    private final Map<String, StoredSession> sessions = new LinkedHashMap<>();
     private final AtomicInteger nextId = new AtomicInteger(0x10);
     private volatile Duration delay = Duration.ZERO;
     private volatile Reply createFailure;
@@ -89,10 +100,25 @@ final class FakeRouter implements AutoCloseable {
         return lastQuery.get(path);
     }
 
-    /** Users that exist on the "router" before the test starts. */
-    synchronized void addExistingUser(String name) {
-        String id = "*" + Integer.toHexString(nextId.getAndIncrement()).toUpperCase();
-        users.put(id, new StoredUser(id, name, "x", "default", "all", "", ""));
+    /** A user that exists on the "router" before the test starts. */
+    void addExistingUser(String name) {
+        addUser(name, "x", "default", "", "", "0s", 0, 0, false);
+    }
+
+    /** @return the router id of the new user */
+    synchronized String addUser(String name, String password, String profile, String limitUptime, String comment,
+            String uptime, long bytesIn, long bytesOut, boolean disabled) {
+        String id = nextId();
+        users.put(id, new StoredUser(id, name, password, profile, "all", limitUptime, comment, uptime, bytesIn,
+                bytesOut, disabled));
+        return id;
+    }
+
+    /** @return the router id of the session */
+    synchronized String addSession(String user, String address) {
+        String id = nextId();
+        sessions.put(id, new StoredSession(id, user, address, "AA:BB:CC:DD:EE:FF", "5m"));
+        return id;
     }
 
     /** From the {@code n+1}-th create on, answer every create with this reply. */
@@ -103,6 +129,14 @@ final class FakeRouter implements AutoCloseable {
 
     synchronized Map<String, StoredUser> users() {
         return Map.copyOf(users);
+    }
+
+    synchronized Map<String, StoredSession> sessions() {
+        return Map.copyOf(sessions);
+    }
+
+    private String nextId() {
+        return "*" + Integer.toHexString(nextId.getAndIncrement()).toUpperCase();
     }
 
     private void routeDefaults() {
@@ -121,18 +155,22 @@ final class FakeRouter implements AutoCloseable {
             if (!delay.isZero()) {
                 Thread.sleep(delay);
             }
+            String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
             lastQuery.put(path, String.valueOf(exchange.getRequestURI().getRawQuery()));
 
             Reply reply;
             if (!expectedAuthorization.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
                 reply = new Reply(401, "{\"error\":401,\"message\":\"Unauthorized\"}", Map.of());
-            } else if (path.startsWith(USERS) && !path.startsWith(USERS + "/profile")
-                    && (!routes.containsKey(path) || isCreate(exchange.getRequestMethod(), path))) {
-                // route() can override listing and deleting; creating always uses the in-memory store
-                reply = handleUsers(exchange.getRequestMethod(), path, exchange.getRequestBody().readAllBytes());
+            } else if (routes.containsKey(path) && !isCreate(method, path)) {
+                // route() can override listing, changing and deleting; creating always uses the store
+                reply = routes.get(path);
+            } else if (path.startsWith(USERS) && !path.startsWith(USERS + "/profile")) {
+                reply = handleUsers(method, path, exchange.getRequestBody().readAllBytes());
+            } else if (path.startsWith(ACTIVE)) {
+                reply = handleSessions(method, path);
             } else {
-                reply = routes.getOrDefault(path, notFound());
+                reply = notFound();
             }
 
             byte[] body = reply.body().getBytes(StandardCharsets.UTF_8);
@@ -152,10 +190,23 @@ final class FakeRouter implements AutoCloseable {
     private synchronized Reply handleUsers(String method, String path, byte[] requestBody) {
         if (method.equals("GET") && path.equals(USERS)) {
             ArrayNode list = JSON.createArrayNode();
-            users.values().forEach(u -> list.addObject().put(".id", u.id()).put("name", u.name()));
-            return new Reply(200, list.toString(), Map.of());
+            for (StoredUser u : users.values()) {
+                list.addObject()
+                        .put(".id", u.id())
+                        .put("name", u.name())
+                        .put("password", u.password())
+                        .put("profile", u.profile())
+                        .put("server", u.server())
+                        .put("limit-uptime", u.limitUptime())
+                        .put("comment", u.comment())
+                        .put("uptime", u.uptime())
+                        .put("bytes-in", String.valueOf(u.bytesIn()))
+                        .put("bytes-out", String.valueOf(u.bytesOut()))
+                        .put("disabled", String.valueOf(u.disabled()));
+            }
+            return ok(list.toString());
         }
-        if (method.equals("PUT") && path.equals(USERS)) {
+        if (isCreate(method, path)) {
             if (creates++ >= createFailureAfter) {
                 return createFailure;
             }
@@ -165,22 +216,51 @@ final class FakeRouter implements AutoCloseable {
                 return new Reply(400, "{\"detail\":\"failure: already have user with this name\",\"error\":400,"
                         + "\"message\":\"Bad Request\"}", Map.of());
             }
-            String id = "*" + Integer.toHexString(nextId.getAndIncrement()).toUpperCase();
+            String id = nextId();
             users.put(id, new StoredUser(id, name, in.path("password").asString(""), in.path("profile").asString(""),
                     in.path("server").asString(""), in.path("limit-uptime").asString(""),
-                    in.path("comment").asString("")));
+                    in.path("comment").asString(""), "0s", 0, 0, false));
             ObjectNode out = JSON.createObjectNode().put(".id", id).put("name", name);
-            return new Reply(200, out.toString(), Map.of());
+            return ok(out.toString());
+        }
+        String id = path.substring(USERS.length() + 1);
+        StoredUser user = users.get(id);
+        if (user == null) {
+            return notFound();
+        }
+        if (method.equals("PATCH")) {
+            boolean disabled = "true".equals(JSON.readTree(requestBody).path("disabled").asString(""));
+            users.put(id, user.withDisabled(disabled));
+            return ok("{\".id\":\"" + id + "\"}");
         }
         if (method.equals("DELETE")) {
-            String id = path.substring(USERS.length() + 1);
-            return users.remove(id) == null ? notFound() : new Reply(204, "", Map.of());
+            users.remove(id);
+            return new Reply(204, "", Map.of());
+        }
+        return notFound();
+    }
+
+    private synchronized Reply handleSessions(String method, String path) {
+        if (method.equals("GET") && path.equals(ACTIVE)) {
+            ArrayNode list = JSON.createArrayNode();
+            sessions.values().forEach(s -> list.addObject().put(".id", s.id()).put("user", s.user())
+                    .put("address", s.address()).put("mac-address", s.mac()).put("uptime", s.uptime()));
+            return ok(list.toString());
+        }
+        if (method.equals("DELETE")) {
+            return sessions.remove(path.substring(ACTIVE.length() + 1)) == null
+                    ? notFound()
+                    : new Reply(204, "", Map.of());
         }
         return notFound();
     }
 
     private static boolean isCreate(String method, String path) {
         return method.equals("PUT") && path.equals(USERS);
+    }
+
+    private static Reply ok(String body) {
+        return new Reply(200, body, Map.of());
     }
 
     private static Reply notFound() {

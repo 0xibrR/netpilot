@@ -74,6 +74,15 @@ Look at the `fingerprint=` value, or in WinBox open **System → Certificates �
 
 If NetPilot later says **"Router certificate changed!"**, someone may be intercepting the connection. Only press *Trust new certificate* if you replaced the certificate yourself.
 
+## Managing users on the router
+
+**Router → Manage Users…** (`Ctrl+U`) lists every hotspot user on the router with what it has used. A green ● marks users that are online right now.
+
+- **Filter** by text (name or comment), by NetPilot batch, by profile, or by state: online, never used, expired (time limit used up) or disabled.
+- **Select** users (`Ctrl`/`Shift`-click, or **Select all**), then **Enable**, **Disable**, **Disconnect**, **Delete** or **Print vouchers**.
+- To clean up used cards: choose the state **Expired**, then **Select all** and **Delete**.
+- Passwords are never shown in the list. They are read from the router only when you press **Print vouchers**, and only for the selected users.
+
 ## Security notes
 
 - **The password is never saved.** You type it each time NetPilot starts. It is not written to settings, logs or error messages.

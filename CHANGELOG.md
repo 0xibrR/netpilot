@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 3, manage router users (**Router → Manage Users…**, `Ctrl+U`):
+  - List of all hotspot users with used time, limit, data, state, comment and a live online marker
+  - Search plus filters by NetPilot batch, profile and state (online, never used, expired, disabled)
+  - Bulk Enable, Disable, Disconnect, Delete (with confirmation) and Print vouchers for the selection
+  - Passwords are never listed; they are read only to reprint the selected vouchers
 - Phase 2, send users to the router:
   - **Send to Router** creates the previewed users directly on the connected router, with a progress bar and Cancel
   - Existing names get a new random name (random modes) or are skipped (sequential modes); nothing is overwritten

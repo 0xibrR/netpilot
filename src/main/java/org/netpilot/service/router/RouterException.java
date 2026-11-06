@@ -60,4 +60,17 @@ public final class RouterException extends Exception {
     public Optional<String> presentedFingerprint() {
         return Optional.ofNullable(presentedFingerprint);
     }
+
+    /**
+     * Whether every following request would fail the same way (connection, login, permission,
+     * HTTPS), so a batch operation should stop instead of trying the next item.
+     */
+    public boolean affectsEveryRequest() {
+        return switch (kind) {
+            case AUTHENTICATION, PERMISSION, UNREACHABLE, TIMEOUT, CERTIFICATE_UNTRUSTED, CERTIFICATE_CHANGED,
+                    TLS_FAILURE ->
+                true;
+            case NOT_SUPPORTED, ALREADY_EXISTS, UNEXPECTED_RESPONSE -> false;
+        };
+    }
 }

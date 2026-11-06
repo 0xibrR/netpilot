@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.RouterUsersController"
+            styleClass="app-root" prefWidth="1060" prefHeight="640">
+
+    <!-- ===== Top: filters ===== -->
+    <top>
+        <VBox spacing="10">
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" promptText="🔍 Search name or comment" prefColumnCount="18"/>
+                <ComboBox fx:id="batchBox" promptText="All batches" prefWidth="270"/>
+                <ComboBox fx:id="profileBox" promptText="All profiles" prefWidth="130"/>
+                <ComboBox fx:id="statusBox" prefWidth="180"/>
+                <Button text="Clear" onAction="#onClearFilters"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                <Button fx:id="refreshButton" text="⟳ Refresh" onAction="#onRefresh"/>
+            </HBox>
+            <padding>
+                <Insets top="12" right="12" bottom="0" left="12"/>
+            </padding>
+        </VBox>
+    </top>
+
+    <!-- ===== Center: users ===== -->
+    <center>
+        <TableView fx:id="usersTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="onlineColumn" text="●" prefWidth="34" maxWidth="40" sortable="true"/>
+                <TableColumn fx:id="nameColumn" text="Name" prefWidth="140"/>
+                <TableColumn fx:id="profileColumn" text="Profile" prefWidth="80"/>
+                <TableColumn fx:id="serverColumn" text="Server" prefWidth="90"/>
+                <TableColumn fx:id="usedColumn" text="Used" prefWidth="80"/>
+                <TableColumn fx:id="limitColumn" text="Limit" prefWidth="70"/>
+                <TableColumn fx:id="dataColumn" text="Data" prefWidth="85"/>
+                <TableColumn fx:id="stateColumn" text="State" prefWidth="80"/>
+                <TableColumn fx:id="commentColumn" text="Comment" prefWidth="260"/>
+            </columns>
+            <placeholder>
+                <Label fx:id="placeholderLabel" text="Loading users…" styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="10" right="12" left="12"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+
+    <!-- ===== Bottom: summary + actions ===== -->
+    <bottom>
+        <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="8">
+            <Label fx:id="summaryLabel" styleClass="muted"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Select all" onAction="#onSelectAll"/>
+            <Separator orientation="VERTICAL"/>
+            <Button fx:id="enableButton" text="Enable" onAction="#onEnable"/>
+            <Button fx:id="disableButton" text="Disable" onAction="#onDisable"/>
+            <Button fx:id="disconnectButton" text="Disconnect" onAction="#onDisconnect"/>
+            <Button fx:id="deleteButton" text="Delete" onAction="#onDelete" styleClass="danger"/>
+            <Button fx:id="printButton" text="Print vouchers" onAction="#onPrint" styleClass="primary"/>
+            <padding>
+                <Insets top="10" right="12" bottom="10" left="12"/>
+            </padding>
+        </HBox>
+    </bottom>
+</BorderPane>

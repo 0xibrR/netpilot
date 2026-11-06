@@ -21,6 +21,7 @@
                 </Menu>
                 <Menu text="_Router">
                     <MenuItem text="Connect…" onAction="#onConnectRouter" accelerator="Shortcut+R"/>
+                    <MenuItem fx:id="manageUsersItem" text="Manage Users…" onAction="#onManageUsers" accelerator="Shortcut+U"/>
                     <MenuItem fx:id="refreshRouterItem" text="Reload Profiles and Servers" onAction="#onRefreshRouter"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="disconnectRouterItem" text="Disconnect" onAction="#onDisconnectRouter"/>
