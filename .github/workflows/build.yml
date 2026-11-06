@@ -4,7 +4,7 @@ name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ '**' ] # every branch, so feature branches are checked before they reach master
   pull_request:
   workflow_dispatch:
 
