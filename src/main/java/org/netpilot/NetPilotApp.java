@@ -12,6 +12,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.MainController;
+import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.repository.AppPaths;
 
 /**
@@ -61,6 +62,7 @@ public class NetPilotApp extends Application {
     public void stop() {
         if (mainController != null) {
             mainController.saveSettings();
+            mainController.close();
         }
         LOG.log(System.Logger.Level.INFO, "{0} stopped", NAME);
     }
@@ -74,6 +76,9 @@ public class NetPilotApp extends Application {
             }
             if (type == HistoryController.class) {
                 return new HistoryController(context);
+            }
+            if (type == RouterConnectionController.class) {
+                return new RouterConnectionController(context);
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });

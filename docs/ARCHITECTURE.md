@@ -39,10 +39,11 @@ This document explains how the code is organized and **why**, so it stays easy t
 | Package | Contents |
 |---|---|
 | `org.netpilot` | `Launcher` (entry point), `NetPilotApp` (JavaFX app), `AppContext` (wiring), `AppLogging` |
-| `org.netpilot.model` | `HotspotUser`, `GenerationSettings` (+ validation), `AppSettings`, `HistoryRecord`, mode enums |
+| `org.netpilot.model` | `HotspotUser`, `GenerationSettings` (+ validation), `AppSettings`, `HistoryRecord`, mode enums; router data: `RouterEndpoint`, `RouterSettings`, `RouterInfo`, `HotspotProfile`, `HotspotServer` |
 | `org.netpilot.service` | `UserGenerator`, `ExportService`, and the exporters (CSV, RSC, PDF, QR) |
+| `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException` |
 | `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `Dialogs` |
+| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `Dialogs` |
 
 ## Main flows
 
@@ -50,6 +51,9 @@ This document explains how the code is organized and **why**, so it stays easy t
 
 **Export:** `MainController.onExport` starts a background `Task` → `ExportService.export()` writes CSV, RSC and PDF into a new folder → `HistoryRepository.append()`.
 The exported users are **exactly** the previewed ones. Changing any setting clears the preview.
+
+**Connect to router:** `RouterSession.showConnectDialog` → `RouterConnectionController` runs `RouterConnector.connect()` in a background `Task` → on success `RouterSession.refresh()` loads profiles and servers → `MainController.showRouterLists` fills the Profile and Server lists.
+A first HTTPS connection fails with `CERTIFICATE_UNTRUSTED`. The dialog shows the fingerprint, and if the user trusts it, saves it in `RouterSettings` and retries.
 
 ## Where data lives
 
@@ -66,6 +70,9 @@ The exported users are **exactly** the previewed ones. Changing any setting clea
 - **Validate input at the boundary.** `GenerationSettings.validate()` and `QrCodeService.validateLoginUrl()` run before any work starts.
 - **Never log secrets.** Passwords, router credentials and tokens must not reach log files or error messages.
 - **Randomness for credentials uses `SecureRandom`.**
+- **Router password is never stored.** It lives in a `char[]` that `RouterConnector` wipes after building the auth header. Settings keep only the endpoint and trusted fingerprints.
+- **No "trust all certificates".** HTTPS trusts only the certificate whose SHA-256 fingerprint the user confirmed (`PinnedTrustManager`, trust on first use). A changed certificate is refused.
+- **Redirects are never followed**, so credentials cannot be sent to another host.
 
 ## Quality gates
 

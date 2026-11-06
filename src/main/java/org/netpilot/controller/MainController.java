@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -22,6 +23,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -37,6 +39,8 @@ import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.GenerationSettings;
+import org.netpilot.model.HotspotProfile;
+import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.UsernameMode;
@@ -121,6 +125,15 @@ public class MainController {
     @FXML
     private Button exportButton;
 
+    @FXML
+    private Label routerStatusLabel;
+    @FXML
+    private MenuItem refreshRouterItem;
+    @FXML
+    private MenuItem disconnectRouterItem;
+
+    private RouterSession router;
+
     public MainController(AppContext context) {
         this.context = context;
     }
@@ -148,6 +161,76 @@ public class MainController {
         clearPreviewWhenSettingsChange();
         exportButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(users));
         updateCountLabel();
+
+        router = new RouterSession(context, routerStatusLabel, this::window, this::showRouterLists,
+                this::showOfflineSuggestions);
+        refreshRouterItem.disableProperty().bind(router.connectedProperty().not());
+        disconnectRouterItem.disableProperty().bind(router.connectedProperty().not());
+    }
+
+    /** Ends the router session; called when the app closes. */
+    public void close() {
+        router.close();
+    }
+
+    // ------------------------------------------------------------------ router
+
+    @FXML
+    private void onConnectRouter() {
+        router.showConnectDialog(appSettings.router()).ifPresent(routerSettings -> {
+            appSettings = appSettings.withRouter(routerSettings);
+            saveSettings(); // keeps the endpoint and trusted certificates, never the password
+        });
+    }
+
+    @FXML
+    private void onRefreshRouter() {
+        router.refresh();
+    }
+
+    @FXML
+    private void onDisconnectRouter() {
+        router.disconnect();
+    }
+
+    @FXML
+    private void onRouterStatusClicked() {
+        onConnectRouter();
+    }
+
+    /** Offers the router's real profiles and servers; typing other values stays possible. */
+    private void showRouterLists(RouterSession.RouterLists lists) {
+        String profile = comboText(profileBox);
+        String server = comboText(serverBox);
+
+        List<String> profiles = lists.profiles().stream().map(HotspotProfile::name).toList();
+        List<String> servers = new ArrayList<>();
+        servers.add("all");
+        lists.servers().stream().filter(s -> !s.disabled()).map(HotspotServer::name).forEach(servers::add);
+
+        profileBox.getItems().setAll(profiles);
+        serverBox.getItems().setAll(servers);
+        profileBox.setValue(profile);
+        serverBox.setValue(server);
+
+        if (!profiles.contains(profile)) {
+            setStatus("Profile '" + profile + "' does not exist on the router. Choose one from the list.", true);
+        } else if (!servers.contains(server)) {
+            setStatus("Server '" + server + "' does not exist on the router. Choose one from the list.", true);
+        } else {
+            setStatus("Loaded " + profiles.size() + " profiles and " + (servers.size() - 1)
+                    + " servers from the router.", false);
+        }
+    }
+
+    private void showOfflineSuggestions() {
+        String profile = comboText(profileBox);
+        String server = comboText(serverBox);
+        profileBox.getItems().setAll(PROFILE_SUGGESTIONS);
+        serverBox.getItems().setAll("all");
+        profileBox.setValue(profile);
+        serverBox.setValue(server);
+        setStatus("Disconnected from the router.", false);
     }
 
     // ------------------------------------------------------------------ actions
@@ -312,7 +395,8 @@ public class MainController {
                 readGenerationSettings(),
                 loginUrlField.getText(),
                 perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()));
+                Path.of(outputDirField.getText()),
+                appSettings.router()); // edited only through the router connection dialog
     }
 
     private GenerationSettings readGenerationSettings() {

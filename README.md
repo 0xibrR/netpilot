@@ -17,6 +17,7 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
   - **RSC** RouterOS script: every value is quoted and escaped, and existing usernames are skipped instead of aborting the import
   - **CSV**, UTF-8, opens correctly in Excel
 - Export history and persistent settings (stored in `~/.netpilot`)
+- **Router connection** (RouterOS 7.1+, REST API): loads the router's real hotspot profiles and servers. HTTPS uses certificate pinning, and the password is never saved. Setup: [docs/ROUTER_SETUP.md](docs/ROUTER_SETUP.md)
 
 ## Requirements
 

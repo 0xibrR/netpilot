@@ -120,3 +120,17 @@
 .button.primary:disabled {
     -fx-opacity: 0.5;
 }
+
+/* Router connection indicator in the status bar */
+.router-status {
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.router-status.router-connected {
+    -fx-text-fill: #1e7e34;
+}
+
+.router-status.router-disconnected {
+    -fx-text-fill: -np-muted;
+}
