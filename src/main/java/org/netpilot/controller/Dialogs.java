@@ -1,11 +1,10 @@
 package org.netpilot.controller;
 
+import java.util.Optional;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Window;
 import org.netpilot.NetPilotApp;
-
-import java.util.Optional;
 
 /**
  * Small helpers for consistent alert dialogs.

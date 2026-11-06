@@ -29,8 +29,7 @@ public record GenerationSettings(
     public static final int MAX_LENGTH = 32;
 
     /** RouterOS durations: {@code 30m}, {@code 1h30m}, {@code 1d}, {@code 01:30:00}. Blank means unlimited. */
-    private static final Pattern DURATION =
-            Pattern.compile("^$|^(\\d+[wdhms])+$|^\\d{1,2}:\\d{2}:\\d{2}$");
+    private static final Pattern DURATION = Pattern.compile("^$|^(\\d+[wdhms])+$|^\\d{1,2}:\\d{2}:\\d{2}$");
 
     private static final Pattern PREFIX = Pattern.compile("^[A-Za-z0-9._-]{0,16}$");
 

@@ -20,6 +20,10 @@ public final class AppPaths {
         return dataDirectory().resolve("settings.properties");
     }
 
+    public static Path logDirectory() {
+        return dataDirectory().resolve("logs");
+    }
+
     public static Path historyFile() {
         return dataDirectory().resolve("history.csv");
     }

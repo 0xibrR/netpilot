@@ -7,8 +7,6 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import org.netpilot.model.HotspotUser;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -16,6 +14,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.netpilot.model.HotspotUser;
 
 /**
  * Builds hotspot auto-login links and renders them as QR codes.
@@ -36,18 +35,29 @@ public class QrCodeService {
                 + "&password=" + encode(user.password());
     }
 
+    /**
+     * @throws IllegalArgumentException unless {@code loginUrl} is an absolute http(s) URL with a host
+     */
     public static void validateLoginUrl(String loginUrl) {
-        try {
-            URI uri = URI.create(loginUrl);
-            String scheme = uri.getScheme();
-            if (uri.getHost() == null || scheme == null
-                    || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
-                throw new IllegalArgumentException();
-            }
-        } catch (IllegalArgumentException | NullPointerException e) {
+        if (!isValidLoginUrl(loginUrl)) {
             throw new IllegalArgumentException(
                     "Login URL must look like http://10.10.0.1/login (got: " + loginUrl + ")");
         }
+    }
+
+    private static boolean isValidLoginUrl(String loginUrl) {
+        if (loginUrl == null || loginUrl.isBlank()) {
+            return false;
+        }
+        URI uri;
+        try {
+            uri = URI.create(loginUrl);
+        } catch (IllegalArgumentException e) {
+            return false; // not a syntactically valid URI
+        }
+        String scheme = uri.getScheme();
+        return uri.getHost() != null
+                && ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme));
     }
 
     /**

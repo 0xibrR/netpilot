@@ -1,18 +1,18 @@
 package org.netpilot;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
-import javafx.stage.Screen;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import org.netpilot.controller.HistoryController;
-import org.netpilot.controller.MainController;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import org.netpilot.controller.HistoryController;
+import org.netpilot.controller.MainController;
+import org.netpilot.repository.AppPaths;
 
 /**
  * JavaFX application: loads the main view and hands the {@link AppContext} to controllers.
@@ -23,7 +23,16 @@ public class NetPilotApp extends Application {
     public static final String VERSION = "1.0.0";
     public static final String REPOSITORY_URL = "https://github.com/0xibrR/netpilot";
 
+    private static final System.Logger LOG = System.getLogger(NetPilotApp.class.getName());
+
     private MainController mainController;
+
+    @Override
+    public void init() {
+        AppLogging.configure(AppPaths.logDirectory());
+        AppLogging.installUncaughtExceptionHandler();
+        LOG.log(System.Logger.Level.INFO, "Starting {0} {1} on Java {2}", NAME, VERSION, Runtime.version());
+    }
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -53,6 +62,7 @@ public class NetPilotApp extends Application {
         if (mainController != null) {
             mainController.saveSettings();
         }
+        LOG.log(System.Logger.Level.INFO, "{0} stopped", NAME);
     }
 
     /** Creates a loader whose controllers receive the shared context. */

@@ -1,10 +1,5 @@
 package org.netpilot.service;
 
-import org.netpilot.model.AppSettings;
-import org.netpilot.model.HistoryRecord;
-import org.netpilot.model.HotspotUser;
-import org.netpilot.repository.HistoryRepository;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,11 +8,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import org.netpilot.model.AppSettings;
+import org.netpilot.model.HistoryRecord;
+import org.netpilot.model.HotspotUser;
+import org.netpilot.repository.HistoryRepository;
 
 /**
  * Exports one batch of users to a new folder (CSV + RSC + PDF) and records it in the history.
  */
-public class ExportService {
+public final class ExportService {
 
     private static final DateTimeFormatter FOLDER_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
@@ -28,10 +27,10 @@ public class ExportService {
     private final Clock clock;
 
     public ExportService(CsvExporter csvExporter,
-                         RscExporter rscExporter,
-                         PdfVoucherGenerator pdfGenerator,
-                         HistoryRepository historyRepository,
-                         Clock clock) {
+            RscExporter rscExporter,
+            PdfVoucherGenerator pdfGenerator,
+            HistoryRepository historyRepository,
+            Clock clock) {
         this.csvExporter = Objects.requireNonNull(csvExporter);
         this.rscExporter = Objects.requireNonNull(rscExporter);
         this.pdfGenerator = Objects.requireNonNull(pdfGenerator);

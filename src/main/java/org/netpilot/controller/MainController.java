@@ -1,5 +1,11 @@
 package org.netpilot.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ObservableValue;
@@ -37,13 +43,6 @@ import org.netpilot.model.UsernameMode;
 import org.netpilot.service.ExportService.ExportResult;
 import org.netpilot.service.QrCodeService;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-
 /**
  * Main window: collects settings, previews generated users and exports exactly those users.
  */
@@ -51,10 +50,9 @@ public class MainController {
 
     private static final System.Logger LOG = System.getLogger(MainController.class.getName());
 
-    private static final List<String> PROFILE_SUGGESTIONS =
-            List.of("default", "1M", "2M", "3M", "4M", "5M", "10M", "20M", "30M", "40M");
-    private static final List<String> UPTIME_SUGGESTIONS =
-            List.of("30m", "1h", "2h", "4h", "8h", "1d", "7d", "30d");
+    private static final List<String> PROFILE_SUGGESTIONS = List.of("default", "1M", "2M", "3M", "4M", "5M", "10M",
+            "20M", "30M", "40M");
+    private static final List<String> UPTIME_SUGGESTIONS = List.of("30m", "1h", "2h", "4h", "8h", "1d", "7d", "30d");
 
     private final AppContext context;
     private final ObservableList<HotspotUser> users = FXCollections.observableArrayList();
@@ -63,38 +61,65 @@ public class MainController {
     private AppSettings appSettings;
     private boolean loadingForm;
 
-    @FXML private Spinner<Integer> countSpinner;
-    @FXML private ComboBox<UsernameMode> usernameModeBox;
-    @FXML private Spinner<Integer> usernameLengthSpinner;
-    @FXML private Spinner<Integer> usernameStartSpinner;
+    @FXML
+    private Spinner<Integer> countSpinner;
+    @FXML
+    private ComboBox<UsernameMode> usernameModeBox;
+    @FXML
+    private Spinner<Integer> usernameLengthSpinner;
+    @FXML
+    private Spinner<Integer> usernameStartSpinner;
 
-    @FXML private ComboBox<PasswordMode> passwordModeBox;
-    @FXML private Spinner<Integer> passwordLengthSpinner;
-    @FXML private Spinner<Integer> passwordStartSpinner;
-    @FXML private TextField prefixField;
-    @FXML private Label weakPasswordWarning;
+    @FXML
+    private ComboBox<PasswordMode> passwordModeBox;
+    @FXML
+    private Spinner<Integer> passwordLengthSpinner;
+    @FXML
+    private Spinner<Integer> passwordStartSpinner;
+    @FXML
+    private TextField prefixField;
+    @FXML
+    private Label weakPasswordWarning;
 
-    @FXML private ComboBox<String> profileBox;
-    @FXML private ComboBox<String> serverBox;
-    @FXML private ComboBox<String> uptimeBox;
+    @FXML
+    private ComboBox<String> profileBox;
+    @FXML
+    private ComboBox<String> serverBox;
+    @FXML
+    private ComboBox<String> uptimeBox;
 
-    @FXML private TextField loginUrlField;
-    @FXML private Spinner<Integer> perRowSpinner;
-    @FXML private TextField outputDirField;
+    @FXML
+    private TextField loginUrlField;
+    @FXML
+    private Spinner<Integer> perRowSpinner;
+    @FXML
+    private TextField outputDirField;
 
-    @FXML private TableView<HotspotUser> usersTable;
-    @FXML private TableColumn<HotspotUser, Integer> indexColumn;
-    @FXML private TableColumn<HotspotUser, String> usernameColumn;
-    @FXML private TableColumn<HotspotUser, String> passwordColumn;
-    @FXML private TableColumn<HotspotUser, String> profileColumn;
-    @FXML private TableColumn<HotspotUser, String> serverColumn;
-    @FXML private TableColumn<HotspotUser, String> uptimeColumn;
-    @FXML private Label usersCountLabel;
+    @FXML
+    private TableView<HotspotUser> usersTable;
+    @FXML
+    private TableColumn<HotspotUser, Integer> indexColumn;
+    @FXML
+    private TableColumn<HotspotUser, String> usernameColumn;
+    @FXML
+    private TableColumn<HotspotUser, String> passwordColumn;
+    @FXML
+    private TableColumn<HotspotUser, String> profileColumn;
+    @FXML
+    private TableColumn<HotspotUser, String> serverColumn;
+    @FXML
+    private TableColumn<HotspotUser, String> uptimeColumn;
+    @FXML
+    private Label usersCountLabel;
 
-    @FXML private ProgressIndicator progressIndicator;
-    @FXML private Label statusLabel;
-    @FXML private Button generateButton;
-    @FXML private Button exportButton;
+    @FXML
+    private ProgressIndicator progressIndicator;
+    @FXML
+    private Label statusLabel;
+    @FXML
+    private Button generateButton;
+    @FXML
+    private Button exportButton;
 
     public MainController(AppContext context) {
         this.context = context;
@@ -163,6 +188,7 @@ public class MainController {
         List<HotspotUser> batch = List.copyOf(users);
 
         Task<ExportResult> task = new Task<>() {
+
             @Override
             protected ExportResult call() throws IOException {
                 return context.exportService().export(batch, settings);
@@ -213,7 +239,8 @@ public class MainController {
     private void onOpenOutputFolder() {
         Path folder = Path.of(outputDirField.getText());
         if (!Files.isDirectory(folder)) {
-            Dialogs.info(window(), "Nothing exported yet", "The output folder will be created on the first export:\n" + folder);
+            Dialogs.info(window(), "Nothing exported yet",
+                    "The output folder will be created on the first export:\n" + folder);
             return;
         }
         open(folder);
@@ -253,15 +280,15 @@ public class MainController {
     private void onAbout() {
         Dialogs.info(window(), NetPilotApp.NAME + " " + NetPilotApp.VERSION,
                 """
-                Network management toolkit.
+                        Network management toolkit.
 
-                • Generate MikroTik Hotspot users with unique names
-                • Printable A4 vouchers with QR auto-login
-                • RouterOS import scripts (.rsc) and CSV export
-                • Export history
+                        • Generate MikroTik Hotspot users with unique names
+                        • Printable A4 vouchers with QR auto-login
+                        • RouterOS import scripts (.rsc) and CSV export
+                        • Export history
 
-                Developed by Ibrahim Ramadan
-                """ + NetPilotApp.REPOSITORY_URL);
+                        Developed by Ibrahim Ramadan
+                        """ + NetPilotApp.REPOSITORY_URL);
     }
 
     @FXML
@@ -333,11 +360,13 @@ public class MainController {
     private void setUpTable() {
         usersTable.setItems(users);
         indexColumn.setCellFactory(column -> new javafx.scene.control.TableCell<>() {
+
             @Override
             protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || getTableRow() == null || getTableRow().getItem() == null
-                        ? null : String.valueOf(getIndex() + 1));
+                        ? null
+                        : String.valueOf(getIndex() + 1));
             }
         });
         indexColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(0));
@@ -440,12 +469,12 @@ public class MainController {
     // ------------------------------------------------------------------ helpers
 
     private static void setUpSpinner(Spinner<Integer> spinner, int min, int max) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory factory =
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(min, max, min);
+        SpinnerValueFactory.IntegerSpinnerValueFactory factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(min,
+                max, min);
         spinner.setValueFactory(factory);
         // digits only, and commit typed text when focus leaves (JavaFX does not by default)
-        spinner.getEditor().setTextFormatter(new TextFormatter<>(change ->
-                change.getControlNewText().matches("\\d{0,10}") ? change : null));
+        spinner.getEditor().setTextFormatter(
+                new TextFormatter<>(change -> change.getControlNewText().matches("\\d{0,10}") ? change : null));
         spinner.focusedProperty().addListener((obs, was, focused) -> {
             if (!focused) {
                 commit(spinner);
@@ -461,8 +490,8 @@ public class MainController {
     }
 
     private static void commit(Spinner<Integer> spinner) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory f =
-                (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner.getValueFactory();
+        SpinnerValueFactory.IntegerSpinnerValueFactory f = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner
+                .getValueFactory();
         String text = spinner.getEditor().getText();
         int value;
         try {

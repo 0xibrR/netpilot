@@ -5,9 +5,11 @@
  * and prepares the app for {@code jlink}/{@code jpackage} installers.
  */
 module org.netpilot {
+
     requires javafx.controls;
     requires javafx.fxml;
     requires java.desktop;
+    requires java.logging; // backs System.Logger and writes the log files (see AppLogging)
 
     requires com.github.librepdf.openpdf;
     requires com.google.zxing;

@@ -1,5 +1,9 @@
 package org.netpilot.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -12,11 +16,6 @@ import javafx.stage.Stage;
 import org.netpilot.AppContext;
 import org.netpilot.model.HistoryRecord;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
 /**
  * Export history window.
  */
@@ -27,14 +26,22 @@ public class HistoryController {
 
     private final AppContext context;
 
-    @FXML private TableView<HistoryRecord> historyTable;
-    @FXML private TableColumn<HistoryRecord, String> dateColumn;
-    @FXML private TableColumn<HistoryRecord, Integer> countColumn;
-    @FXML private TableColumn<HistoryRecord, String> profileColumn;
-    @FXML private TableColumn<HistoryRecord, String> folderColumn;
-    @FXML private Label summaryLabel;
-    @FXML private Button clearButton;
-    @FXML private Button openButton;
+    @FXML
+    private TableView<HistoryRecord> historyTable;
+    @FXML
+    private TableColumn<HistoryRecord, String> dateColumn;
+    @FXML
+    private TableColumn<HistoryRecord, Integer> countColumn;
+    @FXML
+    private TableColumn<HistoryRecord, String> profileColumn;
+    @FXML
+    private TableColumn<HistoryRecord, String> folderColumn;
+    @FXML
+    private Label summaryLabel;
+    @FXML
+    private Button clearButton;
+    @FXML
+    private Button openButton;
 
     public HistoryController(AppContext context) {
         this.context = context;

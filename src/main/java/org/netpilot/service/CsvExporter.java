@@ -1,13 +1,12 @@
 package org.netpilot.service;
 
-import org.netpilot.model.HotspotUser;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.netpilot.model.HotspotUser;
 
 /**
  * Writes users to a CSV file (UTF-8 with BOM so Excel detects the encoding).

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SpotBugs findings we accept on purpose. Every entry must say why.
+-->
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!--
+        "May expose internal representation": controllers and services receive shared,
+        long-lived collaborators (AppContext, repositories) by design; copying them would be wrong.
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Or>
+            <Package name="org.netpilot.controller"/>
+            <Class name="org.netpilot.AppContext"/>
+            <Class name="org.netpilot.service.ExportService"/>
+            <Class name="org.netpilot.service.PdfVoucherGenerator"/>
+            <Class name="org.netpilot.service.UserGenerator"/>
+        </Or>
+    </Match>
+
+    <!-- @FXML fields are written by FXMLLoader through reflection, which SpotBugs cannot see. -->
+    <Match>
+        <Package name="org.netpilot.controller"/>
+        <Bug pattern="UWF_UNWRITTEN_FIELD,NP_UNWRITTEN_FIELD,UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+</FindBugsFilter>

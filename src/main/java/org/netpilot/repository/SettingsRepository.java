@@ -1,10 +1,5 @@
 package org.netpilot.repository;
 
-import org.netpilot.model.AppSettings;
-import org.netpilot.model.GenerationSettings;
-import org.netpilot.model.PasswordMode;
-import org.netpilot.model.UsernameMode;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -13,6 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
+import org.netpilot.model.AppSettings;
+import org.netpilot.model.GenerationSettings;
+import org.netpilot.model.PasswordMode;
+import org.netpilot.model.UsernameMode;
 
 /**
  * Stores {@link AppSettings} in a properties file. Enums are stored by name, and every
@@ -98,7 +97,7 @@ public class SettingsRepository {
         p.setProperty("vouchersPerRow", String.valueOf(settings.vouchersPerRow()));
         p.setProperty("outputDirectory", settings.outputDirectory().toString());
 
-        Files.createDirectories(file.toAbsolutePath().getParent());
+        FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");
         try (Writer writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
             p.store(writer, "NetPilot settings");
