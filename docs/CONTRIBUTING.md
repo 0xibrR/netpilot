@@ -2,15 +2,17 @@
 
 ## Every phase or feature
 
+All work happens directly on `master`. There are no feature branches or pull requests.
+
 1. **Design note first.** What are we building? Which classes change? What are the security risks?
-2. **Branch:** `feature/<short-name>` from `master`. `master` must always build.
-3. **Implement with tests.** New logic gets its unit tests in the same change.
-4. **Run the gates locally:**
+2. **Implement with tests.** New logic gets its unit tests in the same change.
+3. **Run the gates locally before every commit.** Never commit when this fails:
    ```bash
    ./mvnw spotless:apply verify
    ```
-5. **Try it in the app:** `./mvnw javafx:run`
-6. **Pull request → CI green → merge.** Tag releases as `vMAJOR.MINOR.PATCH`.
+4. **Try it in the app:** `./mvnw javafx:run`
+5. **Commit and push to `master`.** GitHub Actions re-runs the gates on Linux and Windows. If it fails, fix it right away with a follow-up commit.
+6. Tag releases as `vMAJOR.MINOR.PATCH`.
 
 ## Definition of Done
 
