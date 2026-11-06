@@ -84,4 +84,14 @@ class RouterUsersModelTest {
         assertTrue(new UserFilter("", "", "", UserFilter.Status.DISABLED).matches(off, online));
         assertFalse(new UserFilter("", "", "", UserFilter.Status.DISABLED).matches(fresh, online));
     }
+
+    @Test
+    void trialUserIsBuiltInAndNotACleanupCandidate() {
+        RouterUser trial = user("default-trial", "0s", "", 0, false, "counters and limits for trial users", "");
+
+        assertTrue(trial.builtIn());
+        assertFalse(user("card", "0s", "", 0, false, "", "1M").builtIn());
+        assertFalse(new UserFilter("", "", "", UserFilter.Status.NEVER_USED).matches(trial, Set.of()));
+        assertTrue(UserFilter.ALL.matches(trial, Set.of()), "still listed, just protected");
+    }
 }

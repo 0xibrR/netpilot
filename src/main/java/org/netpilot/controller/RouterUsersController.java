@@ -345,6 +345,9 @@ public class RouterUsersController {
     }
 
     private static String state(RouterUser user) {
+        if (user.builtIn()) {
+            return "Built-in";
+        }
         if (user.disabled()) {
             return "Disabled";
         }

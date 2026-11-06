@@ -58,4 +58,14 @@ public record RouterUser(
     public long totalBytes() {
         return bytesIn + bytesOut;
     }
+
+    /**
+     * RouterOS's own {@code default-trial} user, which holds the counters for hotspot trial logins.
+     * Deleting or disabling it breaks trial access, so NetPilot never touches it in bulk.
+     */
+    public boolean builtIn() {
+        return BUILT_IN_TRIAL.equals(name);
+    }
+
+    private static final String BUILT_IN_TRIAL = "default-trial";
 }

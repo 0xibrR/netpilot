@@ -59,7 +59,7 @@ public record UserFilter(String text, String batch, String profile, Status statu
         return switch (status) {
             case ALL -> true;
             case ONLINE -> onlineNames.contains(user.name());
-            case NEVER_USED -> user.neverUsed();
+            case NEVER_USED -> user.neverUsed() && !user.builtIn(); // a cleanup filter; keep the trial user out
             case EXPIRED -> user.expired();
             case DISABLED -> user.disabled();
         };

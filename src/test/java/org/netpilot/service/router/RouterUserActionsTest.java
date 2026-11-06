@@ -124,6 +124,24 @@ class RouterUserActionsTest {
         assertEquals(2, router.users().size());
     }
 
+    /** Regression: "Never used" + Select all + Delete would have removed RouterOS's trial user. */
+    @Test
+    void builtInTrialUserIsNeverDeletedOrDisabled() throws Exception {
+        router.addUser("default-trial", "", "", "", "counters and limits for trial users", "0s", 0, 0, false);
+        router.addUser("card1", "p", "1M", "", "", "0s", 0, 0, false);
+        List<RouterUser> all = client.hotspotUsers();
+
+        RouterUserActions.BulkResult disabled = actions.disable(client, all);
+        RouterUserActions.BulkResult deleted = actions.delete(client, all);
+
+        assertEquals(1, disabled.succeeded());
+        assertEquals(1, deleted.succeeded(), "the other user is still processed");
+        assertTrue(deleted.problems().getFirst().startsWith("default-trial: built-in"));
+        assertEquals(List.of("default-trial"),
+                router.users().values().stream().map(FakeRouter.StoredUser::name).toList());
+        assertFalse(router.users().values().iterator().next().disabled());
+    }
+
     @Test
     void reprintFetchesPasswordsOnlyForSelectedUsers() throws Exception {
         router.addUser("a", "pa", "1M", "8h", "", "0s", 0, 0, false);

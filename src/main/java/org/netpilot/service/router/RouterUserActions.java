@@ -33,7 +33,10 @@ public final class RouterUserActions {
     }
 
     public BulkResult disable(RouterClient client, List<RouterUser> users) {
-        return forEach("disable", users, RouterUser::name, u -> client.setHotspotUserDisabled(u.routerId(), true));
+        return forEach("disable", users, RouterUser::name, u -> {
+            protectBuiltIn(u);
+            client.setHotspotUserDisabled(u.routerId(), true);
+        });
     }
 
     public BulkResult enable(RouterClient client, List<RouterUser> users) {
@@ -41,7 +44,18 @@ public final class RouterUserActions {
     }
 
     public BulkResult delete(RouterClient client, List<RouterUser> users) {
-        return forEach("delete", users, RouterUser::name, u -> client.deleteHotspotUser(u.routerId()));
+        return forEach("delete", users, RouterUser::name, u -> {
+            protectBuiltIn(u);
+            client.deleteHotspotUser(u.routerId());
+        });
+    }
+
+    /** "Select all" must never take RouterOS's own trial user with it. */
+    private static void protectBuiltIn(RouterUser user) throws RouterException {
+        if (user.builtIn()) {
+            throw new RouterException(RouterException.Kind.NOT_SUPPORTED,
+                    "built-in RouterOS user for trial logins, skipped");
+        }
     }
 
     public BulkResult disconnect(RouterClient client, List<ActiveSession> sessions) {
