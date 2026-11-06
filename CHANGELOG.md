@@ -10,8 +10,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   - GitHub Actions builds and checks every push and pull request on Linux and Windows
   - Spotless code formatting, JaCoCo coverage gate (80%), SpotBugs static analysis
   - Rotating log files in `~/.netpilot/logs` and a dialog for unexpected errors
-  - Dependabot updates for dependencies and actions
   - `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`, `.editorconfig`, `.gitattributes`
+
+### Changed
+- JavaFX 27.0.1, Maven 3.10.0, and newer Maven plugins and GitHub Actions
+- Dependency updates are applied manually; Dependabot version-update PRs are disabled
 
 ### Fixed
 - Possible null path when creating the settings and history folders (found by SpotBugs)
