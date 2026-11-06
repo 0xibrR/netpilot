@@ -12,6 +12,7 @@ import org.netpilot.service.QrCodeService;
 import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
 import org.netpilot.service.router.RouterConnector;
+import org.netpilot.service.router.RouterUploadService;
 
 /**
  * Wires the application's objects together (manual dependency injection).
@@ -22,9 +23,11 @@ public record AppContext(
         SettingsRepository settingsRepository,
         HistoryRepository historyRepository,
         RouterConnector routerConnector,
+        RouterUploadService routerUploadService,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
+        UserGenerator generator = new UserGenerator();
         HistoryRepository history = new HistoryRepository(AppPaths.historyFile());
         ExportService export = new ExportService(
                 new CsvExporter(),
@@ -33,11 +36,12 @@ public record AppContext(
                 history,
                 Clock.systemDefaultZone());
         return new AppContext(
-                new UserGenerator(),
+                generator,
                 export,
                 new SettingsRepository(AppPaths.settingsFile()),
                 history,
                 new RouterConnector(),
+                new RouterUploadService(generator),
                 hostServices);
     }
 }

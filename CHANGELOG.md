@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 2, send users to the router:
+  - **Send to Router** creates the previewed users directly on the connected router, with a progress bar and Cancel
+  - Existing names get a new random name (random modes) or are skipped (sequential modes); nothing is overwritten
+  - Every batch is tagged with a comment such as `NetPilot 2026-11-06 21:40 #a7f3`
+  - Summary with created / replaced / skipped / failed counts, **Print vouchers** for exactly the created users, and **Undo**
+  - Checks that the profile and server exist on the router before sending; warns when the connection is plain HTTP
+  - Stops on connection or permission problems, or after 5 identical failures in a row
 - Phase 1, router connection (RouterOS 7 REST API):
   - **Router → Connect…** dialog with Test and Connect; status bar shows the connected router
   - Hotspot profiles and servers are loaded from the router into the form

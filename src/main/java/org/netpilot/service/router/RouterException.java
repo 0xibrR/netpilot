@@ -29,6 +29,8 @@ public final class RouterException extends Exception {
         TLS_FAILURE,
         /** The REST API or a menu is not available on this router. */
         NOT_SUPPORTED,
+        /** An item with this name already exists (e.g. a hotspot user name). */
+        ALREADY_EXISTS,
         /** The router answered with something we could not understand. */
         UNEXPECTED_RESPONSE
     }

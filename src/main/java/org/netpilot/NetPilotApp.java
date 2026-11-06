@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.MainController;
 import org.netpilot.controller.RouterConnectionController;
+import org.netpilot.controller.UploadController;
 import org.netpilot.repository.AppPaths;
 
 /**
@@ -79,6 +80,9 @@ public class NetPilotApp extends Application {
             }
             if (type == RouterConnectionController.class) {
                 return new RouterConnectionController(context);
+            }
+            if (type == UploadController.class) {
+                return new UploadController(context);
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });

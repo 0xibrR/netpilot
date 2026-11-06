@@ -134,3 +134,17 @@
 .router-status.router-disconnected {
     -fx-text-fill: -np-muted;
 }
+
+/* Upload summary */
+.summary-ok {
+    -fx-text-fill: #1e7e34;
+    -fx-font-weight: bold;
+}
+
+.summary-warn {
+    -fx-text-fill: -np-warning;
+}
+
+.summary-error {
+    -fx-text-fill: #b3261e;
+}

@@ -35,6 +35,11 @@ public enum UsernameMode {
         return usesSequence;
     }
 
+    /** Random names can be swapped for another free name; sequential ones cannot. */
+    public boolean isRandom() {
+        return !usesSequence;
+    }
+
     @Override
     public String toString() {
         return label;

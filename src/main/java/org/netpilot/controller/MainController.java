@@ -7,10 +7,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -46,6 +51,7 @@ import org.netpilot.model.PasswordMode;
 import org.netpilot.model.UsernameMode;
 import org.netpilot.service.ExportService.ExportResult;
 import org.netpilot.service.QrCodeService;
+import org.netpilot.service.router.RouterClient;
 
 /**
  * Main window: collects settings, previews generated users and exports exactly those users.
@@ -132,7 +138,16 @@ public class MainController {
     @FXML
     private MenuItem disconnectRouterItem;
 
+    @FXML
+    private Button sendButton;
+
     private RouterSession router;
+
+    /** True while an export or upload runs. */
+    private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    /** True when the preview shows users that were already sent, so they cannot be sent twice. */
+    private final BooleanProperty sent = new SimpleBooleanProperty(false);
+    private boolean showingSentUsers;
 
     public MainController(AppContext context) {
         this.context = context;
@@ -159,13 +174,22 @@ public class MainController {
         appSettings = context.settingsRepository().load();
         showSettings(appSettings);
         clearPreviewWhenSettingsChange();
-        exportButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(users));
         updateCountLabel();
 
         router = new RouterSession(context, routerStatusLabel, this::window, this::showRouterLists,
                 this::showOfflineSuggestions);
         refreshRouterItem.disableProperty().bind(router.connectedProperty().not());
         disconnectRouterItem.disableProperty().bind(router.connectedProperty().not());
+
+        BooleanBinding noUsers = Bindings.isEmpty(users);
+        generateButton.disableProperty().bind(busy);
+        exportButton.disableProperty().bind(noUsers.or(busy));
+        sendButton.disableProperty().bind(noUsers.or(busy).or(sent).or(router.connectedProperty().not()));
+        users.addListener((ListChangeListener<HotspotUser>) change -> {
+            if (!showingSentUsers) {
+                sent.set(false); // a new preview has not been sent yet
+            }
+        });
     }
 
     /** Ends the router session; called when the app closes. */
@@ -233,6 +257,75 @@ public class MainController {
         setStatus("Disconnected from the router.", false);
     }
 
+    /** Creates the previewed users on the connected router, then offers Print and Undo. */
+    @FXML
+    private void onSendToRouter() {
+        Optional<RouterClient> client = router.client();
+        if (client.isEmpty() || users.isEmpty()) {
+            return;
+        }
+        List<HotspotUser> batch = List.copyOf(users);
+        HotspotUser first = batch.getFirst();
+        Optional<String> problem = router.checkProfileAndServer(first.profile(), first.server());
+        if (problem.isPresent()) {
+            Dialogs.error(window(), "Cannot send these users", problem.get());
+            return;
+        }
+
+        String httpWarning = client.get().endpoint().https()
+                ? ""
+                : "\n\n⚠ The connection uses HTTP: the voucher passwords travel unencrypted.";
+        String uptime = first.limitUptime().isBlank() ? "unlimited" : first.limitUptime();
+        if (!Dialogs.confirm(window(), "Create " + batch.size() + " users on " + router.displayName() + "?",
+                "Profile: " + first.profile() + "    Server: " + first.server() + "    Uptime: " + uptime
+                        + "\n\nNames that already exist on the router get a new random name (random modes)"
+                        + " or are skipped (sequential modes)." + httpWarning)) {
+            return;
+        }
+
+        try {
+            FXMLLoader loader = NetPilotApp.loader("view/upload-view.fxml", context);
+            Parent root = loader.load();
+            UploadController upload = loader.getController();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Stage stage = new Stage();
+            stage.initOwner(window());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.setTitle("Send to Router - " + NetPilotApp.NAME);
+            stage.setScene(scene);
+            stage.show();
+            upload.start(client.get(), router.displayName(), batch, readGenerationSettings());
+            busy.set(true);
+            stage.setOnHidden(e -> {
+                busy.set(false);
+                afterUpload(upload);
+            });
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open upload window", e);
+            Dialogs.error(window(), "Cannot open the upload window", e.getMessage());
+        }
+    }
+
+    /** The preview now shows exactly the users that exist on the router (or nothing after Undo). */
+    private void afterUpload(UploadController upload) {
+        upload.report().ifPresent(report -> {
+            showingSentUsers = true;
+            try {
+                users.setAll(upload.undone() ? List.of() : report.createdUsers());
+            } finally {
+                showingSentUsers = false;
+            }
+            sent.set(!upload.undone() && !users.isEmpty());
+            setStatus(upload.undone()
+                    ? "The batch was removed from the router."
+                    : report.created().size() + " users are on the router (" + report.batchComment() + ").", false);
+            if (upload.printRequested()) {
+                exportUsers(report.createdUsers());
+            }
+        });
+    }
+
     // ------------------------------------------------------------------ actions
 
     @FXML
@@ -254,7 +347,12 @@ public class MainController {
 
     @FXML
     private void onExport() {
-        if (users.isEmpty()) {
+        exportUsers(List.copyOf(users));
+    }
+
+    /** Writes CSV, RSC and PDF vouchers for exactly these users, in the background. */
+    private void exportUsers(List<HotspotUser> batch) {
+        if (batch.isEmpty()) {
             return;
         }
         String loginUrl = loginUrlField.getText().strip();
@@ -268,7 +366,6 @@ public class MainController {
         }
 
         AppSettings settings = currentAppSettings();
-        List<HotspotUser> batch = List.copyOf(users);
 
         Task<ExportResult> task = new Task<>() {
 
@@ -524,15 +621,10 @@ public class MainController {
         context.hostServices().showDocument(path.toAbsolutePath().toUri().toString());
     }
 
-    private void setBusy(boolean busy, String message) {
-        progressIndicator.setVisible(busy);
-        progressIndicator.setManaged(busy);
-        generateButton.setDisable(busy);
-        exportButton.disableProperty().unbind();
-        exportButton.setDisable(busy);
-        if (!busy) {
-            exportButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(users));
-        }
+    private void setBusy(boolean value, String message) {
+        busy.set(value);
+        progressIndicator.setVisible(value);
+        progressIndicator.setManaged(value);
         if (message != null) {
             setStatus(message, false);
         }

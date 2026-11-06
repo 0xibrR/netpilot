@@ -15,8 +15,22 @@ Don't connect NetPilot with the `admin` account. Create a group with only the ri
 ```
 
 - `read` and `rest-api` are enough to connect and load profiles and servers.
-- `write` will be needed in a later version, to create hotspot users directly on the router.
-- If NetPilot reports *"may not use the REST API"*, check the group's policies.
+- `write` is needed for **Send to Router**, which creates hotspot users on the router and can delete them again with Undo.
+- If NetPilot reports *"is not allowed to do this"*, check the group's policies.
+
+To add `write` to a group you created earlier:
+
+```text
+/user group set netpilot policy=read,write,api,rest-api,!local,!telnet,!ssh,!ftp,!reboot,!policy,!test,!winbox,!password,!web,!sniff,!sensitive,!romon
+```
+
+## Sending users to the router
+
+After generating users, press **Send to Router**. NetPilot creates them one by one and shows the progress.
+
+- **Names that already exist** get a new random name (random username modes) or are skipped (sequential modes), so nothing is overwritten.
+- Every user of the batch gets the same comment, e.g. `NetPilot 2026-11-06 21:40 #a7f3`. In WinBox you can filter **IP → Hotspot → Users** by that comment.
+- When it finishes, **Print vouchers (PDF)** prints only the users that really exist on the router. **Undo** deletes the users of that batch, and nothing else.
 
 ## 2. Enable HTTPS (recommended)
 

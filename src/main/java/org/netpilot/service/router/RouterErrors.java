@@ -68,6 +68,9 @@ final class RouterErrors {
     static JsonNode fromResponse(int status, byte[] body, String path, RouterEndpoint endpoint)
             throws RouterException {
         if (status >= 200 && status < 300) {
+            if (body.length == 0) {
+                return JSON.createObjectNode(); // e.g. 204 No Content after a delete
+            }
             try {
                 return JSON.readTree(body);
             } catch (JacksonException e) {
@@ -78,8 +81,8 @@ final class RouterErrors {
         switch (status) {
             case 401 -> throw new RouterException(Kind.AUTHENTICATION, "Wrong user name or password.");
             case 403 -> throw new RouterException(Kind.PERMISSION,
-                    "User '" + endpoint.username() + "' may not use the REST API. Give its group the"
-                            + " 'read', 'api' and 'rest-api' policies (see docs/ROUTER_SETUP.md).");
+                    "User '" + endpoint.username() + "' is not allowed to do this. Give its group the"
+                            + " 'read', 'write', 'api' and 'rest-api' policies (see docs/ROUTER_SETUP.md).");
             case 404 -> throw new RouterException(Kind.NOT_SUPPORTED,
                     "The router does not offer " + path + ". NetPilot needs RouterOS 7.1 or newer.");
             default -> {
@@ -90,8 +93,12 @@ final class RouterErrors {
             throw new RouterException(Kind.UNEXPECTED_RESPONSE,
                     "The router redirected the request. Check that HTTPS/HTTP matches the port.");
         }
-        throw new RouterException(Kind.UNEXPECTED_RESPONSE,
-                "The router answered with HTTP " + status + errorDetail(body) + ".");
+        String detail = errorDetail(body);
+        // RouterOS: {"error":400,"message":"Bad Request","detail":"failure: already have user with this name"}
+        if (status == 400 && detail.contains("already have")) {
+            throw new RouterException(Kind.ALREADY_EXISTS, "An item with this name already exists on the router.");
+        }
+        throw new RouterException(Kind.UNEXPECTED_RESPONSE, "The router answered with HTTP " + status + detail + ".");
     }
 
     /** RouterOS errors look like {@code {"error":400,"message":"Bad Request","detail":"..."}}. */

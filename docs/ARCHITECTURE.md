@@ -55,6 +55,14 @@ The exported users are **exactly** the previewed ones. Changing any setting clea
 **Connect to router:** `RouterSession.showConnectDialog` → `RouterConnectionController` runs `RouterConnector.connect()` in a background `Task` → on success `RouterSession.refresh()` loads profiles and servers → `MainController.showRouterLists` fills the Profile and Server lists.
 A first HTTPS connection fails with `CERTIFICATE_UNTRUSTED`. The dialog shows the fingerprint, and if the user trusts it, saves it in `RouterSettings` and retries.
 
+**Send to router:** `MainController.onSendToRouter` checks the profile and server against the loaded lists and asks for confirmation. Then `UploadController` runs `RouterUploadService.upload()` in a background `Task`:
+1. Read existing user names. If this fails, nothing is changed.
+2. Create each user with `PUT /rest/ip/hotspot/user`, all with one batch comment.
+3. Existing names are replaced through `UserGenerator.replacement()` (random modes) or skipped.
+4. Connection problems, or 5 identical failures in a row, stop the upload.
+
+The resulting `UploadReport` drives the summary. **Print** exports only the created users. **Undo** deletes them by their router ids, and the preview then shows exactly what is on the router.
+
 ## Where data lives
 
 | What | Where |

@@ -48,6 +48,7 @@ final class RouterSession {
 
     private RouterClient client;
     private RouterInfo info;
+    private RouterLists lists;
 
     RouterSession(AppContext context, Label statusLabel, Supplier<Window> owner,
             Consumer<RouterLists> onListsLoaded, Runnable onDisconnected) {
@@ -61,6 +62,35 @@ final class RouterSession {
 
     ReadOnlyBooleanProperty connectedProperty() {
         return connected.getReadOnlyProperty();
+    }
+
+    Optional<RouterClient> client() {
+        return Optional.ofNullable(client);
+    }
+
+    /** e.g. {@code hEX (10.0.0.1:80)}; only valid while connected. */
+    String displayName() {
+        String name = info.identity().isEmpty() ? info.boardName() : info.identity();
+        return name + " (" + client.endpoint().address() + ")";
+    }
+
+    /**
+     * @return a message if the router does not have this profile or server, based on the lists
+     *         loaded at connect time; empty if they exist or the lists are not loaded
+     */
+    Optional<String> checkProfileAndServer(String profile, String server) {
+        if (lists == null) {
+            return Optional.empty();
+        }
+        if (lists.profiles().stream().noneMatch(p -> p.name().equals(profile))) {
+            return Optional.of("Profile '" + profile + "' does not exist on the router. Choose one from the list.");
+        }
+        boolean serverExists = server.equals("all")
+                || lists.servers().stream().anyMatch(s -> s.name().equals(server) && !s.disabled());
+        if (!serverExists) {
+            return Optional.of("Server '" + server + "' does not exist on the router or is disabled.");
+        }
+        return Optional.empty();
     }
 
     /**
@@ -111,7 +141,8 @@ final class RouterSession {
         task.setOnRunning(e -> statusLabel.setText("Loading hotspot profiles…"));
         task.setOnSucceeded(e -> {
             showState();
-            onListsLoaded.accept(task.getValue());
+            lists = task.getValue();
+            onListsLoaded.accept(lists);
         });
         task.setOnFailed(e -> {
             showState();
@@ -131,6 +162,7 @@ final class RouterSession {
         }
         client = null;
         info = null;
+        lists = null;
         connected.set(false);
         showState();
         onDisconnected.run();

@@ -165,7 +165,12 @@
             <Button text="History" onAction="#onShowHistory"/>
             <Button text="Open Folder" onAction="#onOpenOutputFolder"/>
             <Button fx:id="generateButton" text="Generate" onAction="#onGenerate" defaultButton="true"/>
-            <Button fx:id="exportButton" text="Export CSV + RSC + PDF" onAction="#onExport" styleClass="primary"/>
+            <Button fx:id="exportButton" text="Export CSV + RSC + PDF" onAction="#onExport"/>
+            <Button fx:id="sendButton" text="Send to Router" onAction="#onSendToRouter" styleClass="primary">
+                <tooltip>
+                    <Tooltip text="Create the previewed users directly on the connected router"/>
+                </tooltip>
+            </Button>
             <padding>
                 <Insets top="10" right="16" bottom="10" left="16"/>
             </padding>

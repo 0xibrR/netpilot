@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.random.RandomGenerator;
 import org.netpilot.model.GenerationSettings;
@@ -55,6 +56,28 @@ public final class UserGenerator {
                     settings.profile(), settings.server(), settings.limitUptime()));
         }
         return users;
+    }
+
+    /**
+     * Creates a user to replace one whose name already exists on the router. Only random
+     * username modes can do this; sequential names would no longer be in sequence.
+     *
+     * @param index position for sequence-based passwords; pass {@code count + n} to continue after the batch
+     * @param taken names that must not be used (on the router and already in the batch)
+     * @return empty if the settings use a sequential username mode or no free name was found
+     */
+    public Optional<HotspotUser> replacement(GenerationSettings settings, int index, Set<String> taken) {
+        if (!settings.usernameMode().isRandom()) {
+            return Optional.empty();
+        }
+        for (int attempt = 0; attempt < MAX_ATTEMPTS_PER_USER; attempt++) {
+            String candidate = username(settings, index);
+            if (!taken.contains(candidate)) {
+                return Optional.of(new HotspotUser(candidate, password(settings, index, candidate),
+                        settings.profile(), settings.server(), settings.limitUptime()));
+            }
+        }
+        return Optional.empty();
     }
 
     private String nextUniqueUsername(GenerationSettings settings, int index, Set<String> usedNames) {

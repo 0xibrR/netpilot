@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.UploadController"
+            styleClass="app-root" prefWidth="520">
+
+    <center>
+        <VBox spacing="12" styleClass="form">
+            <Label fx:id="headerLabel" styleClass="card-title" wrapText="true"/>
+
+            <VBox fx:id="progressBox" spacing="6">
+                <ProgressBar fx:id="progressBar" maxWidth="Infinity" progress="0"/>
+                <Label fx:id="progressLabel" styleClass="muted"/>
+            </VBox>
+
+            <VBox fx:id="summaryBox" styleClass="card" spacing="6" visible="false" managed="false">
+                <Label fx:id="createdLabel" styleClass="summary-ok"/>
+                <Label fx:id="replacedLabel" styleClass="muted"/>
+                <Label fx:id="skippedLabel" styleClass="summary-warn"/>
+                <Label fx:id="failedLabel" styleClass="summary-error"/>
+                <Label fx:id="notSentLabel" styleClass="summary-warn"/>
+                <Label fx:id="stopLabel" styleClass="status-error" wrapText="true"/>
+                <Label fx:id="commentLabel" styleClass="muted" wrapText="true"/>
+                <TextArea fx:id="detailsArea" editable="false" wrapText="true" prefRowCount="5"
+                          visible="false" managed="false"/>
+            </VBox>
+            <padding>
+                <Insets top="16" right="16" bottom="8" left="16"/>
+            </padding>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox styleClass="action-bar" alignment="CENTER_RIGHT" spacing="10">
+            <Button fx:id="undoButton" text="Undo (delete these users)" onAction="#onUndo" visible="false" managed="false"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="cancelButton" text="Cancel" onAction="#onCancel" cancelButton="true"/>
+            <Button fx:id="closeButton" text="Close" onAction="#onClose" visible="false" managed="false"/>
+            <Button fx:id="printButton" text="Print vouchers (PDF)" onAction="#onPrint" styleClass="primary"
+                    defaultButton="true" visible="false" managed="false"/>
+            <padding>
+                <Insets top="10" right="16" bottom="10" left="16"/>
+            </padding>
+        </HBox>
+    </bottom>
+</BorderPane>
