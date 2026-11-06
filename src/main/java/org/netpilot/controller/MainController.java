@@ -218,8 +218,8 @@ public class MainController {
         } else if (!servers.contains(server)) {
             setStatus("Server '" + server + "' does not exist on the router. Choose one from the list.", true);
         } else {
-            setStatus("Loaded " + profiles.size() + " profiles and " + (servers.size() - 1)
-                    + " servers from the router.", false);
+            setStatus("Loaded " + plural(profiles.size(), "profile") + " and "
+                    + plural(servers.size() - 1, "server") + " from the router.", false);
         }
     }
 
@@ -595,5 +595,10 @@ public class MainController {
 
     private static int clampLength(int length) {
         return Math.clamp(length, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
+    }
+
+    /** {@code 1 server}, {@code 3 servers}. */
+    private static String plural(int count, String noun) {
+        return count + " " + noun + (count == 1 ? "" : "s");
     }
 }
