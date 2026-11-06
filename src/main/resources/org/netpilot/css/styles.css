@@ -1,0 +1,122 @@
+/* NetPilot theme */
+
+.root {
+    -np-accent: #1f5fa8;
+    -np-accent-hover: #184c88;
+    -np-bg: #f3f5f8;
+    -np-card: #ffffff;
+    -np-border: #dde2ea;
+    -np-text: #1d2430;
+    -np-muted: #6b7686;
+    -np-warning: #a35a00;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: -np-text;
+    -fx-accent: -np-accent;
+    -fx-focus-color: -np-accent;
+}
+
+.app-root {
+    -fx-background-color: -np-bg;
+}
+
+/* Header */
+.header {
+    -fx-background-color: linear-gradient(to right, #173f6e, -np-accent);
+    -fx-padding: 14 18 14 18;
+}
+
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.header-subtitle {
+    -fx-text-fill: rgba(255, 255, 255, 0.8);
+}
+
+/* Settings form */
+.form-scroll, .form-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.form {
+    -fx-padding: 16 8 16 16;
+}
+
+.card {
+    -fx-background-color: -np-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -np-border;
+    -fx-border-radius: 8;
+    -fx-padding: 12 14 14 14;
+}
+
+.card-title, .section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.warning {
+    -fx-text-fill: -np-warning;
+    -fx-font-size: 12px;
+}
+
+.muted {
+    -fx-text-fill: -np-muted;
+}
+
+/* Preview */
+.preview {
+    -fx-padding: 16 16 8 8;
+}
+
+.table-view {
+    -fx-background-radius: 8;
+    -fx-border-color: -np-border;
+    -fx-border-radius: 8;
+}
+
+.table-view .column-header .label {
+    -fx-font-weight: bold;
+}
+
+.table-cell.monospace {
+    -fx-font-family: "Consolas", "Menlo", monospace;
+}
+
+/* Bottom bar */
+.action-bar {
+    -fx-background-color: -np-card;
+    -fx-border-color: -np-border transparent transparent transparent;
+}
+
+.status {
+    -fx-text-fill: -np-muted;
+}
+
+.status-error {
+    -fx-text-fill: #b3261e;
+}
+
+.button {
+    -fx-background-radius: 6;
+    -fx-padding: 6 14 6 14;
+}
+
+.button.primary {
+    -fx-background-color: -np-accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button.primary:hover {
+    -fx-background-color: -np-accent-hover;
+}
+
+.button.primary:disabled {
+    -fx-opacity: 0.5;
+}

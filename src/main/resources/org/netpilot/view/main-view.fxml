@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.MainController"
+            styleClass="app-root">
+
+    <!-- ===== Top: menu + header ===== -->
+    <top>
+        <VBox>
+            <MenuBar>
+                <Menu text="_File">
+                    <MenuItem text="Open Output Folder" onAction="#onOpenOutputFolder"/>
+                    <MenuItem text="Change Output Folder…" onAction="#onBrowseOutputFolder"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Exit" onAction="#onExit"/>
+                </Menu>
+                <Menu text="_Tools">
+                    <MenuItem text="Export History…" onAction="#onShowHistory"/>
+                    <MenuItem text="Reset Settings" onAction="#onResetSettings"/>
+                </Menu>
+                <Menu text="_Help">
+                    <MenuItem text="GitHub Repository" onAction="#onOpenRepository"/>
+                    <MenuItem text="About NetPilot" onAction="#onAbout"/>
+                </Menu>
+            </MenuBar>
+            <HBox styleClass="header" alignment="CENTER_LEFT" spacing="12">
+                <Label text="NetPilot" styleClass="header-title"/>
+                <Label text="MikroTik Hotspot users · QR vouchers · RouterOS scripts" styleClass="header-subtitle"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- ===== Left: settings form ===== -->
+    <left>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="form-scroll" prefWidth="380">
+            <VBox spacing="14" styleClass="form">
+
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Users" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Count" GridPane.rowIndex="0"/>
+                        <Spinner fx:id="countSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Username mode" GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="usernameModeBox" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label text="Username length" GridPane.rowIndex="2"/>
+                        <Spinner fx:id="usernameLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="Start number" GridPane.rowIndex="3"/>
+                        <Spinner fx:id="usernameStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    </GridPane>
+                </VBox>
+
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Passwords" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Password mode" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="passwordModeBox" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Password length" GridPane.rowIndex="1"/>
+                        <Spinner fx:id="passwordLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label text="Start number" GridPane.rowIndex="2"/>
+                        <Spinner fx:id="passwordStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="Prefix" GridPane.rowIndex="3"/>
+                        <TextField fx:id="prefixField" promptText="e.g. vip" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <Label fx:id="weakPasswordWarning" styleClass="warning" wrapText="true"
+                           text="⚠ This mode creates passwords that are easy to guess."/>
+                </VBox>
+
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Hotspot" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Profile" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="profileBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Server" GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="serverBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label text="Uptime limit" GridPane.rowIndex="2"/>
+                        <ComboBox fx:id="uptimeBox" editable="true" maxWidth="Infinity" promptText="blank = unlimited"
+                                  GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                    </GridPane>
+                </VBox>
+
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Vouchers" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="QR login URL" GridPane.rowIndex="0"/>
+                        <TextField fx:id="loginUrlField" promptText="blank = no QR code" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Vouchers per row" GridPane.rowIndex="1"/>
+                        <Spinner fx:id="perRowSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label text="Output folder" GridPane.rowIndex="2"/>
+                        <HBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                            <TextField fx:id="outputDirField" editable="false" HBox.hgrow="ALWAYS"/>
+                            <Button text="…" onAction="#onBrowseOutputFolder"/>
+                        </HBox>
+                    </GridPane>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </left>
+
+    <!-- ===== Center: preview table ===== -->
+    <center>
+        <VBox spacing="8" styleClass="preview">
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="Preview" styleClass="section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="usersCountLabel" styleClass="muted"/>
+            </HBox>
+            <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                </columnResizePolicy>
+                <columns>
+                    <TableColumn fx:id="indexColumn" text="#" prefWidth="60" maxWidth="80" sortable="false"/>
+                    <TableColumn fx:id="usernameColumn" text="Username" prefWidth="170"/>
+                    <TableColumn fx:id="passwordColumn" text="Password" prefWidth="170"/>
+                    <TableColumn fx:id="profileColumn" text="Profile" prefWidth="100"/>
+                    <TableColumn fx:id="serverColumn" text="Server" prefWidth="100"/>
+                    <TableColumn fx:id="uptimeColumn" text="Uptime limit" prefWidth="110"/>
+                </columns>
+                <placeholder>
+                    <Label text="Choose your settings, then press “Generate” to preview users." styleClass="muted"/>
+                </placeholder>
+            </TableView>
+        </VBox>
+    </center>
+
+    <!-- ===== Bottom: actions + status ===== -->
+    <bottom>
+        <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="10">
+            <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="20" prefHeight="20"/>
+            <Label fx:id="statusLabel" text="Ready" styleClass="status"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="History" onAction="#onShowHistory"/>
+            <Button text="Open Folder" onAction="#onOpenOutputFolder"/>
+            <Button fx:id="generateButton" text="Generate" onAction="#onGenerate" defaultButton="true"/>
+            <Button fx:id="exportButton" text="Export CSV + RSC + PDF" onAction="#onExport" styleClass="primary"/>
+            <padding>
+                <Insets top="10" right="16" bottom="10" left="16"/>
+            </padding>
+        </HBox>
+    </bottom>
+</BorderPane>

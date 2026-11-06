@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.HistoryController"
+            styleClass="app-root" prefWidth="820" prefHeight="480">
+
+    <center>
+        <TableView fx:id="historyTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="dateColumn" text="Date" prefWidth="170"/>
+                <TableColumn fx:id="countColumn" text="Users" prefWidth="80"/>
+                <TableColumn fx:id="profileColumn" text="Profile" prefWidth="100"/>
+                <TableColumn fx:id="folderColumn" text="Folder" prefWidth="420"/>
+            </columns>
+            <placeholder>
+                <Label text="No exports yet." styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="12" right="12" left="12"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+
+    <bottom>
+        <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="10">
+            <Label fx:id="summaryLabel" styleClass="muted"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="clearButton" text="Clear History" onAction="#onClear"/>
+            <Button fx:id="openButton" text="Open Folder" onAction="#onOpenFolder"/>
+            <Button text="Close" onAction="#onClose" cancelButton="true"/>
+            <padding>
+                <Insets top="10" right="12" bottom="10" left="12"/>
+            </padding>
+        </HBox>
+    </bottom>
+</BorderPane>
