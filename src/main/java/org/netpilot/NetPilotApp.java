@@ -12,6 +12,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.MainController;
+import org.netpilot.controller.ReportsController;
 import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
 import org.netpilot.controller.UploadController;
@@ -91,6 +92,9 @@ public class NetPilotApp extends Application {
             }
             if (type == VoucherDesignController.class) {
                 return new VoucherDesignController(context);
+            }
+            if (type == ReportsController.class) {
+                return new ReportsController(context);
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });

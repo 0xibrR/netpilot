@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 5, sales reports (**Router → Reports…**, `Ctrl+T`):
+  - Revenue, money still to come from unused cards, cards sold, never used and created, for a chosen period
+  - Revenue-per-day chart, plus tables by batch and by profile (with data used)
+  - A card counts as sold on the first day NetPilot sees it used; that day is kept in `~/.netpilot/usage.csv`,
+    so deleting cards later does not erase past revenue
+  - Prices are read from Voucher Design text (`1000 ل.س`, `١٠٠٠ ل.س`, `$5`, `2,500 SYP`); unreadable prices and
+    other currencies are flagged instead of being added into a wrong total
+  - Export to CSV (UTF-8, opens correctly in Excel)
 - Phase 4, voucher design and Arabic (**Tools → Voucher Design…**, `Ctrl+D`):
   - Network name, logo, accent color, note, label language (English / Arabic) and what to show (QR, time, price, profile)
   - Price per profile, printed on the voucher (and ready for sales reports)

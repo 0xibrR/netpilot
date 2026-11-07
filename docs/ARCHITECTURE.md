@@ -40,10 +40,10 @@ This document explains how the code is organized and **why**, so it stays easy t
 |---|---|
 | `org.netpilot` | `Launcher` (entry point), `NetPilotApp` (JavaFX app), `AppContext` (wiring), `AppLogging` |
 | `org.netpilot.model` | `HotspotUser`, `GenerationSettings` (+ validation), `AppSettings`, `HistoryRecord`, mode enums; router data: `RouterEndpoint`, `RouterSettings`, `RouterInfo`, `HotspotProfile`, `HotspotServer` |
-| `org.netpilot.service` | `UserGenerator`, `ExportService`, the exporters (CSV, RSC, PDF, QR), and `PdfText` (Arabic shaping and bidirectional layout for the PDF) |
+| `org.netpilot.service` | `UserGenerator`, `ExportService`, the exporters (CSV, RSC, PDF, QR), `PdfText` (Arabic shaping and bidirectional layout for the PDF), `ReportService` (sales calculation, pure logic) and `ReportExporter` (CSV) |
 | `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException`, `RouterUploadService` (send a batch), `RouterUserActions` (bulk enable/disable/delete/disconnect/reprint) |
-| `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `Dialogs` |
+| `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `UsageRepository` (first-use day of each card), `AppPaths` |
+| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `ReportsController` (Reports window), `Dialogs` |
 
 ## Main flows
 
@@ -74,6 +74,16 @@ The resulting `UploadReport` drives the summary. **Print** exports only the crea
 | Logs | `~/.netpilot/logs/netpilot-0.log` (rotated, 5 × 1 MB) |
 | Exports | `~/Documents/NetPilot/<timestamp>_<profile>_<count>users/` (configurable) |
 | Voucher logo | `~/.netpilot/voucher-logo.png` (a copy, so moving the original does not break the design) |
+| Sales history | `~/.netpilot/usage.csv`: one line per used card with the day NetPilot first saw it used |
+
+## How sales are counted
+
+RouterOS does not record when a hotspot user first logged in, so NetPilot keeps its own record:
+
+1. Every time **Reports** refreshes, `ReportService.track` adds cards that are now used but not yet known, dated **today**. Daily accuracy therefore depends on opening Reports regularly.
+2. The **first** time a router is tracked, cards that are already used get **no date**. Dating them "today" would show a fake spike. They count in "All time" only, and the report says so.
+3. Records stay when cards are deleted from the router, so past revenue never disappears.
+4. Revenue = sold cards × the price of their profile. Prices come from the Voucher Design text and are parsed by `Money`. Prices without a number, or in a different currency from the rest, are listed as warnings and left out of the total.
 
 ## Arabic in PDFs
 

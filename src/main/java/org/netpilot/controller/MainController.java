@@ -139,9 +139,13 @@ public class MainController {
     private MenuItem disconnectRouterItem;
     @FXML
     private MenuItem manageUsersItem;
+    @FXML
+    private MenuItem reportsItem;
 
     /** The open Router Users window, if any (one at a time). */
     private Stage routerUsersStage;
+    /** The open Reports window, if any (one at a time). */
+    private Stage reportsStage;
 
     @FXML
     private Button sendButton;
@@ -186,6 +190,7 @@ public class MainController {
         refreshRouterItem.disableProperty().bind(router.connectedProperty().not());
         disconnectRouterItem.disableProperty().bind(router.connectedProperty().not());
         manageUsersItem.disableProperty().bind(router.connectedProperty().not());
+        reportsItem.disableProperty().bind(router.connectedProperty().not());
 
         BooleanBinding noUsers = Bindings.isEmpty(users);
         generateButton.disableProperty().bind(busy);
@@ -282,9 +287,14 @@ public class MainController {
     }
 
     private void showOfflineSuggestions() {
+        // these windows use the router session, which is gone now
         if (routerUsersStage != null) {
-            routerUsersStage.close(); // its session is gone
+            routerUsersStage.close();
             routerUsersStage = null;
+        }
+        if (reportsStage != null) {
+            reportsStage.close();
+            reportsStage = null;
         }
         String profile = comboText(profileBox);
         String server = comboText(serverBox);
@@ -431,6 +441,35 @@ public class MainController {
         Thread thread = new Thread(task, "netpilot-export");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    /** Opens the Reports window, or brings it to the front if it is already open. */
+    @FXML
+    private void onReports() {
+        Optional<RouterClient> client = router.client();
+        if (client.isEmpty()) {
+            return;
+        }
+        if (reportsStage != null && reportsStage.isShowing()) {
+            reportsStage.toFront();
+            return;
+        }
+        try {
+            FXMLLoader loader = NetPilotApp.loader("view/reports-view.fxml", context);
+            Parent root = loader.load();
+            ReportsController reports = loader.getController();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            reportsStage = new Stage();
+            reportsStage.initOwner(window()); // not modal: it can stay open next to the main window
+            reportsStage.setScene(scene);
+            reportsStage.show();
+            // prices are read on each rebuild, so changes in Voucher Design apply after Refresh
+            reports.start(client.get(), router.displayName(), () -> appSettings.voucherTemplate());
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open Reports", e);
+            Dialogs.error(window(), "Cannot open Reports", e.getMessage());
+        }
     }
 
     /** Edits how vouchers look; the router's profiles (when connected) get a price field each. */

@@ -83,6 +83,15 @@ If NetPilot later says **"Router certificate changed!"**, someone may be interce
 - To clean up used cards: choose the state **Expired**, then **Select all** and **Delete**.
 - Passwords are never shown in the list. They are read from the router only when you press **Print vouchers**, and only for the selected users.
 
+## Sales reports
+
+**Router → Reports…** (`Ctrl+T`) shows revenue, cards sold and cards still unused, per period, batch and profile.
+
+- Set a **price for each profile** in **Tools → Voucher Design** first. Without prices, revenue stays 0.
+- A card counts as **sold on the first day NetPilot sees it used**. Open Reports regularly (for example daily) for accurate days.
+- Cards that were already used the first time you open Reports have no known day. They appear under **All time** only.
+- **Export CSV…** saves the report for Excel.
+
 ## Security notes
 
 - **The password is never saved.** You type it each time NetPilot starts. It is not written to settings, logs or error messages.

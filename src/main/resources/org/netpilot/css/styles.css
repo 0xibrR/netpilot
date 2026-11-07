@@ -193,3 +193,31 @@
     -fx-border-style: dashed;
     -fx-text-fill: #9aa3b0;
 }
+
+/* Reports summary cards */
+.stat-card {
+    -fx-background-color: -np-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -np-border;
+    -fx-border-radius: 8;
+    -fx-padding: 10 12 10 12;
+    -fx-spacing: 4;
+}
+
+.stat-title {
+    -fx-text-fill: -np-muted;
+    -fx-font-size: 12px;
+}
+
+.stat-value {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.stat-money {
+    -fx-text-fill: #1e7e34;
+}
+
+.chart-bar {
+    -fx-bar-fill: -np-accent;
+}

@@ -5,10 +5,13 @@ import javafx.application.HostServices;
 import org.netpilot.repository.AppPaths;
 import org.netpilot.repository.HistoryRepository;
 import org.netpilot.repository.SettingsRepository;
+import org.netpilot.repository.UsageRepository;
 import org.netpilot.service.CsvExporter;
 import org.netpilot.service.ExportService;
 import org.netpilot.service.PdfVoucherGenerator;
 import org.netpilot.service.QrCodeService;
+import org.netpilot.service.ReportExporter;
+import org.netpilot.service.ReportService;
 import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
 import org.netpilot.service.router.RouterConnector;
@@ -26,6 +29,9 @@ public record AppContext(
         RouterConnector routerConnector,
         RouterUploadService routerUploadService,
         RouterUserActions routerUserActions,
+        ReportService reportService,
+        UsageRepository usageRepository,
+        ReportExporter reportExporter,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -45,6 +51,9 @@ public record AppContext(
                 new RouterConnector(),
                 new RouterUploadService(generator),
                 new RouterUserActions(),
+                new ReportService(),
+                new UsageRepository(AppPaths.usageFile()),
+                new ReportExporter(),
                 hostServices);
     }
 }

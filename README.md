@@ -21,6 +21,7 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 - **Send to Router**: creates the generated users directly on the router. Existing names are replaced or skipped, every batch is tagged with a comment, and you can print vouchers for the created users or undo the batch.
 - **Manage Users**: see every hotspot user with usage and online state, filter by batch, profile or state (expired, never used, ...), and enable, disable, disconnect, delete or reprint vouchers in bulk.
 - **Voucher Design**: your network name, logo, color, note and price per profile, with a live preview. Vouchers can be printed in **Arabic** (joined letters, right-to-left) or English.
+- **Reports**: revenue per period, batch and profile, a revenue-per-day chart, and CSV export. A card counts as sold when it is first used.
 
 ## Requirements
 

@@ -28,6 +28,11 @@ public final class AppPaths {
         return dataDirectory().resolve("history.csv");
     }
 
+    /** When each card was first seen used; the basis of sales reports. */
+    public static Path usageFile() {
+        return dataDirectory().resolve("usage.csv");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         Path documents = userHome().resolve("Documents");
