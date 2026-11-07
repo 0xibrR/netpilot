@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 7, WinBox-style interface:
+  - One main window with a side menu instead of separate windows: Dashboard, Create cards, Hotspot, Reports,
+    Voucher design, Export history and Settings (`Ctrl+1` … `Ctrl+7`)
+  - Top bar with the router connection (connect, reload lists, disconnect) and a theme switch
+  - Status bar with the router's model, RouterOS version, CPU load, memory and uptime, refreshed every 5 seconds
+  - Dashboard: cards on the router, online now, never used, expired, revenue this month, money still to come
+  - Hotspot page with WinBox-like tabs: users grouped by batch with a toolbar, active sessions (disconnect),
+    user profiles (with their price) and servers
+  - Semi-dark theme (dark menu, light content) and seven main colours to choose from
+  - Pages that need a router show a Connect button while none is connected
 - Phase 6, Arabic interface and themes (**Tools → Preferences…**, `Ctrl+,`):
   - The whole interface in English or Arabic: menus, windows, dialogs, router and validation messages, report CSV headers
   - Arabic uses a right-to-left layout and the Cairo font; the language applies on the next start

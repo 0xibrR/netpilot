@@ -8,7 +8,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.VoucherDesignController"
-            styleClass="app-root" prefWidth="900" prefHeight="620">
+            styleClass="page">
 
     <!-- ===== Left: settings ===== -->
     <left>
@@ -106,7 +106,7 @@
         <HBox styleClass="action-bar" alignment="CENTER_RIGHT" spacing="10">
             <Button fx:id="testPrintButton" text="%design.testPrint" onAction="#onTestPrint"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
+            <Button text="%button.revert" onAction="#onCancel"/>
             <Button text="%button.save" onAction="#onSave" defaultButton="true" styleClass="primary"/>
             <padding>
                 <Insets top="10" right="16" bottom="10" left="16"/>

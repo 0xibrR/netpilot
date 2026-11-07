@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Hotspot page: WinBox-style tabs. Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<TabPane xmlns="http://javafx.com/javafx"
+         xmlns:fx="http://javafx.com/fxml"
+         fx:id="tabs"
+         fx:controller="org.netpilot.controller.HotspotController"
+         styleClass="page, winbox-tabs" tabClosingPolicy="UNAVAILABLE">
+
+    <Tab fx:id="usersTab" text="%hotspot.tab.users">
+        <fx:include fx:id="users" source="router-users-view.fxml"/>
+    </Tab>
+
+    <Tab fx:id="activeTab" text="%hotspot.tab.active">
+        <BorderPane>
+            <top>
+                <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="6">
+                    <Button fx:id="refreshActiveButton" text="%button.refresh" onAction="#onRefreshActive" styleClass="tool-button"/>
+                    <Button fx:id="kickButton" text="%users.disconnect" onAction="#onDisconnectSessions" styleClass="tool-button, danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ProgressIndicator fx:id="activeProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
+                    <Label fx:id="activeSummary" styleClass="muted"/>
+                </HBox>
+            </top>
+            <center>
+                <TableView fx:id="activeTable">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                    </columnResizePolicy>
+                    <columns>
+                        <TableColumn fx:id="activeUserColumn" text="%column.username" prefWidth="170"/>
+                        <TableColumn fx:id="activeAddressColumn" text="%hotspot.column.address" prefWidth="140"/>
+                        <TableColumn fx:id="activeMacColumn" text="%hotspot.column.mac" prefWidth="160"/>
+                        <TableColumn fx:id="activeUptimeColumn" text="%hotspot.column.sessionTime" prefWidth="120"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="%hotspot.noActive" styleClass="muted"/>
+                    </placeholder>
+                </TableView>
+            </center>
+        </BorderPane>
+    </Tab>
+
+    <Tab text="%hotspot.tab.profiles">
+        <TableView fx:id="profilesTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="profileNameColumn" text="%column.profile" prefWidth="180"/>
+                <TableColumn fx:id="profileRateColumn" text="%hotspot.column.rateLimit" prefWidth="160"/>
+                <TableColumn fx:id="profilePriceColumn" text="%report.column.price" prefWidth="140"/>
+            </columns>
+            <placeholder>
+                <Label text="%reports.noProfiles" styleClass="muted"/>
+            </placeholder>
+        </TableView>
+    </Tab>
+
+    <Tab text="%hotspot.tab.servers">
+        <TableView fx:id="serversTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="serverNameColumn" text="%column.server" prefWidth="180"/>
+                <TableColumn fx:id="serverInterfaceColumn" text="%hotspot.column.interface" prefWidth="180"/>
+                <TableColumn fx:id="serverStateColumn" text="%users.column.state" prefWidth="120"/>
+            </columns>
+            <placeholder>
+                <Label text="%hotspot.noServers" styleClass="muted"/>
+            </placeholder>
+        </TableView>
+    </Tab>
+</TabPane>

@@ -43,7 +43,7 @@ This document explains how the code is organized and **why**, so it stays easy t
 | `org.netpilot.service` | `UserGenerator`, `ExportService`, the exporters (CSV, RSC, PDF, QR), `PdfText` (Arabic shaping and bidirectional layout for the PDF), `ReportService` (sales calculation, pure logic) and `ReportExporter` (CSV) |
 | `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException`, `RouterUploadService` (send a batch), `RouterUserActions` (bulk enable/disable/delete/disconnect/reprint) |
 | `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `UsageRepository` (first-use day of each card), `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `ReportsController` (Reports window), `PreferencesController` (language and theme), `Styling` (stylesheets, theme, right-to-left), `Dialogs` |
+| `org.netpilot.controller` | `MainController` (main window: top bar, side menu, status bar, page switching), `Page` + `PageId` + `Workspace` (what pages share), pages: `DashboardController`, `GenerateController`, `HotspotController` (tabs; its users tab is `RouterUsersController`), `ReportsController`, `VoucherDesignController`, `HistoryController`, `SettingsController`; dialogs: `RouterConnectionController`, `UploadController`; `RouterSession` (connection + listeners), `Styling` (stylesheets, theme, accent, right-to-left), `Icons`, `Dialogs` |
 | `org.netpilot.i18n` | `Messages`: every text shown to the user, from `messages_en.properties` / `messages_ar.properties` |
 
 ## Main flows
@@ -86,12 +86,21 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 3. Records stay when cards are deleted from the router, so past revenue never disappears.
 4. Revenue = sold cards × the price of their profile. Prices come from the Voucher Design text and are parsed by `Money`. Prices without a number, or in a different currency from the rest, are listed as warnings and left out of the total.
 
+## Main window and pages
+
+- `MainController` builds the WinBox-like frame: top bar (router connection, theme switch), side menu (one entry per `PageId`), a `StackPane` for pages, and a status bar.
+- A page is an FXML view whose controller implements `Page`. Pages are loaded the first time they are opened and then kept, so filters and previews survive switching. `Create cards` is loaded at start-up because other pages print vouchers through it (`Workspace.printVouchers`).
+- `Workspace` holds what pages share: services, the `RouterSession`, the saved `AppSettings` (`updateSettings` saves at once) and navigation.
+- `RouterSession` notifies listeners (`routerConnected`, `routerListsLoaded`, `routerDisconnected`); `MainController` forwards the events to loaded pages and replays them to pages loaded later. Pages marked `needsRouter` show a Connect button while no router is connected.
+- The status bar reads `/system/resource` every 5 seconds (`RouterClient.resource()`), never two reads at once.
+
 ## Interface language and theme
 
 - Every user-visible text lives in `resources/org/netpilot/i18n/messages_en.properties` and `messages_ar.properties`. Views use `%key` (FXMLLoader gets `Messages.bundle()`); code uses `Messages.get("key", args...)`, which formats with `MessageFormat` (numbers are not grouped, so `1000` never becomes `1,000`).
 - The language is chosen once at start-up (`NetPilotApp.start`), before any window is built; changing it in Preferences applies on the next start. Logs stay in English.
 - `Styling.apply` is called on every scene and dialog: it adds `styles.css` (plus `dark.css` for the dark theme), sets right-to-left orientation for Arabic and the `arabic` style class (Cairo font). `Styling.setTheme` restyles all open windows; the system theme follows `Platform.getPreferences()`.
 - `dark.css` only overrides colour tokens (`-np-*`, `-fx-base`, ...). The voucher preview card keeps white paper colours in both themes.
+- Semi-dark adds the `chrome-dark` style class, which only changes the `-np-chrome-*` tokens of the side menu, top bar and status bar. The accent colour is set as `-np-accent` on each root; hover shades are derived from it in CSS.
 - `MessagesTest` fails when a key is missing in one language, placeholders differ, a used key does not exist, or a view has text that is not a `%key`.
 
 ## Arabic in PDFs

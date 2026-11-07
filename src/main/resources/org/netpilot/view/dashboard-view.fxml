@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Dashboard page. Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.DashboardController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="page, form-scroll">
+    <VBox spacing="14">
+        <padding>
+            <Insets top="16" right="20" bottom="16" left="20"/>
+        </padding>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="%nav.DASHBOARD" styleClass="page-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+            <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+        </HBox>
+
+        <VBox fx:id="offlineCard" styleClass="card" spacing="8">
+            <Label text="%main.notConnected.title" styleClass="card-title"/>
+            <Label text="%dashboard.offline" styleClass="muted" wrapText="true"/>
+        </VBox>
+
+        <VBox fx:id="routerCard" styleClass="card" spacing="4">
+            <Label fx:id="routerName" styleClass="stat-value"/>
+            <Label fx:id="routerDetails" styleClass="muted"/>
+        </VBox>
+
+        <FlowPane hgap="12" vgap="12">
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%dashboard.users" styleClass="stat-title"/>
+                <Label fx:id="usersValue" text="—" styleClass="stat-value"/>
+            </VBox>
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%dashboard.online" styleClass="stat-title"/>
+                <Label fx:id="onlineValue" text="—" styleClass="stat-value, stat-online"/>
+            </VBox>
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%report.unused" styleClass="stat-title"/>
+                <Label fx:id="unusedValue" text="—" styleClass="stat-value"/>
+            </VBox>
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%users.state.expired" styleClass="stat-title"/>
+                <Label fx:id="expiredValue" text="—" styleClass="stat-value"/>
+            </VBox>
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%dashboard.revenueMonth" styleClass="stat-title"/>
+                <Label fx:id="revenueValue" text="—" styleClass="stat-value, stat-money"/>
+            </VBox>
+            <VBox styleClass="stat-card" prefWidth="190">
+                <Label text="%report.potential" styleClass="stat-title" wrapText="true"/>
+                <Label fx:id="potentialValue" text="—" styleClass="stat-value"/>
+            </VBox>
+        </FlowPane>
+
+        <VBox styleClass="card" spacing="10">
+            <Label text="%dashboard.quick" styleClass="card-title"/>
+            <FlowPane hgap="8" vgap="8">
+                <Button text="%nav.GENERATE" onAction="#onGenerate" styleClass="primary"/>
+                <Button text="%nav.HOTSPOT" onAction="#onHotspot"/>
+                <Button text="%nav.REPORTS" onAction="#onReports"/>
+                <Button text="%nav.DESIGN" onAction="#onDesign"/>
+            </FlowPane>
+        </VBox>
+    </VBox>
+</ScrollPane>

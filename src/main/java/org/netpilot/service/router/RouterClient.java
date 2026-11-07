@@ -10,6 +10,7 @@ import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
+import org.netpilot.model.RouterResource;
 import org.netpilot.model.RouterUser;
 
 /**
@@ -24,6 +25,9 @@ public interface RouterClient extends AutoCloseable {
     RouterEndpoint endpoint();
 
     RouterInfo info() throws RouterException;
+
+    /** Current CPU, memory and uptime; cheap enough to poll every few seconds. */
+    RouterResource resource() throws RouterException;
 
     List<HotspotProfile> hotspotProfiles() throws RouterException;
 

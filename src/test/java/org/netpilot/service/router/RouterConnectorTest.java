@@ -20,6 +20,7 @@ import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
+import org.netpilot.model.RouterResource;
 import org.netpilot.service.router.RouterException.Kind;
 
 class RouterConnectorTest {
@@ -57,6 +58,21 @@ class RouterConnectorTest {
                 assertArrayEquals(new char[PASSWORD.length()], password, "password must be wiped");
                 assertEquals(".proplist=board-name,version,uptime", router.lastQuery("/rest/system/resource"));
                 connection.client().close();
+            }
+        }
+
+        @Test
+        void readsLiveResources() throws Exception {
+            try (FakeRouter router = FakeRouter.http(USER, PASSWORD);
+                    RouterClient client = connector.connect(http(router.port()), PASSWORD.toCharArray(), null)
+                            .client()) {
+
+                RouterResource resource = client.resource();
+
+                assertEquals(new RouterResource(7, 55050240, 134217728, "14h10m53s"), resource);
+                assertEquals(134217728 - 55050240, resource.usedMemory());
+                assertEquals(".proplist=cpu-load,free-memory,total-memory,uptime",
+                        router.lastQuery("/rest/system/resource"));
             }
         }
 

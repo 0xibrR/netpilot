@@ -14,13 +14,14 @@ import javafx.stage.Window;
 import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.Theme;
+import org.netpilot.model.UiPreferences;
 
 /**
- * One place that gives every window the same look: stylesheets, light or dark theme, and
- * right-to-left layout with the Cairo font for Arabic.
+ * One place that gives every window the same look: stylesheets, light / semi-dark / dark theme,
+ * the accent colour, and right-to-left layout with the Cairo font for Arabic.
  *
  * <p>Call {@link #init} once at start-up (after {@link Messages#use}), then {@link #apply} on every
- * new scene or dialog. {@link #setTheme} restyles all open windows at once.
+ * new scene or dialog. {@link #setAppearance} restyles all open windows at once.
  */
 public final class Styling {
 
@@ -28,15 +29,18 @@ public final class Styling {
     private static final String BASE_CSS = NetPilotApp.resource("css/styles.css").toExternalForm();
     private static final String DARK_CSS = NetPilotApp.resource("css/dark.css").toExternalForm();
     private static final String ARABIC_CLASS = "arabic";
+    private static final String DARK_CHROME_CLASS = "chrome-dark";
 
     private static volatile Theme theme = Theme.SYSTEM;
+    private static volatile String accent = UiPreferences.DEFAULT_ACCENT;
 
     private Styling() {
     }
 
     /** Loads the Arabic font when needed and follows the system colour scheme for {@link Theme#SYSTEM}. */
-    public static void init(Theme initial) {
-        theme = initial;
+    public static void init(UiPreferences ui) {
+        theme = ui.theme();
+        accent = ui.accent();
         if (Messages.isArabic()) {
             loadCairo();
         }
@@ -49,7 +53,13 @@ public final class Styling {
 
     /** Switches the theme of every open window. */
     public static void setTheme(Theme newTheme) {
+        setAppearance(newTheme, accent);
+    }
+
+    /** Switches theme and accent colour of every open window. */
+    public static void setAppearance(Theme newTheme, String newAccent) {
         theme = newTheme;
+        accent = newAccent;
         refreshAll();
     }
 
@@ -63,15 +73,25 @@ public final class Styling {
 
     /** Styles a scene root or a dialog pane. */
     public static void apply(Parent root) {
+        boolean systemDark = systemIsDark();
         List<String> sheets = new ArrayList<>(List.of(BASE_CSS));
-        if (theme.isDark(systemIsDark())) {
+        if (theme.isDark(systemDark)) {
             sheets.add(DARK_CSS);
         }
         root.getStylesheets().setAll(sheets);
+        toggleClass(root, DARK_CHROME_CLASS, theme.darkChrome(systemDark));
+        // the hover shade is derived in CSS from -np-accent
+        root.setStyle("-np-accent: " + accent + ";");
         boolean arabic = Messages.isArabic();
         root.setNodeOrientation(arabic ? NodeOrientation.RIGHT_TO_LEFT : NodeOrientation.LEFT_TO_RIGHT);
-        if (arabic && !root.getStyleClass().contains(ARABIC_CLASS)) {
-            root.getStyleClass().add(ARABIC_CLASS);
+        toggleClass(root, ARABIC_CLASS, arabic);
+    }
+
+    private static void toggleClass(Parent node, String styleClass, boolean on) {
+        if (on && !node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
+        } else if (!on) {
+            node.getStyleClass().remove(styleClass);
         }
     }
 

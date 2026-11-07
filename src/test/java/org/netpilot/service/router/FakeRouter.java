@@ -142,7 +142,8 @@ final class FakeRouter implements AutoCloseable {
     private void routeDefaults() {
         route("/rest/system/identity", 200, "{\"name\":\"hEX\"}");
         route("/rest/system/resource", 200,
-                "{\"board-name\":\"hEX\",\"version\":\"7.25.1 (stable)\",\"uptime\":\"14h10m53s\"}");
+                "{\"board-name\":\"hEX\",\"version\":\"7.25.1 (stable)\",\"uptime\":\"14h10m53s\","
+                        + "\"cpu-load\":\"7\",\"free-memory\":\"55050240\",\"total-memory\":\"134217728\"}");
         route("/rest/ip/hotspot/user/profile", 200,
                 "[{\".id\":\"*0\",\"name\":\"default\"},{\".id\":\"*1\",\"name\":\"2M\",\"rate-limit\":\"2M/2M\"}]");
         route("/rest/ip/hotspot", 200,

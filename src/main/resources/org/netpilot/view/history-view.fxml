@@ -7,7 +7,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.HistoryController"
-            styleClass="app-root" prefWidth="820" prefHeight="480">
+            styleClass="page">
 
     <center>
         <TableView fx:id="historyTable">
@@ -35,7 +35,6 @@
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="clearButton" text="%history.clear" onAction="#onClear"/>
             <Button fx:id="openButton" text="%main.openFolder" onAction="#onOpenFolder"/>
-            <Button text="%button.close" onAction="#onClose" cancelButton="true"/>
             <padding>
                 <Insets top="10" right="12" bottom="10" left="12"/>
             </padding>

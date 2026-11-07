@@ -32,7 +32,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
@@ -45,7 +45,7 @@ import org.netpilot.model.VoucherTemplate;
  *
  * <p>Use: load the view, call {@link #prepare}, show the stage and wait, then read {@link #result()}.
  */
-public class VoucherDesignController {
+public class VoucherDesignController implements Page {
 
     private static final System.Logger LOG = System.getLogger(VoucherDesignController.class.getName());
     private static final String SAMPLE_TIME = "1h";
@@ -55,6 +55,7 @@ public class VoucherDesignController {
     private AppSettings settings;
     private Path logo;
     private VoucherTemplate result;
+    private Workspace workspace;
 
     @FXML
     private TextField networkNameField;
@@ -139,6 +140,24 @@ public class VoucherDesignController {
 
     public VoucherDesignController(AppContext context) {
         this.context = context;
+    }
+
+    @Override
+    public void attach(Workspace shared) {
+        this.workspace = shared;
+        prepare(shared.settings(), shared.profileNames());
+    }
+
+    /** Adds a price row for router profiles that are not listed yet, keeping unsaved edits. */
+    @Override
+    public void routerListsLoaded(RouterSession.RouterLists lists) {
+        Set<String> listed = new LinkedHashSet<>();
+        pricesTable.getItems().forEach(row -> listed.add(row.profile()));
+        lists.profiles().stream()
+                .map(org.netpilot.model.HotspotProfile::name)
+                .filter(name -> !listed.contains(name))
+                .forEach(name -> pricesTable.getItems().add(new PriceRow(name, "")));
+        updatePreview();
     }
 
     @FXML
@@ -260,9 +279,10 @@ public class VoucherDesignController {
         thread.start();
     }
 
+    /** Drops unsaved changes. */
     @FXML
     private void onCancel() {
-        stage().close();
+        prepare(workspace.settings(), workspace.profileNames());
     }
 
     @FXML
@@ -274,7 +294,9 @@ public class VoucherDesignController {
             return;
         }
         result = template;
-        stage().close();
+        workspace.updateSettings(s -> s.withVoucherTemplate(template));
+        settings = workspace.settings();
+        Dialogs.info(stage(), Messages.get("main.status.designSaved"), Messages.get("design.savedBody"));
     }
 
     // ------------------------------------------------------------------ form <-> template
@@ -357,7 +379,7 @@ public class VoucherDesignController {
                 channel.apply(color.getGreen()), channel.apply(color.getBlue()));
     }
 
-    private Stage stage() {
-        return (Stage) voucherCard.getScene().getWindow();
+    private Window stage() {
+        return voucherCard.getScene().getWindow();
     }
 }

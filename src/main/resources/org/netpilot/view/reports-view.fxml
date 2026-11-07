@@ -10,7 +10,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.ReportsController"
-            styleClass="app-root" prefWidth="1000" prefHeight="700">
+            styleClass="page">
 
     <top>
         <HBox spacing="8" alignment="CENTER_LEFT">

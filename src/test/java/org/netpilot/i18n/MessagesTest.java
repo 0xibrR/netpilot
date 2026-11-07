@@ -39,7 +39,7 @@ class MessagesTest {
     private static final Path SOURCES = Path.of("src/main/java");
     private static final Path VIEWS = Path.of("src/main/resources/org/netpilot/view");
     /** View attributes that are not translatable text (names, symbols, sample voucher values). */
-    private static final Set<String> NOT_TEXT = Set.of("NetPilot", "…", "#", "●", "QR", "714133", "5821", "");
+    private static final Set<String> NOT_TEXT = Set.of("NetPilot", "…", "#", "●", "—", "QR", "714133", "5821", "");
 
     @AfterEach
     void backToEnglish() {

@@ -119,7 +119,8 @@ public class SettingsRepository {
                 loadRouter(p, d.router()),
                 loadTemplate(p, d.voucherTemplate()),
                 new UiPreferences(enumValue(p, "ui.language", UiLanguage.class, d.ui().language()),
-                        enumValue(p, "ui.theme", Theme.class, d.ui().theme())));
+                        enumValue(p, "ui.theme", Theme.class, d.ui().theme()),
+                        p.getProperty("ui.accent", d.ui().accent())));
     }
 
     private static VoucherTemplate loadTemplate(Properties p, VoucherTemplate d) {
@@ -212,6 +213,7 @@ public class SettingsRepository {
         t.prices().forEach((profile, price) -> p.setProperty(PRICE_PREFIX + profile, price));
         p.setProperty("ui.language", settings.ui().language().name());
         p.setProperty("ui.theme", settings.ui().theme().name());
+        p.setProperty("ui.accent", settings.ui().accent());
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

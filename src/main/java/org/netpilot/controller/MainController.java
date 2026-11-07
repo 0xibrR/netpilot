@@ -1,162 +1,94 @@
 package org.netpilot.controller;
-import java.io.File;
+
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Optional;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Window;
+import javafx.util.Duration;
 import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
-import org.netpilot.model.AppSettings;
-import org.netpilot.model.GenerationSettings;
-import org.netpilot.model.HotspotProfile;
-import org.netpilot.model.HotspotServer;
-import org.netpilot.model.HotspotUser;
-import org.netpilot.model.PasswordMode;
-import org.netpilot.model.UsernameMode;
-import org.netpilot.service.ExportService.ExportResult;
-import org.netpilot.service.QrCodeService;
+import org.netpilot.model.RouterDuration;
+import org.netpilot.model.RouterResource;
+import org.netpilot.model.Theme;
 import org.netpilot.service.router.RouterClient;
+import org.netpilot.service.router.RouterException;
 
 /**
- * Main window: collects settings, previews generated users and exports exactly those users.
+ * Main window: top bar with the router connection, side menu, the page area and a status bar
+ * with the router's live load, laid out like WinBox.
+ *
+ * <p>Pages are loaded the first time they are opened and then kept. This class only switches
+ * pages and forwards router events to them; each page does its own work.
  */
-public class MainController {
+public class MainController implements RouterSession.Listener {
 
     private static final System.Logger LOG = System.getLogger(MainController.class.getName());
-
-    private static final List<String> PROFILE_SUGGESTIONS = List.of("default", "1M", "2M", "3M", "4M", "5M", "10M",
-            "20M", "30M", "40M");
-    private static final List<String> UPTIME_SUGGESTIONS = List.of("30m", "1h", "2h", "4h", "8h", "1d", "7d", "30d");
+    private static final Duration RESOURCE_INTERVAL = Duration.seconds(5);
 
     private final AppContext context;
-    private final ObservableList<HotspotUser> users = FXCollections.observableArrayList();
-
-    /** Last loaded/saved settings; the form is the source of truth for generation values. */
-    private AppSettings appSettings;
-    private boolean loadingForm;
-
-    @FXML
-    private Spinner<Integer> countSpinner;
-    @FXML
-    private ComboBox<UsernameMode> usernameModeBox;
-    @FXML
-    private Spinner<Integer> usernameLengthSpinner;
-    @FXML
-    private Spinner<Integer> usernameStartSpinner;
-
-    @FXML
-    private ComboBox<PasswordMode> passwordModeBox;
-    @FXML
-    private Spinner<Integer> passwordLengthSpinner;
-    @FXML
-    private Spinner<Integer> passwordStartSpinner;
-    @FXML
-    private TextField prefixField;
-    @FXML
-    private Label weakPasswordWarning;
-
-    @FXML
-    private ComboBox<String> profileBox;
-    @FXML
-    private ComboBox<String> serverBox;
-    @FXML
-    private ComboBox<String> uptimeBox;
-
-    @FXML
-    private TextField loginUrlField;
-    @FXML
-    private Spinner<Integer> perRowSpinner;
-    @FXML
-    private TextField outputDirField;
-
-    @FXML
-    private TableView<HotspotUser> usersTable;
-    @FXML
-    private TableColumn<HotspotUser, Integer> indexColumn;
-    @FXML
-    private TableColumn<HotspotUser, String> usernameColumn;
-    @FXML
-    private TableColumn<HotspotUser, String> passwordColumn;
-    @FXML
-    private TableColumn<HotspotUser, String> profileColumn;
-    @FXML
-    private TableColumn<HotspotUser, String> serverColumn;
-    @FXML
-    private TableColumn<HotspotUser, String> uptimeColumn;
-    @FXML
-    private Label usersCountLabel;
-
-    @FXML
-    private ProgressIndicator progressIndicator;
-    @FXML
-    private Label statusLabel;
-    @FXML
-    private Button generateButton;
-    @FXML
-    private Button exportButton;
-
-    @FXML
-    private Label routerStatusLabel;
-    @FXML
-    private MenuItem refreshRouterItem;
-    @FXML
-    private MenuItem disconnectRouterItem;
-    @FXML
-    private MenuItem manageUsersItem;
-    @FXML
-    private MenuItem reportsItem;
-
-    /** The open Router Users window, if any (one at a time). */
-    private Stage routerUsersStage;
-    /** The open Reports window, if any (one at a time). */
-    private Stage reportsStage;
-
-    @FXML
-    private Button sendButton;
+    private final Map<PageId, LoadedPage> pages = new EnumMap<>(PageId.class);
+    private final Map<PageId, ToggleButton> menuButtons = new EnumMap<>(PageId.class);
+    private final ToggleGroup menuGroup = new ToggleGroup();
+    private final Timeline resourcePoller = new Timeline(new KeyFrame(RESOURCE_INTERVAL, e -> pollResources()));
 
     private RouterSession router;
+    private Workspace workspace;
+    private PageId current;
+    private boolean polling;
 
-    /** True while an export or upload runs. */
-    private final BooleanProperty busy = new SimpleBooleanProperty(false);
-    /** True when the preview shows users that were already sent, so they cannot be sent twice. */
-    private final BooleanProperty sent = new SimpleBooleanProperty(false);
-    private boolean showingSentUsers;
+    @FXML
+    private BorderPane root;
+    @FXML
+    private Label routerChip;
+    @FXML
+    private MenuButton routerMenu;
+    @FXML
+    private MenuItem reloadItem;
+    @FXML
+    private MenuItem disconnectItem;
+    @FXML
+    private Button themeButton;
+    @FXML
+    private VBox sideMenu;
+    @FXML
+    private StackPane pageHost;
+    @FXML
+    private VBox notConnectedPane;
+    @FXML
+    private Label routerInfoLabel;
+    @FXML
+    private Label cpuLabel;
+    @FXML
+    private Label memoryLabel;
+    @FXML
+    private Label uptimeLabel;
+    @FXML
+    private Label versionLabel;
+
+    /** A loaded page: its view and its controller. */
+    private record LoadedPage(Node view, Page controller) {
+    }
 
     public MainController(AppContext context) {
         this.context = context;
@@ -164,62 +96,122 @@ public class MainController {
 
     @FXML
     private void initialize() {
-        setUpSpinner(countSpinner, 1, GenerationSettings.MAX_COUNT);
-        setUpSpinner(usernameLengthSpinner, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
-        setUpSpinner(usernameStartSpinner, 0, Integer.MAX_VALUE);
-        setUpSpinner(passwordLengthSpinner, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
-        setUpSpinner(passwordStartSpinner, 0, Integer.MAX_VALUE);
-        setUpSpinner(perRowSpinner, AppSettings.MIN_PER_ROW, AppSettings.MAX_PER_ROW);
+        router = new RouterSession(context, routerChip, this::window);
+        router.addListener(this);
+        workspace = new Workspace(context, router, this::window, context.settingsRepository().load());
+        workspace.setNavigator(this::show);
 
-        usernameModeBox.getItems().setAll(UsernameMode.values());
-        passwordModeBox.getItems().setAll(PasswordMode.values());
-        profileBox.getItems().setAll(PROFILE_SUGGESTIONS);
-        serverBox.getItems().setAll("all");
-        uptimeBox.getItems().setAll(UPTIME_SUGGESTIONS);
+        reloadItem.disableProperty().bind(router.connectedProperty().not());
+        disconnectItem.disableProperty().bind(router.connectedProperty().not());
+        routerMenu.setGraphic(Icons.of(Icons.ROUTER));
+        themeButton.setGraphic(Icons.of(Icons.MOON));
+        versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
+        resourcePoller.setCycleCount(Timeline.INDEFINITE);
+        showResources(null);
 
-        setUpTable();
-        bindFieldStates();
-
-        appSettings = context.settingsRepository().load();
-        showSettings(appSettings);
-        clearPreviewWhenSettingsChange();
-        updateCountLabel();
-
-        router = new RouterSession(context, routerStatusLabel, this::window, this::showRouterLists,
-                this::showOfflineSuggestions);
-        refreshRouterItem.disableProperty().bind(router.connectedProperty().not());
-        disconnectRouterItem.disableProperty().bind(router.connectedProperty().not());
-        manageUsersItem.disableProperty().bind(router.connectedProperty().not());
-        reportsItem.disableProperty().bind(router.connectedProperty().not());
-
-        BooleanBinding noUsers = Bindings.isEmpty(users);
-        generateButton.disableProperty().bind(busy);
-        exportButton.disableProperty().bind(noUsers.or(busy));
-        sendButton.disableProperty().bind(noUsers.or(busy).or(sent).or(router.connectedProperty().not()));
-        users.addListener((ListChangeListener<HotspotUser>) change -> {
-            if (!showingSentUsers) {
-                sent.set(false); // a new preview has not been sent yet
+        buildSideMenu();
+        load(PageId.GENERATE); // always loaded: other pages print vouchers through it
+        show(PageId.GENERATE);
+        root.sceneProperty().addListener((obs, old, scene) -> {
+            if (scene != null) {
+                addShortcuts();
             }
         });
     }
 
-    /** Ends the router session; called when the app closes. */
+    /** Saves page state and ends the router session; called when the app closes. */
     public void close() {
+        resourcePoller.stop();
+        pages.values().forEach(p -> {
+            if (p.controller() instanceof GenerateController generate) {
+                generate.saveSettings();
+            }
+        });
         router.close();
+    }
+
+    // ------------------------------------------------------------------ navigation
+
+    private void buildSideMenu() {
+        for (PageId page : PageId.values()) {
+            ToggleButton button = new ToggleButton(Messages.get(page.labelKey()), Icons.of(page.icon()));
+            button.getStyleClass().add("nav-button");
+            button.setToggleGroup(menuGroup);
+            button.setMaxWidth(Double.MAX_VALUE);
+            button.setOnAction(e -> show(page));
+            menuButtons.put(page, button);
+            sideMenu.getChildren().add(button);
+        }
+        // a selected menu entry stays selected when clicked again
+        menuGroup.selectedToggleProperty().addListener((obs, old, now) -> {
+            if (now == null && old != null) {
+                old.setSelected(true);
+            }
+        });
+    }
+
+    private void addShortcuts() {
+        PageId[] all = PageId.values();
+        for (int i = 0; i < all.length && i < 9; i++) {
+            PageId page = all[i];
+            KeyCombination keys = new KeyCodeCombination(KeyCode.getKeyCode(String.valueOf(i + 1)),
+                    KeyCombination.SHORTCUT_DOWN);
+            root.getScene().getAccelerators().put(keys, () -> show(page));
+        }
+    }
+
+    private void show(PageId page) {
+        current = page;
+        menuButtons.get(page).setSelected(true);
+        boolean blocked = page.needsRouter() && router.client().isEmpty();
+        notConnectedPane.setVisible(blocked);
+        pages.values().forEach(p -> p.view().setVisible(false));
+        if (blocked) {
+            return;
+        }
+        Optional<LoadedPage> loaded = Optional.ofNullable(pages.get(page)).or(() -> load(page));
+        loaded.ifPresent(p -> {
+            p.view().setVisible(true);
+            p.controller().shown();
+        });
+    }
+
+    private Optional<LoadedPage> load(PageId page) {
+        try {
+            FXMLLoader loader = NetPilotApp.loader(page.view(), context);
+            Parent view = loader.load();
+            Page controller = loader.getController();
+            view.setVisible(false);
+            pageHost.getChildren().add(view);
+            LoadedPage loaded = new LoadedPage(view, controller);
+            pages.put(page, loaded);
+            controller.attach(workspace);
+            // catch up with a router that connected before this page existed
+            router.client().ifPresent(client -> controller.routerConnected(client, router.displayName()));
+            router.lists().ifPresent(controller::routerListsLoaded);
+            return Optional.of(loaded);
+        } catch (IOException | RuntimeException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open page " + page, e);
+            Dialogs.error(window(), Messages.get("error.openWindow"), String.valueOf(e.getMessage()));
+            return Optional.empty();
+        }
     }
 
     // ------------------------------------------------------------------ router
 
     @FXML
     private void onConnectRouter() {
-        router.showConnectDialog(appSettings.router()).ifPresent(routerSettings -> {
-            appSettings = appSettings.withRouter(routerSettings);
-            saveSettings(); // keeps the endpoint and trusted certificates, never the password
-        });
+        router.showConnectDialog(workspace.settings().router())
+                .ifPresent(routerSettings -> workspace.updateSettings(s -> s.withRouter(routerSettings)));
     }
 
     @FXML
-    private void onRefreshRouter() {
+    private void onRouterChipClicked() {
+        onConnectRouter();
+    }
+
+    @FXML
+    private void onReloadRouter() {
         router.refresh();
     }
 
@@ -228,594 +220,104 @@ public class MainController {
         router.disconnect();
     }
 
-    /** Opens the Router Users window, or brings it to the front if it is already open. */
-    @FXML
-    private void onManageUsers() {
+    @Override
+    public void routerConnected(RouterClient client, String name) {
+        pages.values().forEach(p -> p.controller().routerConnected(client, name));
+        router.info().ifPresent(info -> routerInfoLabel.setText(info.summary()));
+        resourcePoller.play();
+        pollResources();
+        if (current != null && current.needsRouter()) {
+            show(current);
+        }
+    }
+
+    @Override
+    public void routerListsLoaded(RouterSession.RouterLists lists) {
+        pages.values().forEach(p -> p.controller().routerListsLoaded(lists));
+    }
+
+    @Override
+    public void routerDisconnected() {
+        resourcePoller.stop();
+        showResources(null);
+        pages.values().forEach(p -> p.controller().routerDisconnected());
+        if (current != null && current.needsRouter()) {
+            show(current);
+        }
+    }
+
+    /** Reads CPU, memory and uptime in the background; skipped while the previous read runs. */
+    private void pollResources() {
         Optional<RouterClient> client = router.client();
-        if (client.isEmpty()) {
+        if (client.isEmpty() || polling) {
             return;
         }
-        if (routerUsersStage != null && routerUsersStage.isShowing()) {
-            routerUsersStage.toFront();
-            return;
-        }
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/router-users-view.fxml", context);
-            Parent root = loader.load();
-            RouterUsersController controller = loader.getController();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-            routerUsersStage = new Stage();
-            routerUsersStage.initOwner(window()); // not modal: it can stay open next to the main window
-            routerUsersStage.setScene(scene);
-            routerUsersStage.show();
-            controller.start(client.get(), router.displayName(), this::exportUsers);
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open Router Users", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
-    }
-
-    @FXML
-    private void onRouterStatusClicked() {
-        onConnectRouter();
-    }
-
-    /** Offers the router's real profiles and servers; typing other values stays possible. */
-    private void showRouterLists(RouterSession.RouterLists lists) {
-        String profile = comboText(profileBox);
-        String server = comboText(serverBox);
-
-        List<String> profiles = lists.profiles().stream().map(HotspotProfile::name).toList();
-        List<String> servers = new ArrayList<>();
-        servers.add("all");
-        lists.servers().stream().filter(s -> !s.disabled()).map(HotspotServer::name).forEach(servers::add);
-
-        profileBox.getItems().setAll(profiles);
-        serverBox.getItems().setAll(servers);
-        profileBox.setValue(profile);
-        serverBox.setValue(server);
-
-        if (!profiles.contains(profile)) {
-            setStatus(Messages.get("main.status.profileMissing", profile), true);
-        } else if (!servers.contains(server)) {
-            setStatus(Messages.get("main.status.serverMissing", server), true);
-        } else {
-            setStatus(Messages.get("main.status.loadedLists", profiles.size(), servers.size() - 1), false);
-        }
-    }
-
-    private void showOfflineSuggestions() {
-        // these windows use the router session, which is gone now
-        if (routerUsersStage != null) {
-            routerUsersStage.close();
-            routerUsersStage = null;
-        }
-        if (reportsStage != null) {
-            reportsStage.close();
-            reportsStage = null;
-        }
-        String profile = comboText(profileBox);
-        String server = comboText(serverBox);
-        profileBox.getItems().setAll(PROFILE_SUGGESTIONS);
-        serverBox.getItems().setAll("all");
-        profileBox.setValue(profile);
-        serverBox.setValue(server);
-        setStatus(Messages.get("main.status.disconnected"), false);
-    }
-
-    /** Creates the previewed users on the connected router, then offers Print and Undo. */
-    @FXML
-    private void onSendToRouter() {
-        Optional<RouterClient> client = router.client();
-        if (client.isEmpty() || users.isEmpty()) {
-            return;
-        }
-        List<HotspotUser> batch = List.copyOf(users);
-        HotspotUser first = batch.getFirst();
-        Optional<String> problem = router.checkProfileAndServer(first.profile(), first.server());
-        if (problem.isPresent()) {
-            Dialogs.error(window(), Messages.get("send.cannotSend"), problem.get());
-            return;
-        }
-
-        String httpWarning = client.get().endpoint().https()
-                ? ""
-                : "\n\n" + Messages.get("send.httpWarning");
-        String uptime = first.limitUptime().isBlank() ? Messages.get("common.unlimited") : first.limitUptime();
-        if (!Dialogs.confirm(window(), Messages.get("send.confirm.title", batch.size(), router.displayName()),
-                Messages.get("send.confirm.body", first.profile(), first.server(), uptime) + httpWarning)) {
-            return;
-        }
-
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/upload-view.fxml", context);
-            Parent root = loader.load();
-            UploadController upload = loader.getController();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-            Stage stage = new Stage();
-            stage.initOwner(window());
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle(Messages.get("window.send") + " - " + NetPilotApp.NAME);
-            stage.setScene(scene);
-            stage.show();
-            upload.start(client.get(), router.displayName(), batch, readGenerationSettings());
-            busy.set(true);
-            stage.setOnHidden(e -> {
-                busy.set(false);
-                afterUpload(upload);
-            });
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open upload window", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
-    }
-
-    /** The preview now shows exactly the users that exist on the router (or nothing after Undo). */
-    private void afterUpload(UploadController upload) {
-        upload.report().ifPresent(report -> {
-            showingSentUsers = true;
-            try {
-                users.setAll(upload.undone() ? List.of() : report.createdUsers());
-            } finally {
-                showingSentUsers = false;
-            }
-            sent.set(!upload.undone() && !users.isEmpty());
-            setStatus(upload.undone()
-                    ? Messages.get("send.status.undone")
-                    : Messages.get("send.status.done", report.created().size(), report.batchComment()), false);
-            if (upload.printRequested()) {
-                exportUsers(report.createdUsers());
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------ actions
-
-    @FXML
-    private void onGenerate() {
-        GenerationSettings settings = readGenerationSettings();
-        List<String> errors = settings.validate();
-        if (!errors.isEmpty()) {
-            Dialogs.error(window(), Messages.get("error.fixSettings"), String.join("\n", errors));
-            return;
-        }
-        try {
-            users.setAll(context.userGenerator().generate(settings));
-            setStatus(Messages.get("main.status.generated", users.size()), false);
-        } catch (RuntimeException e) {
-            LOG.log(System.Logger.Level.ERROR, "Generation failed", e);
-            Dialogs.error(window(), Messages.get("error.generate"), e.getMessage());
-        }
-    }
-
-    @FXML
-    private void onExport() {
-        exportUsers(List.copyOf(users));
-    }
-
-    /** Writes CSV, RSC and PDF vouchers for exactly these users, in the background. */
-    private void exportUsers(List<HotspotUser> batch) {
-        if (batch.isEmpty()) {
-            return;
-        }
-        String loginUrl = loginUrlField.getText().strip();
-        if (!loginUrl.isEmpty()) {
-            try {
-                QrCodeService.validateLoginUrl(loginUrl);
-            } catch (IllegalArgumentException e) {
-                Dialogs.error(window(), Messages.get("error.invalidLoginUrl"), e.getMessage());
-                return;
-            }
-        }
-
-        AppSettings settings = currentAppSettings();
-
-        Task<ExportResult> task = new Task<>() {
+        polling = true;
+        RouterClient target = client.get();
+        Task<RouterResource> task = new Task<>() {
 
             @Override
-            protected ExportResult call() throws IOException {
-                return context.exportService().export(batch, settings);
+            protected RouterResource call() throws RouterException {
+                return target.resource();
             }
         };
-        task.setOnRunning(e -> setBusy(true, Messages.get("main.status.exporting", batch.size())));
         task.setOnSucceeded(e -> {
-            setBusy(false, null);
-            ExportResult result = task.getValue();
-            setStatus(Messages.get("main.status.exported", result.userCount(), result.folder().getFileName()), false);
-            saveSettings();
-            showExportDone(result);
+            polling = false;
+            if (router.client().orElse(null) == target) {
+                showResources(task.getValue());
+            }
         });
         task.setOnFailed(e -> {
-            setBusy(false, null);
-            Throwable error = task.getException();
-            LOG.log(System.Logger.Level.ERROR, "Export failed", error);
-            setStatus(Messages.get("error.exportFailed"), true);
-            Dialogs.error(window(), Messages.get("error.exportFailed"), String.valueOf(error.getMessage()));
+            polling = false;
+            LOG.log(System.Logger.Level.DEBUG, "Cannot read router resources", task.getException());
         });
-
-        Thread thread = new Thread(task, "netpilot-export");
+        Thread thread = new Thread(task, "netpilot-router-resources");
         thread.setDaemon(true);
         thread.start();
     }
 
-    /** Opens the Reports window, or brings it to the front if it is already open. */
-    @FXML
-    private void onReports() {
-        Optional<RouterClient> client = router.client();
-        if (client.isEmpty()) {
+    private void showResources(RouterResource resource) {
+        boolean show = resource != null;
+        for (Label label : new Label[]{cpuLabel, memoryLabel, uptimeLabel}) {
+            label.setVisible(show);
+            label.setManaged(show);
+        }
+        if (!show) {
+            routerInfoLabel.setText(Messages.get("router.notConnected"));
             return;
         }
-        if (reportsStage != null && reportsStage.isShowing()) {
-            reportsStage.toFront();
-            return;
-        }
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/reports-view.fxml", context);
-            Parent root = loader.load();
-            ReportsController reports = loader.getController();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-            reportsStage = new Stage();
-            reportsStage.initOwner(window()); // not modal: it can stay open next to the main window
-            reportsStage.setScene(scene);
-            reportsStage.show();
-            // prices are read on each rebuild, so changes in Voucher Design apply after Refresh
-            reports.start(client.get(), router.displayName(), () -> appSettings.voucherTemplate());
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open Reports", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
+        cpuLabel.setText(Messages.get("status.cpu", resource.cpuLoad()));
+        memoryLabel.setText(Messages.get("status.memory", mebibytes(resource.usedMemory()),
+                mebibytes(resource.totalMemory())));
+        uptimeLabel.setText(Messages.get("status.uptime",
+                RouterDuration.parse(resource.uptime()).map(RouterDuration::format).orElse(resource.uptime())));
     }
 
-    /** Edits how vouchers look; the router's profiles (when connected) get a price field each. */
+    private static String mebibytes(long bytes) {
+        return String.format(java.util.Locale.ROOT, "%.1f", bytes / (1024.0 * 1024.0));
+    }
+
+    // ------------------------------------------------------------------ theme
+
+    /** Light → semi-dark → dark → light; Settings offers every choice. */
     @FXML
-    private void onVoucherDesign() {
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/voucher-design-view.fxml", context);
-            Parent root = loader.load();
-            VoucherDesignController design = loader.getController();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-            Stage stage = new Stage();
-            stage.initOwner(window());
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle(Messages.get("window.design") + " - " + NetPilotApp.NAME);
-            stage.setScene(scene);
-            design.prepare(currentAppSettings(), List.copyOf(profileBox.getItems()));
-            stage.showAndWait();
-            design.result().ifPresent(template -> {
-                appSettings = appSettings.withVoucherTemplate(template);
-                saveSettings();
-                setStatus(Messages.get("main.status.designSaved"), false);
-            });
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open Voucher Design", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
-    }
-
-    /** Language (used from the next start) and theme (used at once). */
-    @FXML
-    private void onPreferences() {
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/preferences-view.fxml", context);
-            Parent root = loader.load();
-            PreferencesController preferences = loader.getController();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-            Stage stage = new Stage();
-            stage.initOwner(window());
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.setResizable(false);
-            stage.setTitle(Messages.get("window.preferences") + " - " + NetPilotApp.NAME);
-            stage.setScene(scene);
-            preferences.prepare(appSettings.ui());
-            stage.setOnCloseRequest(e -> Styling.setTheme(appSettings.ui().theme()));
-            stage.showAndWait();
-            preferences.result().ifPresent(ui -> {
-                boolean languageChanged = ui.language() != appSettings.ui().language();
-                appSettings = appSettings.withUi(ui);
-                saveSettings();
-                Styling.setTheme(ui.theme());
-                if (languageChanged) {
-                    Dialogs.info(window(), Messages.get("prefs.restartTitle"), Messages.get("prefs.restartBody"));
-                }
-            });
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open Preferences", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
-    }
-
-    @FXML
-    private void onShowHistory() {
-        try {
-            FXMLLoader loader = NetPilotApp.loader("view/history-view.fxml", context);
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-            Styling.apply(scene);
-
-            Stage stage = new Stage();
-            stage.initOwner(window());
-            stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle(Messages.get("window.history") + " - " + NetPilotApp.NAME);
-            stage.setScene(scene);
-            stage.showAndWait();
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.ERROR, "Cannot open history", e);
-            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
-        }
-    }
-
-    @FXML
-    private void onOpenOutputFolder() {
-        Path folder = Path.of(outputDirField.getText());
-        if (!Files.isDirectory(folder)) {
-            Dialogs.info(window(), Messages.get("main.noExports.title"), Messages.get("main.noExports.body", folder));
-            return;
-        }
-        open(folder);
-    }
-
-    @FXML
-    private void onBrowseOutputFolder() {
-        DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle(Messages.get("main.chooseFolder"));
-        Path current = Path.of(outputDirField.getText());
-        if (Files.isDirectory(current)) {
-            chooser.setInitialDirectory(current.toFile());
-        }
-        File chosen = chooser.showDialog(window());
-        if (chosen != null) {
-            outputDirField.setText(chosen.getAbsolutePath());
-            saveSettings();
-        }
-    }
-
-    @FXML
-    private void onResetSettings() {
-        if (Dialogs.confirm(window(), Messages.get("main.reset.title"), Messages.get("main.reset.body"))) {
-            appSettings = context.settingsRepository().defaults();
-            showSettings(appSettings);
-            saveSettings();
-            setStatus(Messages.get("main.status.reset"), false);
-        }
-    }
-
-    @FXML
-    private void onOpenRepository() {
-        context.hostServices().showDocument(NetPilotApp.REPOSITORY_URL);
-    }
-
-    @FXML
-    private void onAbout() {
-        Dialogs.info(window(), NetPilotApp.NAME + " " + NetPilotApp.VERSION,
-                Messages.get("about.body") + "\n\n" + NetPilotApp.REPOSITORY_URL);
-    }
-
-    @FXML
-    private void onExit() {
-        ((Stage) window()).close();
-    }
-
-    // ------------------------------------------------------------------ settings <-> form
-
-    public void saveSettings() {
-        try {
-            appSettings = currentAppSettings();
-            context.settingsRepository().save(appSettings);
-        } catch (IOException | RuntimeException e) {
-            LOG.log(System.Logger.Level.WARNING, "Cannot save settings", e);
-        }
-    }
-
-    private AppSettings currentAppSettings() {
-        return new AppSettings(
-                readGenerationSettings(),
-                loginUrlField.getText(),
-                perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()),
-                appSettings.router(), // edited only through the router connection dialog
-                appSettings.voucherTemplate(), // edited only through the Voucher Design window
-                appSettings.ui()); // edited only through the Preferences window
-    }
-
-    private GenerationSettings readGenerationSettings() {
-        commitSpinners();
-        return new GenerationSettings(
-                countSpinner.getValue(),
-                usernameModeBox.getValue(),
-                usernameLengthSpinner.getValue(),
-                usernameStartSpinner.getValue(),
-                passwordModeBox.getValue(),
-                passwordLengthSpinner.getValue(),
-                passwordStartSpinner.getValue(),
-                prefixField.getText(),
-                comboText(profileBox),
-                comboText(serverBox),
-                comboText(uptimeBox));
-    }
-
-    private void showSettings(AppSettings s) {
-        loadingForm = true;
-        try {
-            GenerationSettings g = s.generation();
-            countSpinner.getValueFactory().setValue(Math.clamp(g.count(), 1, GenerationSettings.MAX_COUNT));
-            usernameModeBox.setValue(g.usernameMode());
-            usernameLengthSpinner.getValueFactory().setValue(clampLength(g.usernameLength()));
-            usernameStartSpinner.getValueFactory().setValue(Math.max(0, g.usernameStart()));
-            passwordModeBox.setValue(g.passwordMode());
-            passwordLengthSpinner.getValueFactory().setValue(clampLength(g.passwordLength()));
-            passwordStartSpinner.getValueFactory().setValue(Math.max(0, g.passwordStart()));
-            prefixField.setText(g.passwordPrefix());
-            profileBox.setValue(g.profile());
-            serverBox.setValue(g.server());
-            uptimeBox.setValue(g.limitUptime());
-            loginUrlField.setText(s.loginUrl());
-            perRowSpinner.getValueFactory().setValue(s.vouchersPerRow());
-            outputDirField.setText(s.outputDirectory().toString());
-        } finally {
-            loadingForm = false;
-        }
-        users.clear();
-    }
-
-    // ------------------------------------------------------------------ UI wiring
-
-    private void setUpTable() {
-        usersTable.setItems(users);
-        indexColumn.setCellFactory(column -> new javafx.scene.control.TableCell<>() {
-
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || getTableRow() == null || getTableRow().getItem() == null
-                        ? null
-                        : String.valueOf(getIndex() + 1));
+    private void onToggleTheme() {
+        Theme next = switch (Styling.theme()) {
+            case SYSTEM, LIGHT -> Theme.SEMI_DARK;
+            case SEMI_DARK -> Theme.DARK;
+            case DARK -> Theme.LIGHT;
+        };
+        workspace.updateSettings(s -> s.withUi(new org.netpilot.model.UiPreferences(s.ui().language(), next,
+                s.ui().accent())));
+        Styling.setTheme(next);
+        pages.values().forEach(p -> {
+            if (p.controller() instanceof SettingsController settings) {
+                settings.shown();
             }
         });
-        indexColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(0));
-        usernameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().username()));
-        passwordColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().password()));
-        profileColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().profile()));
-        serverColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().server()));
-        uptimeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                c.getValue().limitUptime().isBlank() ? Messages.get("common.unlimited") : c.getValue().limitUptime()));
-        usernameColumn.getStyleClass().add("monospace");
-        passwordColumn.getStyleClass().add("monospace");
-    }
-
-    /** Only enable inputs that the selected modes actually use. */
-    private void bindFieldStates() {
-        usernameModeBox.valueProperty().addListener((obs, old, mode) -> {
-            usernameLengthSpinner.setDisable(mode == null || !mode.usesLength());
-            usernameStartSpinner.setDisable(mode == null || !mode.usesSequence());
-        });
-        passwordModeBox.valueProperty().addListener((obs, old, mode) -> {
-            passwordLengthSpinner.setDisable(mode == null || !mode.usesLength());
-            passwordStartSpinner.setDisable(mode == null || !mode.usesSequence());
-            prefixField.setDisable(mode == null || !mode.usesPrefix());
-            boolean weak = mode != null && mode.isWeak();
-            weakPasswordWarning.setVisible(weak);
-            weakPasswordWarning.setManaged(weak);
-        });
-    }
-
-    /** A preview must always match what gets exported, so any change invalidates it. */
-    private void clearPreviewWhenSettingsChange() {
-        List<ObservableValue<?>> inputs = List.of(
-                countSpinner.valueProperty(), usernameModeBox.valueProperty(),
-                usernameLengthSpinner.valueProperty(), usernameStartSpinner.valueProperty(),
-                passwordModeBox.valueProperty(), passwordLengthSpinner.valueProperty(),
-                passwordStartSpinner.valueProperty(), prefixField.textProperty(),
-                profileBox.valueProperty(), profileBox.getEditor().textProperty(),
-                serverBox.valueProperty(), serverBox.getEditor().textProperty(),
-                uptimeBox.valueProperty(), uptimeBox.getEditor().textProperty());
-        for (ObservableValue<?> input : inputs) {
-            input.addListener((obs, old, value) -> {
-                if (!loadingForm && !users.isEmpty()) {
-                    users.clear();
-                    setStatus(Messages.get("main.status.settingsChanged"), false);
-                }
-            });
-        }
-        users.addListener((javafx.collections.ListChangeListener<HotspotUser>) change -> updateCountLabel());
-    }
-
-    private void updateCountLabel() {
-        usersCountLabel.setText(users.isEmpty()
-                ? Messages.get("main.count.none")
-                : Messages.get("main.count.users", users.size()));
-    }
-
-    private void showExportDone(ExportResult result) {
-        ButtonType openPdf = new ButtonType(Messages.get("export.openPdf"), ButtonBar.ButtonData.YES);
-        ButtonType openFolder = new ButtonType(Messages.get("main.openFolder"), ButtonBar.ButtonData.OTHER);
-        ButtonType close = new ButtonType(Messages.get("button.close"), ButtonBar.ButtonData.CANCEL_CLOSE);
-        Alert alert = Dialogs.alert(Alert.AlertType.INFORMATION, window(), Messages.get("export.done.title"),
-                Messages.get("export.done.body", result.userCount(), result.folder().toAbsolutePath(),
-                        result.rscFile().getFileName()));
-        alert.getButtonTypes().setAll(openPdf, openFolder, close);
-        Optional<ButtonType> answer = alert.showAndWait();
-        if (answer.isPresent() && answer.get() == openPdf) {
-            open(result.pdfFile());
-        } else if (answer.isPresent() && answer.get() == openFolder) {
-            open(result.folder());
-        }
-    }
-
-    private void open(Path path) {
-        context.hostServices().showDocument(path.toAbsolutePath().toUri().toString());
-    }
-
-    private void setBusy(boolean value, String message) {
-        busy.set(value);
-        progressIndicator.setVisible(value);
-        progressIndicator.setManaged(value);
-        if (message != null) {
-            setStatus(message, false);
-        }
-    }
-
-    private void setStatus(String message, boolean error) {
-        statusLabel.setText(message);
-        statusLabel.getStyleClass().remove("status-error");
-        if (error) {
-            statusLabel.getStyleClass().add("status-error");
-        }
     }
 
     private Window window() {
-        return usersTable.getScene().getWindow();
+        return root.getScene() == null ? null : root.getScene().getWindow();
     }
-
-    // ------------------------------------------------------------------ helpers
-
-    private static void setUpSpinner(Spinner<Integer> spinner, int min, int max) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(min,
-                max, min);
-        spinner.setValueFactory(factory);
-        // digits only, and commit typed text when focus leaves (JavaFX does not by default)
-        spinner.getEditor().setTextFormatter(
-                new TextFormatter<>(change -> change.getControlNewText().matches("\\d{0,10}") ? change : null));
-        spinner.focusedProperty().addListener((obs, was, focused) -> {
-            if (!focused) {
-                commit(spinner);
-            }
-        });
-    }
-
-    private void commitSpinners() {
-        for (Spinner<Integer> s : List.of(countSpinner, usernameLengthSpinner, usernameStartSpinner,
-                passwordLengthSpinner, passwordStartSpinner, perRowSpinner)) {
-            commit(s);
-        }
-    }
-
-    private static void commit(Spinner<Integer> spinner) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory f = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner
-                .getValueFactory();
-        String text = spinner.getEditor().getText();
-        int value;
-        try {
-            value = Math.clamp(Long.parseLong(text), f.getMin(), f.getMax());
-        } catch (NumberFormatException e) {
-            value = f.getValue();
-        }
-        f.setValue(value);
-        spinner.getEditor().setText(String.valueOf(value));
-    }
-
-    /** Editable combo boxes only update their value on Enter; read the editor text instead. */
-    private static String comboText(ComboBox<String> box) {
-        String text = box.isEditable() ? box.getEditor().getText() : box.getValue();
-        return text == null ? "" : text.strip();
-    }
-
-    private static int clampLength(int length) {
-        return Math.clamp(length, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
-    }
-
 }

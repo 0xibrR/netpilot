@@ -21,7 +21,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.Money;
@@ -39,7 +39,7 @@ import org.netpilot.service.router.RouterClient;
  * <p>Each refresh reads the router's users once, records newly used cards in the usage history,
  * and builds the report. Changing the period only rebuilds the report locally.
  */
-public class ReportsController {
+public class ReportsController implements Page {
 
     private static final System.Logger LOG = System.getLogger(ReportsController.class.getName());
     private static final DateTimeFormatter BATCH_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -107,8 +107,29 @@ public class ReportsController {
     @FXML
     private Label warningsLabel;
 
+    private Workspace workspace;
+
     public ReportsController(AppContext context) {
         this.context = context;
+    }
+
+    @Override
+    public void attach(Workspace shared) {
+        this.workspace = shared;
+    }
+
+    @Override
+    public void routerConnected(RouterClient routerClient, String routerName) {
+        users = List.of();
+        report = null;
+        // prices are read on each rebuild, so changes in Voucher Design apply after Refresh
+        start(routerClient, routerName, () -> workspace.settings().voucherTemplate());
+    }
+
+    @Override
+    public void routerDisconnected() {
+        client = null;
+        exportButton.setDisable(true);
     }
 
     @FXML
@@ -126,7 +147,6 @@ public class ReportsController {
     public void start(RouterClient routerClient, String routerName, Supplier<VoucherTemplate> voucherTemplate) {
         this.client = routerClient;
         this.template = voucherTemplate;
-        stage().setTitle(Messages.get("window.reports", routerName));
         onRefresh();
     }
 
@@ -271,7 +291,7 @@ public class ReportsController {
     private record Snapshot(List<RouterUser> users, List<UsageRecord> history) {
     }
 
-    private Stage stage() {
-        return (Stage) periodBox.getScene().getWindow();
+    private Window stage() {
+        return periodBox.getScene().getWindow();
     }
 }

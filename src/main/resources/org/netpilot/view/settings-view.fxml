@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Settings page. Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.SettingsController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="page, form-scroll">
+    <VBox spacing="14" maxWidth="640">
+        <padding>
+            <Insets top="16" right="20" bottom="16" left="20"/>
+        </padding>
+        <Label text="%nav.SETTINGS" styleClass="page-title"/>
+
+        <VBox styleClass="card" spacing="10">
+            <Label text="%settings.appearance" styleClass="card-title"/>
+            <GridPane hgap="12" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="130"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                </columnConstraints>
+                <Label text="%prefs.language" GridPane.rowIndex="0"/>
+                <ComboBox fx:id="languageBox" maxWidth="260" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label fx:id="restartNote" text="%prefs.restartNote" styleClass="warning" wrapText="true"
+                       GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+                <Label text="%prefs.theme" GridPane.rowIndex="2"/>
+                <ComboBox fx:id="themeBox" maxWidth="260" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                <Label text="%settings.accent" GridPane.rowIndex="3"/>
+                <HBox fx:id="accentBox" spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+            </GridPane>
+            <Label text="%settings.appliedAtOnce" styleClass="muted" wrapText="true"/>
+        </VBox>
+
+        <VBox styleClass="card" spacing="10">
+            <Label text="%menu.help.about" styleClass="card-title"/>
+            <Label fx:id="aboutLabel" wrapText="true"/>
+            <HBox spacing="8">
+                <Button text="%menu.help.github" onAction="#onOpenRepository"/>
+            </HBox>
+        </VBox>
+    </VBox>
+</ScrollPane>

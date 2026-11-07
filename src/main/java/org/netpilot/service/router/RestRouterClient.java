@@ -22,6 +22,7 @@ import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
+import org.netpilot.model.RouterResource;
 import org.netpilot.model.RouterUser;
 import org.netpilot.service.router.RouterException.Kind;
 import tools.jackson.databind.JsonNode;
@@ -69,6 +70,13 @@ final class RestRouterClient implements RouterClient {
                 text(resource, "board-name"),
                 text(resource, "version"),
                 text(resource, "uptime"));
+    }
+
+    @Override
+    public RouterResource resource() throws RouterException {
+        JsonNode resource = get("/system/resource", "cpu-load,free-memory,total-memory,uptime");
+        return new RouterResource((int) number(resource, "cpu-load"), number(resource, "free-memory"),
+                number(resource, "total-memory"), text(resource, "uptime"));
     }
 
     @Override

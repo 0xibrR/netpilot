@@ -1,20 +1,23 @@
 package org.netpilot.controller;
+
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
+import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -22,10 +25,13 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableRow;
+import javafx.scene.control.TreeTableView;
+import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
@@ -33,13 +39,15 @@ import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.UserFilter;
+import org.netpilot.service.ReportService;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
 import org.netpilot.service.router.RouterUserActions.BulkResult;
 
 /**
- * "Router Users" window: lists the router's hotspot users with live online state, filters them,
- * and runs bulk actions (enable, disable, disconnect, delete, reprint vouchers).
+ * Hotspot users tab: lists the router's hotspot users grouped by NetPilot batch (like WinBox
+ * groups by comment), with live online state, filters, and bulk actions (enable, disable,
+ * disconnect, delete, reprint vouchers).
  *
  * <p>Everything is loaded once per refresh and filtered locally, so typing in the search box
  * never sends requests to the router.
@@ -51,11 +59,23 @@ public class RouterUsersController {
     private static final String ALL_PROFILES = Messages.get("users.allProfiles");
     private static final String BATCH_PREFIX = "NetPilot ";
 
-    private final AppContext context;
-    private final ObservableList<RouterUser> users = FXCollections.observableArrayList();
-    private final FilteredList<RouterUser> filtered = new FilteredList<>(users, u -> true);
-    private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    /** One line of the tree: a batch header or a user. */
+    sealed interface Row permits GroupRow, UserRow {
+    }
 
+    /** Header of a batch; {@code batch} is empty for users added by hand. */
+    record GroupRow(String batch, int count) implements Row {
+    }
+
+    record UserRow(RouterUser user) implements Row {
+    }
+
+    private final AppContext context;
+    private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    private final TreeItem<Row> root = new TreeItem<>();
+
+    private List<RouterUser> users = List.of();
+    private List<RouterUser> visible = List.of();
     private RouterClient client;
     private Consumer<List<HotspotUser>> printer;
     private Map<String, List<ActiveSession>> sessionsByUser = Map.of();
@@ -73,25 +93,25 @@ public class RouterUsersController {
     @FXML
     private Button refreshButton;
     @FXML
-    private TableView<RouterUser> usersTable;
+    private TreeTableView<Row> usersTable;
     @FXML
-    private TableColumn<RouterUser, String> onlineColumn;
+    private TreeTableColumn<Row, String> nameColumn;
     @FXML
-    private TableColumn<RouterUser, String> nameColumn;
+    private TreeTableColumn<Row, String> onlineColumn;
     @FXML
-    private TableColumn<RouterUser, String> profileColumn;
+    private TreeTableColumn<Row, String> profileColumn;
     @FXML
-    private TableColumn<RouterUser, String> serverColumn;
+    private TreeTableColumn<Row, String> serverColumn;
     @FXML
-    private TableColumn<RouterUser, java.time.Duration> usedColumn;
+    private TreeTableColumn<Row, Duration> usedColumn;
     @FXML
-    private TableColumn<RouterUser, String> limitColumn;
+    private TreeTableColumn<Row, String> limitColumn;
     @FXML
-    private TableColumn<RouterUser, Long> dataColumn;
+    private TreeTableColumn<Row, Long> dataColumn;
     @FXML
-    private TableColumn<RouterUser, String> stateColumn;
+    private TreeTableColumn<Row, String> stateColumn;
     @FXML
-    private TableColumn<RouterUser, String> commentColumn;
+    private TreeTableColumn<Row, String> commentColumn;
     @FXML
     private Label placeholderLabel;
     @FXML
@@ -132,24 +152,41 @@ public class RouterUsersController {
         }
         refreshButton.disableProperty().bind(busy);
         usersTable.getSelectionModel().getSelectedItems()
-                .addListener((javafx.collections.ListChangeListener<RouterUser>) c -> updateSummary());
+                .addListener((ListChangeListener<TreeItem<Row>>) c -> updateSummary());
+        enableButton.setGraphic(Icons.of(Icons.CHECK));
+        disableButton.setGraphic(Icons.of(Icons.PAUSE));
+        disconnectButton.setGraphic(Icons.of(Icons.UNPLUG));
+        deleteButton.setGraphic(Icons.of(Icons.CROSS));
+        printButton.setGraphic(Icons.of(Icons.PRINTER));
+        refreshButton.setGraphic(Icons.of(Icons.REFRESH));
     }
 
     /**
-     * @param printer prints vouchers for the given users (the main window's export)
+     * @param printer prints vouchers for the given users (the Create cards page export)
      */
     public void start(RouterClient routerClient, String routerName, Consumer<List<HotspotUser>> voucherPrinter) {
         this.client = routerClient;
         this.printer = voucherPrinter;
-        stage().setTitle(Messages.get("window.users", routerName));
         onRefresh();
+    }
+
+    /** Forgets the router's users after a disconnect. */
+    void stop() {
+        client = null;
+        sessionsByUser = Map.of();
+        users = List.of();
+        applyFilter();
     }
 
     // ------------------------------------------------------------------ actions
 
     @FXML
     private void onRefresh() {
-        run(Messages.get("users.loading"), () -> new Snapshot(client.hotspotUsers(), client.activeSessions()),
+        RouterClient target = client;
+        if (target == null) {
+            return;
+        }
+        run(Messages.get("users.loading"), () -> new Snapshot(target.hotspotUsers(), target.activeSessions()),
                 this::show);
     }
 
@@ -229,15 +266,14 @@ public class RouterUsersController {
 
     private void show(Snapshot snapshot) {
         sessionsByUser = snapshot.sessions().stream().collect(Collectors.groupingBy(ActiveSession::user));
-        users.setAll(snapshot.users());
-        keepChoices(batchBox, ALL_BATCHES, snapshot.users().stream()
+        users = List.copyOf(snapshot.users());
+        keepChoices(batchBox, ALL_BATCHES, users.stream()
                 .map(RouterUser::comment)
                 .filter(c -> c.startsWith(BATCH_PREFIX))
                 .distinct()
                 .sorted(Comparator.reverseOrder()) // newest batch first
                 .toList());
-        keepChoices(profileBox, ALL_PROFILES,
-                snapshot.users().stream().map(RouterUser::profile).distinct().sorted().toList());
+        keepChoices(profileBox, ALL_PROFILES, users.stream().map(RouterUser::profile).distinct().sorted().toList());
         placeholderLabel.setText(Messages.get("users.noMatch"));
         applyFilter();
     }
@@ -255,21 +291,64 @@ public class RouterUsersController {
         String profile = ALL_PROFILES.equals(profileBox.getValue()) ? "" : profileBox.getValue();
         UserFilter filter = new UserFilter(searchField.getText(), batch, profile, statusBox.getValue());
         Set<String> online = sessionsByUser.keySet();
-        filtered.setPredicate(user -> filter.matches(user, online));
+        visible = users.stream().filter(user -> filter.matches(user, online)).toList();
+        rebuildTree();
         updateSummary();
+    }
+
+    /** Newest NetPilot batch first; users added by hand (or by other tools) last. */
+    private void rebuildTree() {
+        Map<String, List<RouterUser>> groups = new LinkedHashMap<>();
+        visible.stream()
+                .map(RouterUsersController::batchOf)
+                .distinct()
+                .sorted(Comparator.comparing(String::isEmpty).thenComparing(Comparator.reverseOrder()))
+                .forEach(batch -> groups.put(batch, new ArrayList<>()));
+        visible.forEach(user -> groups.get(batchOf(user)).add(user));
+
+        List<TreeItem<Row>> items = new ArrayList<>();
+        groups.forEach((batch, members) -> {
+            TreeItem<Row> group = new TreeItem<>(new GroupRow(batch, members.size()));
+            group.setExpanded(true);
+            members.forEach(user -> group.getChildren().add(new TreeItem<>(new UserRow(user))));
+            items.add(group);
+        });
+        usersTable.getSelectionModel().clearSelection();
+        root.getChildren().setAll(items);
+        usersTable.sort();
+    }
+
+    private static String batchOf(RouterUser user) {
+        return user.comment().startsWith(BATCH_PREFIX) ? user.comment() : "";
     }
 
     private void updateSummary() {
         long online = users.stream().filter(u -> sessionsByUser.containsKey(u.name())).count();
         long expired = users.stream().filter(RouterUser::expired).count();
-        int selectedCount = usersTable.getSelectionModel().getSelectedItems().size();
-        String summary = Messages.get("users.summary", users.size(), online, expired, filtered.size());
+        int selectedCount = selected().size();
+        String summary = Messages.get("users.summary", users.size(), online, expired, visible.size());
         summaryLabel
                 .setText(selectedCount > 0 ? summary + " · " + Messages.get("users.selected", selectedCount) : summary);
     }
 
+    /** Selected users; a selected batch header stands for all its users. */
     private List<RouterUser> selected() {
-        return List.copyOf(usersTable.getSelectionModel().getSelectedItems());
+        Set<RouterUser> result = new LinkedHashSet<>();
+        for (TreeItem<Row> item : usersTable.getSelectionModel().getSelectedItems()) {
+            if (item == null) {
+                continue;
+            }
+            if (item.getValue() instanceof UserRow(RouterUser user)) {
+                result.add(user);
+            } else {
+                item.getChildren().forEach(child -> {
+                    if (child.getValue() instanceof UserRow(RouterUser user)) {
+                        result.add(user);
+                    }
+                });
+            }
+        }
+        return List.copyOf(result);
     }
 
     // ------------------------------------------------------------------ background work
@@ -324,30 +403,52 @@ public class RouterUsersController {
     // ------------------------------------------------------------------ table
 
     private void setUpTable() {
-        SortedList<RouterUser> sorted = new SortedList<>(filtered);
-        sorted.comparatorProperty().bind(usersTable.comparatorProperty());
-        usersTable.setItems(sorted);
+        usersTable.setRoot(root);
         usersTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        usersTable.setRowFactory(table -> new TreeTableRow<>() {
 
+            @Override
+            protected void updateItem(Row item, boolean empty) {
+                super.updateItem(item, empty);
+                getStyleClass().remove("group-row");
+                if (!empty && item instanceof GroupRow) {
+                    getStyleClass().add("group-row");
+                }
+            }
+        });
+
+        nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(switch (c.getValue().getValue()) {
+            case GroupRow g -> ReportService.batchLabel(g.batch()) + "  ·  " + g.count();
+            case UserRow u -> u.user().name();
+        }));
         onlineColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                sessionsByUser.containsKey(c.getValue().name()) ? "●" : ""));
+                user(c).filter(u -> sessionsByUser.containsKey(u.name())).map(u -> "●").orElse("")));
         onlineColumn.getStyleClass().add("online-dot");
-        nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().name()));
-        nameColumn.getStyleClass().add("monospace");
-        profileColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().profile()));
-        serverColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().server()));
+        profileColumn.setCellValueFactory(c -> text(c, RouterUser::profile));
+        serverColumn.setCellValueFactory(c -> text(c, RouterUser::server));
 
-        usedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().uptime()));
+        usedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::uptime).orElse(null)));
         usedColumn.setCellFactory(column -> new FormattedCell<>(RouterDuration::format));
 
-        limitColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                c.getValue().limit().map(RouterDuration::format).orElse("∞")));
+        limitColumn.setCellValueFactory(c -> text(c, u -> u.limit().map(RouterDuration::format).orElse("∞")));
 
-        dataColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().totalBytes()));
+        dataColumn.setCellValueFactory(
+                c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::totalBytes).orElse(null)));
         dataColumn.setCellFactory(column -> new FormattedCell<>(RouterUsersController::formatBytes));
 
-        stateColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(state(c.getValue())));
-        commentColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().comment()));
+        stateColumn.setCellValueFactory(c -> text(c, RouterUsersController::state));
+        commentColumn.setCellValueFactory(c -> text(c, RouterUser::comment));
+    }
+
+    private static java.util.Optional<RouterUser> user(TreeTableColumn.CellDataFeatures<Row, ?> cell) {
+        return cell.getValue().getValue() instanceof UserRow(RouterUser user)
+                ? java.util.Optional.of(user)
+                : java.util.Optional.empty();
+    }
+
+    private static ReadOnlyStringWrapper text(TreeTableColumn.CellDataFeatures<Row, String> cell,
+            Function<RouterUser, String> value) {
+        return new ReadOnlyStringWrapper(user(cell).map(value).orElse(""));
     }
 
     private static String state(RouterUser user) {
@@ -379,11 +480,11 @@ public class RouterUsersController {
     }
 
     /** Shows a sortable value (duration, bytes) as formatted text. */
-    private static final class FormattedCell<T> extends javafx.scene.control.TableCell<RouterUser, T> {
+    private static final class FormattedCell<T> extends TreeTableCell<Row, T> {
 
-        private final java.util.function.Function<T, String> format;
+        private final Function<T, String> format;
 
-        FormattedCell(java.util.function.Function<T, String> format) {
+        FormattedCell(Function<T, String> format) {
             this.format = format;
         }
 
@@ -394,7 +495,7 @@ public class RouterUsersController {
         }
     }
 
-    private Stage stage() {
-        return (Stage) usersTable.getScene().getWindow();
+    private Window stage() {
+        return usersTable.getScene().getWindow();
     }
 }

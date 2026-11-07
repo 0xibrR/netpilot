@@ -1,8 +1,14 @@
 /* NetPilot theme */
 
 .root {
-    -np-accent: #1f5fa8;
-    -np-accent-hover: #184c88;
+    -np-accent: #2f7bd8;
+    -np-accent-hover: derive(-np-accent, -18%);
+    /* side menu, top bar and status bar (light theme) */
+    -np-chrome-bg: #e8ecf1;
+    -np-chrome-bg-2: #dde2e9;
+    -np-chrome-border: #cfd6df;
+    -np-chrome-text: #2a3240;
+    -np-chrome-muted: #66717f;
     -np-bg: #f3f5f8;
     -np-card: #ffffff;
     -np-border: #dde2ea;
@@ -225,4 +231,227 @@
 
 .chart-bar {
     -fx-bar-fill: -np-accent;
+}
+
+/* ================================================================ WinBox-style main window */
+
+/* Semi-dark and dark themes: dark side menu, top bar and status bar (set by Styling) */
+.root.chrome-dark {
+    -np-chrome-bg: #1f232a;
+    -np-chrome-bg-2: #262b33;
+    -np-chrome-border: #3a414c;
+    -np-chrome-text: #d6dbe3;
+    -np-chrome-muted: #9aa5b4;
+}
+
+.icon {
+    -fx-fill: transparent;
+    -fx-stroke: -np-chrome-text;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.top-bar {
+    -fx-background-color: -np-chrome-bg-2;
+    -fx-border-color: transparent transparent -np-chrome-border transparent;
+}
+
+.top-bar .label, .top-bar .separator {
+    -fx-text-fill: -np-chrome-text;
+}
+
+.brand {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.router-chip {
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+    -fx-padding: 3 10 3 10;
+    -fx-background-color: -np-chrome-bg;
+    -fx-background-radius: 4;
+    -fx-border-color: -np-chrome-border;
+    -fx-border-radius: 4;
+}
+
+.top-bar .router-chip.router-connected {
+    -fx-text-fill: #2ea043;
+}
+
+.top-bar .router-chip.router-disconnected {
+    -fx-text-fill: -np-chrome-muted;
+}
+
+.chrome-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -np-chrome-text;
+    -fx-padding: 4 8 4 8;
+}
+
+.chrome-button:hover {
+    -fx-background-color: -np-chrome-bg;
+}
+
+.chrome-button > .label {
+    -fx-text-fill: -np-chrome-text;
+}
+
+.side-menu {
+    -fx-background-color: -np-chrome-bg;
+    -fx-border-color: transparent -np-chrome-border transparent transparent;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-text-fill: -np-chrome-text;
+    -fx-alignment: center-left;
+    -fx-padding: 8 14 8 14;
+    -fx-graphic-text-gap: 10;
+}
+
+.nav-button:hover {
+    -fx-background-color: -np-chrome-bg-2;
+}
+
+.nav-button:selected {
+    -fx-background-color: -np-accent;
+    -fx-text-fill: white;
+}
+
+.nav-button:selected .icon {
+    -fx-stroke: white;
+}
+
+.status-bar {
+    -fx-background-color: -np-chrome-bg-2;
+    -fx-border-color: -np-chrome-border transparent transparent transparent;
+}
+
+.status-bar .status-item {
+    -fx-text-fill: -np-chrome-muted;
+    -fx-font-size: 12px;
+}
+
+.page-host, .page {
+    -fx-background-color: -np-bg;
+}
+
+.page-header {
+    -fx-padding: 12 16 4 16;
+}
+
+.page-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.not-connected {
+    -fx-background-color: -np-bg;
+}
+
+/* WinBox tabs and toolbars */
+.winbox-tabs > .tab-header-area {
+    -fx-padding: 6 8 0 8;
+}
+
+.winbox-tabs > .tab-header-area > .tab-header-background {
+    -fx-background-color: -np-card;
+    -fx-border-color: transparent transparent -np-border transparent;
+}
+
+.winbox-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4 4 0 0;
+    -fx-padding: 4 12 4 12;
+}
+
+.winbox-tabs .tab:selected {
+    -fx-background-color: -np-bg;
+    -fx-border-color: -np-border -np-border transparent -np-border;
+    -fx-border-radius: 4 4 0 0;
+}
+
+.winbox-tabs .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.toolbar {
+    -fx-padding: 6 10 6 10;
+    -fx-background-color: -np-card;
+    -fx-border-color: transparent transparent -np-border transparent;
+}
+
+.tool-button {
+    -fx-background-color: transparent;
+    -fx-padding: 4 10 4 10;
+}
+
+.tool-button:hover {
+    -fx-background-color: -np-bg;
+}
+
+.tool-button .icon {
+    -fx-stroke: -np-text;
+}
+
+.button.flat {
+    -fx-background-color: transparent;
+    -fx-text-fill: -np-muted;
+}
+
+.stat-online {
+    -fx-text-fill: #2ea043;
+}
+
+/* Accent colour swatches in Settings */
+.accent-swatch {
+    -fx-padding: 0;
+}
+
+.accent-swatch > .radio {
+    -fx-background-color: -swatch-color;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-padding: 11;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 6;
+}
+
+.accent-swatch:selected > .radio {
+    -fx-border-color: -np-text;
+}
+
+.accent-swatch > .radio > .dot {
+    -fx-background-color: transparent;
+}
+
+/* Hotspot users grouped by batch, like WinBox comment rows */
+.tree-table-row-cell.group-row {
+    -fx-background-color: -np-card;
+    -fx-font-weight: bold;
+}
+
+.tree-table-row-cell.group-row .text {
+    -fx-fill: -np-muted;
+}
+
+.tree-table-row-cell.group-row:selected {
+    -fx-background-color: -fx-selection-bar;
+}
+
+.table-footer {
+    -fx-background-color: -np-card;
+    -fx-border-color: -np-border transparent transparent transparent;
+}
+
+/* The default (Enter) button: outlined in the accent colour instead of the stock light blue */
+.button:default {
+    -fx-base: -np-card;
+    -fx-border-color: -np-accent;
+    -fx-border-radius: 6;
+    -fx-border-width: 1.5;
 }

@@ -1,8 +1,9 @@
 package org.netpilot.controller;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -26,10 +27,11 @@ import org.netpilot.service.router.RouterConnector;
 import org.netpilot.service.router.RouterException;
 
 /**
- * The main window's router session: opens the connection dialog, keeps the connected client,
- * loads hotspot profiles/servers in the background and shows the state in the status bar.
+ * The application's router session: opens the connection dialog, keeps the connected client,
+ * loads hotspot profiles/servers in the background and shows the state in the top bar.
  *
- * <p>Kept out of {@link MainController} so that class stays about generating and exporting.
+ * <p>Pages register a {@link Listener} to react when a router connects, its lists load, or it
+ * disconnects.
  */
 final class RouterSession {
 
@@ -39,25 +41,38 @@ final class RouterSession {
     record RouterLists(List<HotspotProfile> profiles, List<HotspotServer> servers) {
     }
 
+    /** Connection events, always delivered on the JavaFX thread. */
+    interface Listener {
+
+        default void routerConnected(RouterClient client, String name) {
+        }
+
+        default void routerListsLoaded(RouterLists lists) {
+        }
+
+        default void routerDisconnected() {
+        }
+    }
+
     private final AppContext context;
     private final Label statusLabel;
     private final Supplier<Window> owner;
-    private final Consumer<RouterLists> onListsLoaded;
-    private final Runnable onDisconnected;
+    private final List<Listener> listeners = new ArrayList<>();
     private final ReadOnlyBooleanWrapper connected = new ReadOnlyBooleanWrapper(false);
 
     private RouterClient client;
     private RouterInfo info;
     private RouterLists lists;
 
-    RouterSession(AppContext context, Label statusLabel, Supplier<Window> owner,
-            Consumer<RouterLists> onListsLoaded, Runnable onDisconnected) {
+    RouterSession(AppContext context, Label statusLabel, Supplier<Window> owner) {
         this.context = context;
         this.statusLabel = statusLabel;
         this.owner = owner;
-        this.onListsLoaded = onListsLoaded;
-        this.onDisconnected = onDisconnected;
         showState();
+    }
+
+    void addListener(Listener listener) {
+        listeners.add(listener);
     }
 
     ReadOnlyBooleanProperty connectedProperty() {
@@ -66,6 +81,15 @@ final class RouterSession {
 
     Optional<RouterClient> client() {
         return Optional.ofNullable(client);
+    }
+
+    Optional<RouterInfo> info() {
+        return Optional.ofNullable(info);
+    }
+
+    /** Profiles and servers loaded from the connected router, if loaded. */
+    Optional<RouterLists> lists() {
+        return Optional.ofNullable(lists);
     }
 
     /** e.g. {@code hEX (10.0.0.1:80)}; only valid while connected. */
@@ -141,8 +165,11 @@ final class RouterSession {
         task.setOnRunning(e -> statusLabel.setText(Messages.get("router.loadingLists")));
         task.setOnSucceeded(e -> {
             showState();
+            if (client != current) {
+                return; // disconnected or switched router meanwhile
+            }
             lists = task.getValue();
-            onListsLoaded.accept(lists);
+            List.copyOf(listeners).forEach(l -> l.routerListsLoaded(lists));
         });
         task.setOnFailed(e -> {
             showState();
@@ -156,16 +183,17 @@ final class RouterSession {
     }
 
     void disconnect() {
-        if (client != null) {
-            LOG.log(System.Logger.Level.INFO, "Disconnected from {0}", client.endpoint().address());
-            client.close();
+        if (client == null) {
+            return;
         }
+        LOG.log(System.Logger.Level.INFO, "Disconnected from {0}", client.endpoint().address());
+        client.close();
         client = null;
         info = null;
         lists = null;
         connected.set(false);
         showState();
-        onDisconnected.run();
+        List.copyOf(listeners).forEach(Listener::routerDisconnected);
     }
 
     /** Ends the session when the app closes. */
@@ -177,11 +205,15 @@ final class RouterSession {
     }
 
     private void useConnection(RouterConnector.Connection connection) {
-        close();
+        if (client != null) {
+            disconnect();
+        }
         client = connection.client();
         info = connection.info();
         connected.set(true);
         showState();
+        String name = displayName();
+        List.copyOf(listeners).forEach(l -> l.routerConnected(client, name));
         refresh();
     }
 
@@ -191,7 +223,7 @@ final class RouterSession {
             statusLabel.setText("● " + Messages.get("router.notConnected"));
             statusLabel.getStyleClass().add("router-disconnected");
         } else {
-            statusLabel.setText("● " + info.summary() + " (" + client.endpoint().address() + ")");
+            statusLabel.setText("● " + displayName());
             statusLabel.getStyleClass().add("router-connected");
         }
     }

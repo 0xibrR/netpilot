@@ -19,6 +19,31 @@ class UiPreferencesTest {
     }
 
     @Test
+    void semiDarkHasDarkChromeOnLightContent() {
+        assertFalse(Theme.SEMI_DARK.isDark(true));
+        assertTrue(Theme.SEMI_DARK.darkChrome(false));
+        assertTrue(Theme.DARK.darkChrome(false));
+        assertFalse(Theme.LIGHT.darkChrome(true));
+        assertTrue(Theme.SYSTEM.darkChrome(true));
+    }
+
+    @Test
+    void accentMustBeAHexColour() {
+        assertEquals("#7367F0", new UiPreferences(UiLanguage.ENGLISH, Theme.LIGHT, " #7367f0 ").accent());
+        assertEquals(UiPreferences.DEFAULT_ACCENT, new UiPreferences(UiLanguage.ENGLISH, Theme.LIGHT, "red").accent());
+        assertEquals(UiPreferences.DEFAULT_ACCENT, new UiPreferences(UiLanguage.ENGLISH, Theme.LIGHT).accent());
+        assertTrue(UiPreferences.ACCENTS.contains(UiPreferences.DEFAULT_ACCENT));
+    }
+
+    @Test
+    void routerResourceIsClamped() {
+        RouterResource resource = new RouterResource(140, 10, 5, null);
+        assertEquals(100, resource.cpuLoad());
+        assertEquals(0, resource.usedMemory());
+        assertEquals("", resource.uptime());
+    }
+
+    @Test
     void arabicSystemsStartInArabic() {
         assertEquals(UiLanguage.ARABIC, UiLanguage.forLocale(Locale.of("ar", "EG")));
         assertEquals(UiLanguage.ENGLISH, UiLanguage.forLocale(Locale.GERMANY));

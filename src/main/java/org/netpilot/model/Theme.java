@@ -9,6 +9,7 @@ public enum Theme {
 
     SYSTEM,
     LIGHT,
+    SEMI_DARK,
     DARK;
 
     /**
@@ -18,9 +19,14 @@ public enum Theme {
     public boolean isDark(boolean systemDark) {
         return switch (this) {
             case SYSTEM -> systemDark;
-            case LIGHT -> false;
+            case LIGHT, SEMI_DARK -> false;
             case DARK -> true;
         };
+    }
+
+    /** Light content with the dark WinBox-style side menu, top bar and status bar. */
+    public boolean darkChrome(boolean systemDark) {
+        return this == SEMI_DARK || isDark(systemDark);
     }
 
     @Override

@@ -11,15 +11,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.HistoryRecord;
 
 /**
- * Export history window.
+ * "Export history" page.
  */
-public class HistoryController {
+public class HistoryController implements Page {
 
     private static final System.Logger LOG = System.getLogger(HistoryController.class.getName());
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd  HH:mm");
@@ -90,9 +90,15 @@ public class HistoryController {
         }
     }
 
-    @FXML
-    private void onClose() {
-        stage().close();
+    @Override
+    public void attach(Workspace workspace) {
+        // the history repository comes from the context; nothing else is shared
+    }
+
+    /** Exports made since the page was last shown appear at once. */
+    @Override
+    public void shown() {
+        reload();
     }
 
     private void reload() {
@@ -117,7 +123,7 @@ public class HistoryController {
         context.hostServices().showDocument(record.folder().toUri().toString());
     }
 
-    private Stage stage() {
-        return (Stage) historyTable.getScene().getWindow();
+    private Window stage() {
+        return historyTable.getScene().getWindow();
     }
 }

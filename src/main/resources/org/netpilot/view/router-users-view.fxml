@@ -4,70 +4,67 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!-- Hotspot users tab: WinBox-style toolbar, filters, users grouped by batch.
+     Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.RouterUsersController"
-            styleClass="app-root" prefWidth="1060" prefHeight="640">
+            styleClass="page">
 
-    <!-- ===== Top: filters ===== -->
     <top>
-        <VBox spacing="10">
+        <VBox>
+            <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="4">
+                <Button fx:id="enableButton" text="%users.enable" onAction="#onEnable" styleClass="tool-button"/>
+                <Button fx:id="disableButton" text="%users.disable" onAction="#onDisable" styleClass="tool-button"/>
+                <Button fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect" styleClass="tool-button"/>
+                <Button fx:id="deleteButton" text="%users.delete" onAction="#onDelete" styleClass="tool-button, danger"/>
+                <Button fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="tool-button"/>
+                <Separator orientation="VERTICAL"/>
+                <Button text="%users.selectAll" onAction="#onSelectAll" styleClass="tool-button"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
+                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="tool-button"/>
+            </HBox>
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <TextField fx:id="searchField" promptText="%users.search" prefColumnCount="18"/>
                 <ComboBox fx:id="batchBox" prefWidth="270"/>
                 <ComboBox fx:id="profileBox" prefWidth="130"/>
                 <ComboBox fx:id="statusBox" prefWidth="180"/>
-                <Button text="%users.clearFilters" onAction="#onClearFilters"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+                <Button text="%users.clearFilters" onAction="#onClearFilters" styleClass="flat"/>
+                <padding>
+                    <Insets top="8" right="10" bottom="8" left="10"/>
+                </padding>
             </HBox>
-            <padding>
-                <Insets top="12" right="12" bottom="0" left="12"/>
-            </padding>
         </VBox>
     </top>
 
-    <!-- ===== Center: users ===== -->
     <center>
-        <TableView fx:id="usersTable">
+        <TreeTableView fx:id="usersTable" showRoot="false">
             <columnResizePolicy>
-                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                <TreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
             </columnResizePolicy>
             <columns>
-                <TableColumn fx:id="onlineColumn" text="●" prefWidth="34" maxWidth="40" sortable="true"/>
-                <TableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="140"/>
-                <TableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
-                <TableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
-                <TableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="80"/>
-                <TableColumn fx:id="limitColumn" text="%users.column.limit" prefWidth="70"/>
-                <TableColumn fx:id="dataColumn" text="%users.column.data" prefWidth="85"/>
-                <TableColumn fx:id="stateColumn" text="%users.column.state" prefWidth="80"/>
-                <TableColumn fx:id="commentColumn" text="%users.column.comment" prefWidth="260"/>
+                <TreeTableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="200"/>
+                <TreeTableColumn fx:id="onlineColumn" text="●" prefWidth="34" maxWidth="40"/>
+                <TreeTableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
+                <TreeTableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
+                <TreeTableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="90"/>
+                <TreeTableColumn fx:id="limitColumn" text="%users.column.limit" prefWidth="70"/>
+                <TreeTableColumn fx:id="dataColumn" text="%users.column.data" prefWidth="85"/>
+                <TreeTableColumn fx:id="stateColumn" text="%users.column.state" prefWidth="100"/>
+                <TreeTableColumn fx:id="commentColumn" text="%users.column.comment" prefWidth="240"/>
             </columns>
             <placeholder>
                 <Label fx:id="placeholderLabel" text="%users.loading" styleClass="muted"/>
             </placeholder>
-            <BorderPane.margin>
-                <Insets top="10" right="12" left="12"/>
-            </BorderPane.margin>
-        </TableView>
+        </TreeTableView>
     </center>
 
-    <!-- ===== Bottom: summary + actions ===== -->
     <bottom>
-        <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="8">
+        <HBox styleClass="table-footer" alignment="CENTER_LEFT" spacing="8">
             <Label fx:id="summaryLabel" styleClass="muted"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button text="%users.selectAll" onAction="#onSelectAll"/>
-            <Separator orientation="VERTICAL"/>
-            <Button fx:id="enableButton" text="%users.enable" onAction="#onEnable"/>
-            <Button fx:id="disableButton" text="%users.disable" onAction="#onDisable"/>
-            <Button fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect"/>
-            <Button fx:id="deleteButton" text="%users.delete" onAction="#onDelete" styleClass="danger"/>
-            <Button fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="primary"/>
             <padding>
-                <Insets top="10" right="12" bottom="10" left="12"/>
+                <Insets top="5" right="10" bottom="5" left="10"/>
             </padding>
         </HBox>
     </bottom>

@@ -10,12 +10,15 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.netpilot.controller.DashboardController;
+import org.netpilot.controller.GenerateController;
 import org.netpilot.controller.HistoryController;
+import org.netpilot.controller.HotspotController;
 import org.netpilot.controller.MainController;
-import org.netpilot.controller.PreferencesController;
 import org.netpilot.controller.ReportsController;
 import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
+import org.netpilot.controller.SettingsController;
 import org.netpilot.controller.Styling;
 import org.netpilot.controller.UploadController;
 import org.netpilot.controller.VoucherDesignController;
@@ -50,7 +53,7 @@ public class NetPilotApp extends Application {
         // language and theme must be known before the first window is built
         UiPreferences ui = context.settingsRepository().load().ui();
         Messages.use(ui.language().locale());
-        Styling.init(ui.theme());
+        Styling.init(ui);
 
         FXMLLoader loader = loader("view/main-view.fxml", context);
         Parent root = loader.load();
@@ -58,13 +61,13 @@ public class NetPilotApp extends Application {
 
         // fit small/laptop screens: never open taller or wider than the usable desktop area
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
-        double width = Math.min(1180, screen.getWidth() - 40);
+        double width = Math.min(1280, screen.getWidth() - 40);
         double height = Math.min(760, screen.getHeight() - 60);
         Scene scene = new Scene(root, width, height);
         Styling.apply(scene);
 
         stage.setTitle(NAME);
-        stage.setMinWidth(Math.min(900, width));
+        stage.setMinWidth(Math.min(980, width));
         stage.setMinHeight(Math.min(560, height));
         stage.setScene(scene);
         stage.centerOnScreen();
@@ -74,7 +77,6 @@ public class NetPilotApp extends Application {
     @Override
     public void stop() {
         if (mainController != null) {
-            mainController.saveSettings();
             mainController.close();
         }
         LOG.log(System.Logger.Level.INFO, "{0} stopped", NAME);
@@ -105,8 +107,17 @@ public class NetPilotApp extends Application {
             if (type == ReportsController.class) {
                 return new ReportsController(context);
             }
-            if (type == PreferencesController.class) {
-                return new PreferencesController();
+            if (type == GenerateController.class) {
+                return new GenerateController(context);
+            }
+            if (type == DashboardController.class) {
+                return new DashboardController(context);
+            }
+            if (type == HotspotController.class) {
+                return new HotspotController(context);
+            }
+            if (type == SettingsController.class) {
+                return new SettingsController(context);
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });
