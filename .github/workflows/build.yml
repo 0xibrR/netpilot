@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
       - name: Check out code
@@ -37,7 +37,7 @@ jobs:
           cache: maven
 
       - name: Build and verify
-        shell: bash # same command on Linux and Windows runners
+        shell: bash # same command on Linux, Windows and macOS runners
         run: ./mvnw -B -ntp verify
 
       - name: Upload test and coverage reports

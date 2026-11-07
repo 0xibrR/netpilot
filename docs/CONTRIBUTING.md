@@ -45,6 +45,15 @@ Never write user-visible text directly in Java or FXML:
 
 Log messages stay in English and are not translated.
 
+## Developing on another computer (Windows or macOS)
+
+1. Install JDK 25 (Temurin) and IntelliJ IDEA, then **File → New → Project from Version Control** with this repository.
+2. Set Git's name and email to the same author as before (**Settings → Version Control → Git**), so the repository keeps a single contributor.
+3. Run configuration: main class `org.netpilot.Launcher`, module `NetPilot.main`, VM options `--enable-native-access=javafx.graphics,com.sun.jna`.
+4. `.idea/misc.xml` (the local JDK name) is not tracked, so each computer keeps its own.
+
+On macOS everything works except **Remember password**, which uses Windows DPAPI and is hidden elsewhere. CI builds and tests on Ubuntu, Windows and macOS.
+
 ## Useful commands
 
 | Command | Purpose |

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Ready for development on macOS: CI also builds on macOS, and `.idea/misc.xml` (local JDK name) is no longer tracked
 - Your own speeds: no built-in speed list any more; **Hotspot → User profiles** adds, edits and deletes profiles
   with any download/upload speed (k, M or G, e.g. 1 G) and devices per card
 - Live updates like WinBox: while a router is connected, the visible page refreshes every 5 seconds (users,
