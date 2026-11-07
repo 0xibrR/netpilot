@@ -20,6 +20,7 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 - **Router connection** (RouterOS 7.1+, REST API): loads the router's real hotspot profiles and servers. HTTPS uses certificate pinning, and the password is never saved. Setup: [docs/ROUTER_SETUP.md](docs/ROUTER_SETUP.md)
 - **Send to Router**: creates the generated users directly on the router. Existing names are replaced or skipped, every batch is tagged with a comment, and you can print vouchers for the created users or undo the batch.
 - **Manage Users**: see every hotspot user with usage and online state, filter by batch, profile or state (expired, never used, ...), and enable, disable, disconnect, delete or reprint vouchers in bulk.
+- **Voucher Design**: your network name, logo, color, note and price per profile, with a live preview. Vouchers can be printed in **Arabic** (joined letters, right-to-left) or English.
 
 ## Requirements
 
@@ -84,3 +85,7 @@ src/main/resources/org/netpilot/
 ## Author
 
 Ibrahim Ramadan, [github.com/0xibrR](https://github.com/0xibrR)
+
+## Third-party assets
+
+- **Cairo** font, © 2009 The Cairo Project Authors, licensed under the [SIL Open Font License 1.1](src/main/resources/org/netpilot/fonts/Cairo-OFL.txt). It is embedded in voucher PDFs.

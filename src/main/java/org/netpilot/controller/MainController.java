@@ -433,6 +433,33 @@ public class MainController {
         thread.start();
     }
 
+    /** Edits how vouchers look; the router's profiles (when connected) get a price field each. */
+    @FXML
+    private void onVoucherDesign() {
+        try {
+            FXMLLoader loader = NetPilotApp.loader("view/voucher-design-view.fxml", context);
+            Parent root = loader.load();
+            VoucherDesignController design = loader.getController();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Stage stage = new Stage();
+            stage.initOwner(window());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.setTitle("Voucher Design - " + NetPilotApp.NAME);
+            stage.setScene(scene);
+            design.prepare(currentAppSettings(), List.copyOf(profileBox.getItems()));
+            stage.showAndWait();
+            design.result().ifPresent(template -> {
+                appSettings = appSettings.withVoucherTemplate(template);
+                saveSettings();
+                setStatus("Voucher design saved.", false);
+            });
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open Voucher Design", e);
+            Dialogs.error(window(), "Cannot open Voucher Design", e.getMessage());
+        }
+    }
+
     @FXML
     private void onShowHistory() {
         try {
@@ -531,7 +558,8 @@ public class MainController {
                 loginUrlField.getText(),
                 perRowSpinner.getValue(),
                 Path.of(outputDirField.getText()),
-                appSettings.router()); // edited only through the router connection dialog
+                appSettings.router(), // edited only through the router connection dialog
+                appSettings.voucherTemplate()); // edited only through the Voucher Design window
     }
 
     private GenerationSettings readGenerationSettings() {

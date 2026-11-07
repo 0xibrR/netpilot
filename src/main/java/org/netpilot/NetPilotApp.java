@@ -15,6 +15,7 @@ import org.netpilot.controller.MainController;
 import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
 import org.netpilot.controller.UploadController;
+import org.netpilot.controller.VoucherDesignController;
 import org.netpilot.repository.AppPaths;
 
 /**
@@ -87,6 +88,9 @@ public class NetPilotApp extends Application {
             }
             if (type == RouterUsersController.class) {
                 return new RouterUsersController(context);
+            }
+            if (type == VoucherDesignController.class) {
+                return new VoucherDesignController(context);
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });

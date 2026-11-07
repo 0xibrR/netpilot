@@ -158,3 +158,38 @@
     -fx-text-fill: #1e7e34;
     -fx-alignment: center;
 }
+
+/* Voucher Design preview card (mirrors the PDF layout) */
+.voucher-card {
+    -fx-background-color: white;
+    -fx-border-color: #9e9e9e;
+    -fx-font-family: "Cairo", "Segoe UI", sans-serif;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 8, 0, 0, 2);
+}
+
+.voucher-title {
+    -fx-font-size: 16px;
+    -fx-text-alignment: center;
+}
+
+.voucher-label {
+    -fx-text-fill: #555e6b;
+    -fx-font-size: 12px;
+}
+
+.voucher-value {
+    -fx-text-fill: black;
+    -fx-font-size: 13px;
+}
+
+.voucher-small {
+    -fx-text-fill: #555e6b;
+    -fx-font-size: 10px;
+    -fx-text-alignment: center;
+}
+
+.voucher-qr {
+    -fx-border-color: #c3c9d2;
+    -fx-border-style: dashed;
+    -fx-text-fill: #9aa3b0;
+}

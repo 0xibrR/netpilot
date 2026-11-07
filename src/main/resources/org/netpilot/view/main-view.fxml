@@ -27,6 +27,7 @@
                     <MenuItem fx:id="disconnectRouterItem" text="Disconnect" onAction="#onDisconnectRouter"/>
                 </Menu>
                 <Menu text="_Tools">
+                    <MenuItem text="Voucher Design…" onAction="#onVoucherDesign" accelerator="Shortcut+D"/>
                     <MenuItem text="Export History…" onAction="#onShowHistory"/>
                     <MenuItem text="Reset Settings" onAction="#onResetSettings"/>
                 </Menu>

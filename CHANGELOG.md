@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 4, voucher design and Arabic (**Tools → Voucher Design…**, `Ctrl+D`):
+  - Network name, logo, accent color, note, label language (English / Arabic) and what to show (QR, time, price, profile)
+  - Price per profile, printed on the voucher (and ready for sales reports)
+  - Live preview card and **Test print** with the exact PDF layout
+  - Arabic in the PDF: joined letters, right-to-left lines, correct word wrapping, embedded Cairo font (SIL Open Font License)
+  - Numbers and Latin credentials inside Arabic lines keep their order (regression-tested)
+  - Vouchers without a QR code are shorter, so more fit on a page
 - Phase 3, manage router users (**Router → Manage Users…**, `Ctrl+U`):
   - List of all hotspot users with used time, limit, data, state, comment and a live online marker
   - Search plus filters by NetPilot batch, profile and state (online, never used, expired, disabled)

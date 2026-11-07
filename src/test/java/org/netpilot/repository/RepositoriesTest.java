@@ -18,6 +18,7 @@ import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.model.UsernameMode;
+import org.netpilot.model.VoucherTemplate;
 
 class RepositoriesTest {
 
@@ -33,13 +34,42 @@ class RepositoriesTest {
                 "http://192.168.88.1/login", 4, dir.resolve("out"),
                 new RouterSettings(new RouterEndpoint("10.0.0.1", 8443, true, "netpilot"), Map.of(
                         "10.0.0.1:8443", "ab".repeat(32),
-                        "[fe80::1]:443", "cd".repeat(32))));
+                        "[fe80::1]:443", "cd".repeat(32))),
+                new VoucherTemplate("شبكة الأمل", "صالح لمدة 30 يوماً", VoucherTemplate.Language.ARABIC, "#AA3300",
+                        Map.of("2M", "1000 ل.س", "My Profile", "5$"), true, false, true, false, null));
 
         repo.save(saved);
 
         assertEquals(saved, repo.load());
         String stored = Files.readString(dir.resolve("sub/settings.properties"));
         assertTrue(!stored.toLowerCase().contains("password="), "router passwords are never stored");
+    }
+
+    @Test
+    void logoIsCopiedNextToTheSettings() throws Exception {
+        SettingsRepository repo = new SettingsRepository(dir.resolve("data/settings.properties"));
+        Path original = Files.write(dir.resolve("my logo.PNG"), new byte[]{(byte) 0x89, 'P', 'N', 'G'});
+
+        Path stored = repo.storeLogo(original);
+        Files.delete(original);
+
+        assertEquals(dir.resolve("data/voucher-logo.png"), stored);
+        assertTrue(Files.exists(stored), "the copy survives deleting the original");
+
+        AppSettings withLogo = repo.defaults().withVoucherTemplate(VoucherTemplate.defaults().withLogo(stored));
+        repo.save(withLogo);
+        assertEquals(stored, repo.load().voucherTemplate().logo());
+
+        Files.delete(stored);
+        assertEquals(null, repo.load().voucherTemplate().logo(), "a deleted logo is dropped, not an error");
+    }
+
+    @Test
+    void logoMustBeAnImage() throws Exception {
+        SettingsRepository repo = new SettingsRepository(dir.resolve("settings.properties"));
+        Path text = Files.writeString(dir.resolve("notes.txt"), "x");
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> repo.storeLogo(text));
     }
 
     @Test

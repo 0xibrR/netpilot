@@ -27,7 +27,8 @@ class RouterConnectorTest {
     private static final String USER = "netpilot";
     private static final String PASSWORD = "s3cret:pass";
 
-    private final RouterConnector connector = new RouterConnector(Duration.ofSeconds(2), Duration.ofMillis(500));
+    // generous request timeout: an HTTPS handshake on a busy machine can take over half a second
+    private final RouterConnector connector = new RouterConnector(Duration.ofSeconds(3), Duration.ofSeconds(3));
 
     private static RouterEndpoint http(int port) {
         return new RouterEndpoint("127.0.0.1", port, false, USER);
@@ -145,7 +146,7 @@ class RouterConnectorTest {
         @Test
         void slowRouterTimesOut() throws Exception {
             try (FakeRouter router = FakeRouter.http(USER, PASSWORD)) {
-                router.delayReplies(Duration.ofSeconds(2));
+                router.delayReplies(Duration.ofSeconds(5)); // longer than the 3 s request timeout
 
                 assertEquals(Kind.TIMEOUT, failure(http(router.port()), PASSWORD, null).kind());
             }

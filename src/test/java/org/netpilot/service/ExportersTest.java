@@ -9,10 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.VoucherTemplate;
 import org.openpdf.text.pdf.PdfReader;
 import org.openpdf.text.pdf.parser.PdfTextExtractor;
 
@@ -88,8 +90,85 @@ class ExportersTest {
                 .toList();
         Path file = dir.resolve("vouchers.pdf");
 
-        new PdfVoucherGenerator(new QrCodeService()).export(users, file, "http://10.10.0.1/login", 5);
+        new PdfVoucherGenerator(new QrCodeService()).export(users, file, "http://10.10.0.1/login", 5,
+                VoucherTemplate.defaults());
 
+        String text = pdfText(file);
+        for (HotspotUser u : users) {
+            assertTrue(text.contains(u.username()), "missing " + u.username());
+        }
+    }
+
+    @Test
+    void pdfWithoutQrWhenLoginUrlBlank() throws Exception {
+        Path file = dir.resolve("plain.pdf");
+        new PdfVoucherGenerator(new QrCodeService()).export(List.of(user("a1", "b1")), file, "", 4,
+                VoucherTemplate.defaults());
+        assertTrue(Files.size(file) > 0);
+    }
+
+    /**
+     * Regression for the Arabic layout: with right-to-left text, numbers and Latin credentials
+     * were once printed reversed (714133 as 331417), which would hand out wrong usernames.
+     */
+    @Test
+    void arabicVouchersKeepCredentialsInTheirOriginalOrder() throws Exception {
+        VoucherTemplate arabic = new VoucherTemplate("شبكة الأمل", "صالح لمدة 30 يوماً",
+                VoucherTemplate.Language.ARABIC, "#AA3300", Map.of("2M", "1000 ل.س"), false, true, true, true, null);
+        Path file = dir.resolve("arabic.pdf");
+
+        new PdfVoucherGenerator(new QrCodeService()).export(
+                List.of(new HotspotUser("714133", "aB3x9", "2M", "all", "1h")), file, "", 3, arabic);
+
+        String text = pdfText(file);
+        assertTrue(text.contains("714133"), text);
+        assertFalse(text.contains("331417"), "username must not be reversed");
+        assertTrue(text.contains("aB3x9"), text);
+        assertFalse(text.contains("9x3Ba"), "password must not be reversed");
+        assertTrue(text.contains("1000"), text);
+        // Shaped Arabic is stored as joined letter forms (U+FE70-U+FEFF) in visual order, like in any
+        // PDF; seeing those forms proves the letters were joined rather than printed one by one.
+        assertTrue(text.chars().anyMatch(c -> c >= 0xFE70 && c <= 0xFEFF), "Arabic letters are joined: " + text);
+        assertTrue(new String(Files.readAllBytes(file), java.nio.charset.StandardCharsets.ISO_8859_1).contains("Cairo"),
+                "the Arabic font is embedded so the PDF prints the same everywhere");
+    }
+
+    @Test
+    void templateOptionsControlWhatIsPrinted() throws Exception {
+        VoucherTemplate minimal = new VoucherTemplate("NetZone", "", VoucherTemplate.Language.ENGLISH, "#000000",
+                Map.of("5M", "9 USD"), false, false, false, false, null);
+        Path file = dir.resolve("minimal.pdf");
+
+        new PdfVoucherGenerator(new QrCodeService()).export(
+                List.of(new HotspotUser("u1", "p1", "5M", "all", "8h")), file, "http://10.10.0.1/login", 4, minimal);
+
+        String text = pdfText(file);
+        assertTrue(text.contains("NetZone"));
+        assertTrue(text.contains("u1") && text.contains("p1"));
+        assertFalse(text.contains("8h"), "time hidden");
+        assertFalse(text.contains("9 USD"), "price hidden");
+        assertFalse(text.contains("5M"), "profile hidden");
+    }
+
+    @Test
+    void logoIsPrintedAndAMissingLogoIsSkipped() throws Exception {
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(40, 20,
+                java.awt.image.BufferedImage.TYPE_INT_RGB);
+        Path logo = dir.resolve("logo.png");
+        javax.imageio.ImageIO.write(image, "png", logo.toFile());
+        HotspotUser u = user("u1", "p1");
+        PdfVoucherGenerator generator = new PdfVoucherGenerator(new QrCodeService());
+
+        Path withLogo = dir.resolve("with-logo.pdf");
+        generator.export(List.of(u), withLogo, "", 4, VoucherTemplate.defaults().withLogo(logo));
+        Path missingLogo = dir.resolve("missing-logo.pdf");
+        generator.export(List.of(u), missingLogo, "", 4, VoucherTemplate.defaults().withLogo(dir.resolve("gone.png")));
+
+        assertTrue(Files.size(withLogo) > Files.size(missingLogo), "the logo image is embedded");
+        assertTrue(pdfText(missingLogo).contains("u1"), "a missing logo never blocks printing");
+    }
+
+    private static String pdfText(Path file) throws Exception {
         PdfReader reader = new PdfReader(Files.readAllBytes(file)); // byte[] so Windows can delete the temp file
         try {
             StringBuilder text = new StringBuilder();
@@ -97,18 +176,9 @@ class ExportersTest {
             for (int page = 1; page <= reader.getNumberOfPages(); page++) {
                 text.append(extractor.getTextFromPage(page));
             }
-            for (HotspotUser u : users) {
-                assertTrue(text.toString().contains(u.username()), "missing " + u.username());
-            }
+            return text.toString();
         } finally {
             reader.close();
         }
-    }
-
-    @Test
-    void pdfWithoutQrWhenLoginUrlBlank() throws Exception {
-        Path file = dir.resolve("plain.pdf");
-        new PdfVoucherGenerator(new QrCodeService()).export(List.of(user("a1", "b1")), file, "", 4);
-        assertTrue(Files.size(file) > 0);
     }
 }

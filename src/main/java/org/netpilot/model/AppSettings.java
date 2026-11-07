@@ -11,13 +11,15 @@ import java.util.Objects;
  * @param vouchersPerRow  vouchers per row on the printed A4 page
  * @param outputDirectory where export folders are created
  * @param router          last router endpoint and trusted HTTPS certificates
+ * @param voucherTemplate how printed vouchers look
  */
 public record AppSettings(
         GenerationSettings generation,
         String loginUrl,
         int vouchersPerRow,
         Path outputDirectory,
-        RouterSettings router) {
+        RouterSettings router,
+        VoucherTemplate voucherTemplate) {
 
     public static final int MIN_PER_ROW = 2;
     public static final int MAX_PER_ROW = 8;
@@ -28,9 +30,14 @@ public record AppSettings(
         loginUrl = loginUrl == null ? "" : loginUrl.strip();
         vouchersPerRow = Math.clamp(vouchersPerRow, MIN_PER_ROW, MAX_PER_ROW);
         router = router == null ? RouterSettings.defaults() : router;
+        voucherTemplate = voucherTemplate == null ? VoucherTemplate.defaults() : voucherTemplate;
     }
 
     public AppSettings withRouter(RouterSettings newRouter) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate);
+    }
+
+    public AppSettings withVoucherTemplate(VoucherTemplate newTemplate) {
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate);
     }
 }

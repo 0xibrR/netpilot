@@ -58,10 +58,21 @@ public final class ExportService {
 
         csvExporter.export(users, csv);
         rscExporter.export(users, rsc);
-        pdfGenerator.export(users, pdf, settings.loginUrl(), settings.vouchersPerRow());
+        pdfGenerator.export(users, pdf, settings.loginUrl(), settings.vouchersPerRow(), settings.voucherTemplate());
 
         historyRepository.append(new HistoryRecord(now, users.size(), profile, folder.toAbsolutePath()));
         return new ExportResult(folder, csv, rsc, pdf, users.size());
+    }
+
+    /**
+     * Writes a voucher PDF to a temporary file for checking a design. Nothing is added to the
+     * export history and no CSV/RSC files are written.
+     */
+    public Path previewPdf(List<HotspotUser> users, AppSettings settings) throws IOException {
+        Path file = Files.createTempFile("netpilot-preview-", ".pdf");
+        file.toFile().deleteOnExit();
+        pdfGenerator.export(users, file, settings.loginUrl(), settings.vouchersPerRow(), settings.voucherTemplate());
+        return file;
     }
 
     private static Path uniqueFolder(Path parent, String name) {

@@ -40,10 +40,10 @@ This document explains how the code is organized and **why**, so it stays easy t
 |---|---|
 | `org.netpilot` | `Launcher` (entry point), `NetPilotApp` (JavaFX app), `AppContext` (wiring), `AppLogging` |
 | `org.netpilot.model` | `HotspotUser`, `GenerationSettings` (+ validation), `AppSettings`, `HistoryRecord`, mode enums; router data: `RouterEndpoint`, `RouterSettings`, `RouterInfo`, `HotspotProfile`, `HotspotServer` |
-| `org.netpilot.service` | `UserGenerator`, `ExportService`, and the exporters (CSV, RSC, PDF, QR) |
+| `org.netpilot.service` | `UserGenerator`, `ExportService`, the exporters (CSV, RSC, PDF, QR), and `PdfText` (Arabic shaping and bidirectional layout for the PDF) |
 | `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException`, `RouterUploadService` (send a batch), `RouterUserActions` (bulk enable/disable/delete/disconnect/reprint) |
 | `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `Dialogs` |
+| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `Dialogs` |
 
 ## Main flows
 
@@ -73,6 +73,21 @@ The resulting `UploadReport` drives the summary. **Print** exports only the crea
 | Export history | `~/.netpilot/history.csv` |
 | Logs | `~/.netpilot/logs/netpilot-0.log` (rotated, 5 × 1 MB) |
 | Exports | `~/Documents/NetPilot/<timestamp>_<profile>_<count>users/` (configurable) |
+| Voucher logo | `~/.netpilot/voucher-logo.png` (a copy, so moving the original does not break the design) |
+
+## Arabic in PDFs
+
+Voucher PDFs embed the **Cairo** font (`resources/org/netpilot/fonts`, SIL Open Font License). `PdfText` handles the text, and each choice in it comes from a test result:
+
+| Problem seen | Fix |
+|---|---|
+| OpenPDF's classic Arabic mode dropped letters (it uses old "presentation form" characters the font lacks) | Use OpenPDF's `LayoutProcessor`, which shapes text with Java's text engine and the font's own tables |
+| Forcing right-to-left reversed numbers and Latin text (`714133` → `331417`) | Split each line into direction runs with `java.text.Bidi`, draw each run in its own direction, and place the runs in visual order |
+| The direction setting is stored per font file | Load two copies of the font: one for right-to-left runs, one for left-to-right runs |
+| Spaces at the edge between runs disappeared | Strip edge spaces and add explicit space chunks |
+| PDF line wrapping, done after reordering, moved Arabic words to the wrong line | Wrap long text in reading order first, measured as OpenPDF measures it, then lay out each line |
+
+Tests cover each of these: `PdfTextTest` and `ExportersTest.arabicVouchersKeepCredentialsInTheirOriginalOrder`.
 
 ## Security principles
 
