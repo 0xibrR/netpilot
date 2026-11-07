@@ -47,6 +47,7 @@ import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.PasswordMode;
+import org.netpilot.model.TimeLimit;
 import org.netpilot.model.UsernameMode;
 import org.netpilot.service.ExportService.ExportResult;
 import org.netpilot.service.QrCodeService;
@@ -59,8 +60,6 @@ import org.netpilot.service.router.RouterClient;
 public class GenerateController implements Page {
 
     private static final System.Logger LOG = System.getLogger(GenerateController.class.getName());
-
-    private static final List<String> UPTIME_SUGGESTIONS = List.of("30m", "1h", "2h", "4h", "8h", "1d", "7d", "30d");
 
     private final AppContext context;
     private final ObservableList<HotspotUser> users = FXCollections.observableArrayList();
@@ -93,7 +92,9 @@ public class GenerateController implements Page {
     @FXML
     private ComboBox<String> serverBox;
     @FXML
-    private ComboBox<String> uptimeBox;
+    private TextField uptimeAmountField;
+    @FXML
+    private ComboBox<TimeLimit.Unit> uptimeUnitBox;
 
     @FXML
     private TextField loginUrlField;
@@ -157,7 +158,10 @@ public class GenerateController implements Page {
         usernameModeBox.getItems().setAll(UsernameMode.values());
         passwordModeBox.getItems().setAll(PasswordMode.values());
         serverBox.getItems().setAll("all");
-        uptimeBox.getItems().setAll(UPTIME_SUGGESTIONS);
+        uptimeUnitBox.getItems().setAll(TimeLimit.Unit.values());
+        uptimeUnitBox.setValue(TimeLimit.Unit.HOURS);
+        uptimeAmountField.setTextFormatter(new TextFormatter<>(
+                change -> change.getControlNewText().matches("\\d{0,5}") ? change : null));
 
         setUpTable();
         bindFieldStates();
@@ -446,7 +450,7 @@ public class GenerateController implements Page {
                 prefixField.getText(),
                 comboText(profileBox),
                 comboText(serverBox),
-                comboText(uptimeBox));
+                uptimeText());
     }
 
     private void showSettings(AppSettings s) {
@@ -463,7 +467,9 @@ public class GenerateController implements Page {
             prefixField.setText(g.passwordPrefix());
             profileBox.setValue(g.profile());
             serverBox.setValue(g.server());
-            uptimeBox.setValue(g.limitUptime());
+            Optional<TimeLimit> limit = TimeLimit.parse(g.limitUptime());
+            uptimeAmountField.setText(limit.map(l -> String.valueOf(l.amount())).orElse(""));
+            uptimeUnitBox.setValue(limit.map(TimeLimit::unit).orElse(TimeLimit.Unit.HOURS));
             loginUrlField.setText(s.loginUrl());
             perRowSpinner.getValueFactory().setValue(s.vouchersPerRow());
             outputDirField.setText(s.outputDirectory().toString());
@@ -523,7 +529,7 @@ public class GenerateController implements Page {
                 passwordStartSpinner.valueProperty(), prefixField.textProperty(),
                 profileBox.valueProperty(), profileBox.getEditor().textProperty(),
                 serverBox.valueProperty(), serverBox.getEditor().textProperty(),
-                uptimeBox.valueProperty(), uptimeBox.getEditor().textProperty());
+                uptimeAmountField.textProperty(), uptimeUnitBox.valueProperty());
         for (ObservableValue<?> input : inputs) {
             input.addListener((obs, old, value) -> {
                 if (!loadingForm && !users.isEmpty()) {
@@ -622,6 +628,15 @@ public class GenerateController implements Page {
     private static String comboText(ComboBox<String> box) {
         String text = box.isEditable() ? box.getEditor().getText() : box.getValue();
         return text == null ? "" : text.strip();
+    }
+
+    /** RouterOS {@code limit-uptime} from the amount and unit; empty amount means no limit. */
+    private String uptimeText() {
+        String amount = uptimeAmountField.getText().strip();
+        if (amount.isEmpty() || Long.parseLong(amount) == 0) {
+            return "";
+        }
+        return new TimeLimit(Long.parseLong(amount), uptimeUnitBox.getValue()).routerText();
     }
 
     private static int clampLength(int length) {

@@ -71,8 +71,10 @@
                         <Label text="%main.server" GridPane.rowIndex="1"/>
                         <ComboBox fx:id="serverBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
                         <Label text="%main.uptimeLimit" GridPane.rowIndex="2"/>
-                        <ComboBox fx:id="uptimeBox" editable="true" maxWidth="Infinity" promptText="%main.uptimeLimit.prompt"
-                                  GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <HBox spacing="6" alignment="CENTER_LEFT" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                            <TextField fx:id="uptimeAmountField" promptText="%main.uptimeLimit.prompt" HBox.hgrow="ALWAYS"/>
+                            <ComboBox fx:id="uptimeUnitBox" prefWidth="140"/>
+                        </HBox>
                     </GridPane>
                 </VBox>
 
