@@ -253,12 +253,15 @@
 }
 
 .top-bar {
-    -fx-background-color: -np-chrome-bg-2;
-    -fx-border-color: transparent transparent -np-chrome-border transparent;
+    -fx-background-color: -np-accent;
+}
+
+.top-bar .icon {
+    -fx-stroke: white;
 }
 
 .top-bar .label, .top-bar .separator {
-    -fx-text-fill: -np-chrome-text;
+    -fx-text-fill: white;
 }
 
 .brand {
@@ -270,32 +273,33 @@
     -fx-cursor: hand;
     -fx-font-weight: bold;
     -fx-padding: 3 10 3 10;
-    -fx-background-color: -np-chrome-bg;
+    -fx-background-color: rgba(255, 255, 255, 0.16);
     -fx-background-radius: 4;
-    -fx-border-color: -np-chrome-border;
+    -fx-border-color: rgba(255, 255, 255, 0.28);
     -fx-border-radius: 4;
 }
 
 .top-bar .router-chip.router-connected {
-    -fx-text-fill: #2ea043;
+    -fx-text-fill: white;
+    -fx-background-color: rgba(46, 160, 67, 0.55);
 }
 
 .top-bar .router-chip.router-disconnected {
-    -fx-text-fill: -np-chrome-muted;
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
 }
 
 .chrome-button {
     -fx-background-color: transparent;
-    -fx-text-fill: -np-chrome-text;
+    -fx-text-fill: white;
     -fx-padding: 4 8 4 8;
 }
 
 .chrome-button:hover {
-    -fx-background-color: -np-chrome-bg;
+    -fx-background-color: rgba(255, 255, 255, 0.16);
 }
 
 .chrome-button > .label {
-    -fx-text-fill: -np-chrome-text;
+    -fx-text-fill: white;
 }
 
 .side-menu {
@@ -454,4 +458,91 @@
     -fx-border-color: -np-accent;
     -fx-border-radius: 6;
     -fx-border-width: 1.5;
+}
+
+.chrome-button > .arrow-button > .arrow {
+    -fx-background-color: white;
+}
+
+/* Neighbors without an IP address cannot be reached through the REST API */
+.table-row-cell.unreachable .text {
+    -fx-fill: -np-muted;
+}
+
+/* ================================================================ modern polish */
+
+.card, .stat-card {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.07), 12, 0, 0, 2);
+}
+
+.button, .combo-box, .text-field, .spinner, .color-picker, .menu-button {
+    -fx-background-radius: 6;
+}
+
+.button {
+    -fx-padding: 7 14 7 14;
+    -fx-graphic-text-gap: 7;
+}
+
+.button .icon {
+    -fx-stroke: -np-text;
+}
+
+.button.primary .icon {
+    -fx-stroke: white;
+}
+
+.top-bar .button .icon {
+    -fx-stroke: white;
+}
+
+.table-view .column-header-background, .tree-table-view .column-header-background {
+    -fx-background-color: -np-card;
+}
+
+.table-view .column-header, .tree-table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -np-border transparent;
+}
+
+.table-row-cell, .tree-table-row-cell {
+    -fx-cell-size: 30;
+}
+
+.toast {
+    -fx-background-color: rgba(20, 24, 31, 0.9);
+    -fx-text-fill: white;
+    -fx-background-radius: 18;
+    -fx-padding: 9 18 9 18;
+    -fx-font-size: 13px;
+}
+
+.welcome-card {
+    -fx-border-color: -np-accent;
+}
+
+.step-card {
+    -fx-background-color: -np-bg;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+
+.step-number {
+    -fx-background-color: -np-accent;
+    -fx-text-fill: white;
+    -fx-background-radius: 12;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-alignment: center;
+    -fx-font-weight: bold;
+}
+
+.step-title {
+    -fx-font-weight: bold;
+}
+
+.card-preview {
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.18), 14, 0, 0, 3);
 }

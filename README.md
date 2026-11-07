@@ -20,7 +20,8 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 - **Router connection** (RouterOS 7.1+, REST API): loads the router's real hotspot profiles and servers. HTTPS uses certificate pinning, and the password is never saved. Setup: [docs/ROUTER_SETUP.md](docs/ROUTER_SETUP.md)
 - **Send to Router**: creates the generated users directly on the router. Existing names are replaced or skipped, every batch is tagged with a comment, and you can print vouchers for the created users or undo the batch.
 - **Manage Users**: see every hotspot user with usage and online state, filter by batch, profile or state (expired, never used, ...), and enable, disable, disconnect, delete or reprint vouchers in bulk.
-- **Voucher Design**: your network name, logo, color, note and price per profile, with a live preview. Vouchers can be printed in **Arabic** (joined letters, right-to-left) or English.
+- **Voucher Design**: small modern card styles (up to 65 per A4 page) or **your own card picture** with the details dragged into place; network name, logo, colour, note and price per profile, with a live preview that matches the PDF. Vouchers can be printed in **Arabic** (joined letters, right-to-left) or English.
+- **Router discovery**: the connect dialog lists MikroTik routers on your network, like WinBox Neighbors.
 - **Reports**: revenue per period, batch and profile, a revenue-per-day chart, and CSV export. A card counts as sold when it is first used.
 - **WinBox-style main window**: side menu (Dashboard, Create cards, Hotspot, Reports, Voucher design, Export history, Settings, `Ctrl+1`…`Ctrl+7`), router connection in the top bar, and a status bar with the router's CPU, memory and uptime.
 - **Hotspot page** with tabs like WinBox: users grouped by batch, active sessions, user profiles and servers.

@@ -100,6 +100,9 @@ public class MainController implements RouterSession.Listener {
         router.addListener(this);
         workspace = new Workspace(context, router, this::window, context.settingsRepository().load());
         workspace.setNavigator(this::show);
+        Toast toast = new Toast(pageHost);
+        workspace.setToaster(toast::show);
+        workspace.setConnector(this::onConnectRouter);
 
         reloadItem.disableProperty().bind(router.connectedProperty().not());
         disconnectItem.disableProperty().bind(router.connectedProperty().not());

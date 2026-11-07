@@ -4,51 +4,83 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!-- Connect dialog: neighbors list beside the login form, so it fits small screens.
+     Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.RouterConnectionController"
-            styleClass="app-root" prefWidth="520">
+            styleClass="app-root" prefWidth="1000">
 
     <center>
-        <VBox spacing="12" styleClass="form">
-            <VBox styleClass="card" spacing="10">
-                <Label text="%connect.router" styleClass="card-title"/>
-                <GridPane hgap="10" vgap="8">
-                    <columnConstraints>
-                        <ColumnConstraints minWidth="110"/>
-                        <ColumnConstraints hgrow="ALWAYS"/>
-                    </columnConstraints>
-                    <Label text="%connect.address" GridPane.rowIndex="0"/>
-                    <TextField fx:id="hostField" promptText="%connect.address.prompt" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                    <Label text="%connect.port" GridPane.rowIndex="1"/>
-                    <HBox spacing="12" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
-                        <TextField fx:id="portField" prefColumnCount="6"/>
-                        <CheckBox fx:id="httpsCheck" text="%connect.https"/>
+        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="form-scroll">
+            <HBox spacing="12">
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" minWidth="420">
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="%connect.neighbors" styleClass="card-title"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <ProgressIndicator fx:id="scanProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
+                        <Button fx:id="scanButton" text="%button.refresh" onAction="#onScan" styleClass="tool-button"/>
                     </HBox>
-                    <Label text="%connect.username" GridPane.rowIndex="2"/>
-                    <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                    <Label text="%connect.password" GridPane.rowIndex="3"/>
-                    <PasswordField fx:id="passwordField" promptText="%connect.password.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                </GridPane>
-                <Label fx:id="httpWarning" styleClass="warning" wrapText="true" text="%connect.httpWarning"/>
-            </VBox>
+                    <TableView fx:id="neighborsTable" VBox.vgrow="ALWAYS" prefHeight="220">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                        </columnResizePolicy>
+                        <columns>
+                            <TableColumn fx:id="neighborAddressColumn" text="%hotspot.column.address" prefWidth="95"/>
+                            <TableColumn fx:id="neighborIdentityColumn" text="%connect.neighbor.identity" prefWidth="80"/>
+                            <TableColumn fx:id="neighborBoardColumn" text="%connect.neighbor.board" prefWidth="85"/>
+                            <TableColumn fx:id="neighborVersionColumn" text="%connect.neighbor.version" prefWidth="90"/>
+                            <TableColumn fx:id="neighborUptimeColumn" text="%connect.neighbor.uptime" prefWidth="70"/>
+                            <TableColumn fx:id="neighborMacColumn" text="%hotspot.column.mac" prefWidth="125"/>
+                        </columns>
+                        <placeholder>
+                            <Label fx:id="neighborsPlaceholder" text="%connect.neighbors.searching" styleClass="muted" wrapText="true"/>
+                        </placeholder>
+                    </TableView>
+                    <Label text="%connect.neighbors.hint" styleClass="muted" wrapText="true"/>
+                </VBox>
 
-            <VBox styleClass="card" spacing="8">
-                <Label text="%connect.certificate" styleClass="card-title"/>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label fx:id="certificateLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Button fx:id="forgetCertificateButton" text="%connect.forget" onAction="#onForgetCertificate"/>
-                </HBox>
-            </VBox>
+                <VBox spacing="12" prefWidth="430" minWidth="380">
+                    <VBox styleClass="card" spacing="10">
+                        <Label text="%connect.router" styleClass="card-title"/>
+                        <GridPane hgap="10" vgap="8">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="100"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+                            <Label text="%connect.address" GridPane.rowIndex="0"/>
+                            <TextField fx:id="hostField" promptText="%connect.address.prompt" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <Label text="%connect.port" GridPane.rowIndex="1"/>
+                            <HBox spacing="12" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                                <TextField fx:id="portField" prefColumnCount="5"/>
+                                <CheckBox fx:id="httpsCheck" text="%connect.https"/>
+                            </HBox>
+                            <Label text="%connect.username" GridPane.rowIndex="2"/>
+                            <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                            <Label text="%connect.password" GridPane.rowIndex="3"/>
+                            <PasswordField fx:id="passwordField" promptText="%connect.password.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        </GridPane>
+                        <Label fx:id="httpWarning" styleClass="warning" wrapText="true" text="%connect.httpWarning"/>
+                    </VBox>
 
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-                <Label fx:id="resultLabel" wrapText="true" styleClass="status" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <VBox styleClass="card" spacing="6">
+                        <Label text="%connect.certificate" styleClass="card-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label fx:id="certificateLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button fx:id="forgetCertificateButton" text="%connect.forget" onAction="#onForgetCertificate"/>
+                        </HBox>
+                    </VBox>
+
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                        <Label fx:id="resultLabel" wrapText="true" styleClass="status" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                </VBox>
+                <padding>
+                    <Insets top="14" right="14" bottom="8" left="14"/>
+                </padding>
             </HBox>
-            <padding>
-                <Insets top="16" right="16" bottom="8" left="16"/>
-            </padding>
-        </VBox>
+        </ScrollPane>
     </center>
 
     <bottom>

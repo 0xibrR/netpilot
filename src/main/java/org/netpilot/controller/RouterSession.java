@@ -137,6 +137,10 @@ final class RouterSession {
             stage.setTitle(Messages.get("window.connect") + " - " + NetPilotApp.NAME);
             stage.setResizable(false);
             stage.setScene(scene);
+            // never taller or wider than the screen, so the buttons stay reachable on small laptops
+            javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setMaxWidth(screen.getWidth());
+            stage.setMaxHeight(screen.getHeight());
             dialog.prepare(current);
             stage.showAndWait();
 

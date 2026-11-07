@@ -13,6 +13,8 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
+import org.netpilot.model.CardImage;
+import org.netpilot.model.CardSize;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
@@ -21,6 +23,7 @@ import org.netpilot.model.Theme;
 import org.netpilot.model.UiLanguage;
 import org.netpilot.model.UiPreferences;
 import org.netpilot.model.UsernameMode;
+import org.netpilot.model.VoucherStyle;
 import org.netpilot.model.VoucherTemplate;
 
 /**
@@ -38,6 +41,7 @@ public class SettingsRepository {
     private static final Pattern FINGERPRINT = Pattern.compile("^[0-9a-f]{64}$");
     private static final String PRICE_PREFIX = "voucher.price.";
     private static final long MAX_LOGO_BYTES = 2L * 1024 * 1024;
+    private static final long MAX_CARD_IMAGE_BYTES = 5L * 1024 * 1024;
 
     private final Path file;
 
@@ -52,6 +56,15 @@ public class SettingsRepository {
     }
 
     /**
+     * Copies the user's own card picture next to the settings, like {@link #storeLogo}.
+     *
+     * @throws IllegalArgumentException if the file is not a PNG/JPEG image of at most 5 MB
+     */
+    public Path storeCardImage(Path source) throws IOException {
+        return storePicture(source, "voucher-background", MAX_CARD_IMAGE_BYTES);
+    }
+
+    /**
      * Copies a logo image next to the settings, so the template keeps working if the original
      * file is moved or deleted.
      *
@@ -59,17 +72,21 @@ public class SettingsRepository {
      * @throws IllegalArgumentException if the file is not a PNG/JPEG image of at most 2 MB
      */
     public Path storeLogo(Path source) throws IOException {
+        return storePicture(source, "voucher-logo", MAX_LOGO_BYTES);
+    }
+
+    private Path storePicture(Path source, String baseName, long maxBytes) throws IOException {
         Path fileName = source.getFileName();
         String name = fileName == null ? "" : fileName.toString().toLowerCase(Locale.ROOT);
         String extension = name.endsWith(".png") ? "png" : name.endsWith(".jpg") || name.endsWith(".jpeg") ? "jpg" : "";
         if (extension.isEmpty()) {
             throw new IllegalArgumentException(Messages.get("logo.notImage"));
         }
-        if (Files.size(source) > MAX_LOGO_BYTES) {
-            throw new IllegalArgumentException(Messages.get("logo.tooBig"));
+        if (Files.size(source) > maxBytes) {
+            throw new IllegalArgumentException(Messages.get("logo.tooBig", maxBytes / (1024 * 1024)));
         }
         FileSupport.createParentDirectories(file);
-        Path target = file.resolveSibling("voucher-logo." + extension);
+        Path target = file.resolveSibling(baseName + "." + extension);
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         return target;
     }
@@ -130,16 +147,16 @@ public class SettingsRepository {
                 prices.put(key.substring(PRICE_PREFIX.length()), p.getProperty(key));
             }
         }
-        Path logo = null;
-        String logoValue = p.getProperty("voucher.logo", "");
-        if (!logoValue.isBlank()) {
-            try {
-                Path candidate = Path.of(logoValue);
-                logo = Files.isRegularFile(candidate) ? candidate : null; // a deleted logo is simply dropped
-            } catch (RuntimeException e) {
-                LOG.log(System.Logger.Level.WARNING, "Invalid logo path in settings: " + logoValue);
-            }
-        }
+        Path logo = existingFile(p.getProperty("voucher.logo", ""));
+        CardImage di = d.image();
+        CardImage image = new CardImage(existingFile(p.getProperty("voucher.image.file", "")),
+                spot(p, "voucher.image.user", di.username()),
+                spot(p, "voucher.image.pass", di.password()),
+                spot(p, "voucher.image.qr", di.qr()),
+                spot(p, "voucher.image.price", di.price()),
+                p.getProperty("voucher.image.color", di.textColor()),
+                doubleValue(p, "voucher.image.scale", di.scale()),
+                booleanValue(p, "voucher.image.textBox", di.textBox()));
         return new VoucherTemplate(
                 p.getProperty("voucher.networkName", d.networkName()),
                 p.getProperty("voucher.note", d.note()),
@@ -150,7 +167,41 @@ public class SettingsRepository {
                 booleanValue(p, "voucher.showUptime", d.showUptime()),
                 booleanValue(p, "voucher.showPrice", d.showPrice()),
                 booleanValue(p, "voucher.showProfile", d.showProfile()),
-                logo);
+                logo,
+                enumValue(p, "voucher.style", VoucherStyle.class, d.style()),
+                enumValue(p, "voucher.size", CardSize.class, d.size()),
+                image);
+    }
+
+    /** A picture that was deleted or moved is simply dropped. */
+    private static Path existingFile(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            Path candidate = Path.of(value);
+            return Files.isRegularFile(candidate) ? candidate : null;
+        } catch (RuntimeException e) {
+            LOG.log(System.Logger.Level.WARNING, "Invalid picture path in settings: " + value);
+            return null;
+        }
+    }
+
+    private static CardImage.Spot spot(Properties p, String key, CardImage.Spot fallback) {
+        return new CardImage.Spot(doubleValue(p, key + ".x", fallback.x()), doubleValue(p, key + ".y", fallback.y()));
+    }
+
+    private static double doubleValue(Properties p, String key, double fallback) {
+        try {
+            return Double.parseDouble(p.getProperty(key, String.valueOf(fallback)));
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private static void putSpot(Properties p, String key, CardImage.Spot spot) {
+        p.setProperty(key + ".x", String.valueOf(spot.x()));
+        p.setProperty(key + ".y", String.valueOf(spot.y()));
     }
 
     /** Router password is never part of the settings; only the endpoint and trusted certificates are. */
@@ -210,6 +261,17 @@ public class SettingsRepository {
         p.setProperty("voucher.showPrice", String.valueOf(t.showPrice()));
         p.setProperty("voucher.showProfile", String.valueOf(t.showProfile()));
         p.setProperty("voucher.logo", t.logoFile().map(Path::toString).orElse(""));
+        p.setProperty("voucher.style", t.style().name());
+        p.setProperty("voucher.size", t.size().name());
+        CardImage image = t.image();
+        p.setProperty("voucher.image.file", image.background() == null ? "" : image.background().toString());
+        putSpot(p, "voucher.image.user", image.username());
+        putSpot(p, "voucher.image.pass", image.password());
+        putSpot(p, "voucher.image.qr", image.qr());
+        putSpot(p, "voucher.image.price", image.price());
+        p.setProperty("voucher.image.color", image.textColor());
+        p.setProperty("voucher.image.scale", String.valueOf(image.scale()));
+        p.setProperty("voucher.image.textBox", String.valueOf(image.textBox()));
         t.prices().forEach((profile, price) -> p.setProperty(PRICE_PREFIX + profile, price));
         p.setProperty("ui.language", settings.ui().language().name());
         p.setProperty("ui.theme", settings.ui().theme().name());

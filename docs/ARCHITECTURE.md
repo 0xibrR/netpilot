@@ -103,6 +103,16 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 - Semi-dark adds the `chrome-dark` style class, which only changes the `-np-chrome-*` tokens of the side menu, top bar and status bar. The accent colour is set as `-np-accent` on each root; hover shades are derived from it in CSS.
 - `MessagesTest` fails when a key is missing in one language, placeholders differ, a used key does not exist, or a view has text that is not a `%key`.
 
+## Compact voucher cards
+
+- `VoucherStyle` (Classic, Modern, QR on the side, Minimal, My own picture) and `CardSize` (a fixed grid on A4) are part of `VoucherTemplate`; `CardImage` holds the user's picture and where each detail sits on it (fractions of the card, changed by dragging in the preview).
+- `CardLayout` turns a template and one user into drawing elements (band, text, QR, picture, logo) in PDF points. `PdfVoucherGenerator` draws them in a cell event per card; the Voucher design page draws the same elements with JavaFX nodes. Text sizes shrink to fit, measured by whichever side draws.
+- Classic keeps the original flowing layout and the "vouchers per row" setting.
+
+## Router discovery
+
+`NeighborDiscovery` sends an empty MNDP request (UDP 5678) to the broadcast addresses and reads the routers' answers for 3 seconds: MAC, identity, version, board, uptime, interface and IPv4. It never sends credentials. A router without an IP is listed but cannot be used, because the REST API needs IP.
+
 ## Arabic in PDFs
 
 Voucher PDFs embed the **Cairo** font (`resources/org/netpilot/fonts`, SIL Open Font License). `PdfText` handles the text, and each choice in it comes from a test result:

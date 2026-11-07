@@ -15,6 +15,38 @@
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="form-scroll" prefWidth="430">
             <VBox spacing="12" styleClass="form">
                 <VBox styleClass="card" spacing="10">
+                    <Label text="%design.card" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="110"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="%design.style" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="styleBox" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="%design.size" GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="sizeBox" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <VBox fx:id="imageBox" spacing="8">
+                        <HBox spacing="6" alignment="CENTER_LEFT">
+                            <Label fx:id="imageLabel" styleClass="muted" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button text="%design.chooseImage" onAction="#onChooseImage" styleClass="primary"/>
+                        </HBox>
+                        <GridPane hgap="10" vgap="8">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="110"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+                            <Label text="%design.textColor" GridPane.rowIndex="0"/>
+                            <ColorPicker fx:id="textColorPicker" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <Label text="%design.textSize" GridPane.rowIndex="1"/>
+                            <Slider fx:id="scaleSlider" min="0.6" max="1.6" value="1" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        </GridPane>
+                        <CheckBox fx:id="textBoxCheck" text="%design.textBox"/>
+                        <Label text="%design.dragHint" styleClass="muted" wrapText="true"/>
+                    </VBox>
+                </VBox>
+
+                <VBox styleClass="card" spacing="10">
                     <Label text="%design.text" styleClass="card-title"/>
                     <GridPane hgap="10" vgap="8">
                         <columnConstraints>
@@ -72,6 +104,8 @@
     <center>
         <VBox spacing="10" alignment="TOP_CENTER" styleClass="preview">
             <Label text="%main.preview" styleClass="section-title"/>
+            <Pane fx:id="cardPane" styleClass="card-preview" nodeOrientation="LEFT_TO_RIGHT"/>
+            <Label fx:id="perPageLabel" styleClass="muted"/>
             <VBox fx:id="voucherCard" styleClass="voucher-card" alignment="TOP_CENTER" spacing="3" maxWidth="230">
                 <ImageView fx:id="logoView" fitHeight="36" fitWidth="150" preserveRatio="true"/>
                 <Label fx:id="titleLabel" styleClass="voucher-title" wrapText="true"/>

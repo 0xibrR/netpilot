@@ -14,6 +14,7 @@ import org.netpilot.service.ReportExporter;
 import org.netpilot.service.ReportService;
 import org.netpilot.service.RscExporter;
 import org.netpilot.service.UserGenerator;
+import org.netpilot.service.router.NeighborDiscovery;
 import org.netpilot.service.router.RouterConnector;
 import org.netpilot.service.router.RouterUploadService;
 import org.netpilot.service.router.RouterUserActions;
@@ -32,6 +33,7 @@ public record AppContext(
         ReportService reportService,
         UsageRepository usageRepository,
         ReportExporter reportExporter,
+        NeighborDiscovery neighborDiscovery,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -54,6 +56,7 @@ public record AppContext(
                 new ReportService(),
                 new UsageRepository(AppPaths.usageFile()),
                 new ReportExporter(),
+                new NeighborDiscovery(),
                 hostServices);
     }
 }

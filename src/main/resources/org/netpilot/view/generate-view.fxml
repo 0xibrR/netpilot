@@ -132,7 +132,7 @@
             <Label fx:id="statusLabel" text="%status.ready" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="%main.reset" onAction="#onResetSettings" styleClass="flat"/>
-            <Button text="%main.openFolder" onAction="#onOpenOutputFolder"/>
+            <Button fx:id="openFolderButton" text="%main.openFolder" onAction="#onOpenOutputFolder"/>
             <Button fx:id="generateButton" text="%main.generate" onAction="#onGenerate" defaultButton="true"/>
             <Button fx:id="exportButton" text="%main.export" onAction="#onExport"/>
             <Button fx:id="sendButton" text="%main.send" onAction="#onSendToRouter" styleClass="primary">

@@ -168,6 +168,11 @@ public class DashboardController implements Page {
     }
 
     @FXML
+    private void onConnect() {
+        workspace.connect();
+    }
+
+    @FXML
     private void onGenerate() {
         workspace.show(PageId.GENERATE);
     }

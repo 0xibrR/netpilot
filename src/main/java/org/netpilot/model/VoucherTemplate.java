@@ -21,6 +21,9 @@ import org.netpilot.i18n.Messages;
  * @param showPrice   print the profile's price
  * @param showProfile print the profile name
  * @param logo        logo image inside NetPilot's data folder, or {@code null}
+ * @param style       card layout
+ * @param size        card size for compact styles
+ * @param image       the user's own card picture, used by {@link VoucherStyle#IMAGE}
  */
 public record VoucherTemplate(
         String networkName,
@@ -32,7 +35,10 @@ public record VoucherTemplate(
         boolean showUptime,
         boolean showPrice,
         boolean showProfile,
-        Path logo) {
+        Path logo,
+        VoucherStyle style,
+        CardSize size,
+        CardImage image) {
 
     public static final int MAX_NAME = 40;
     public static final int MAX_NOTE = 90;
@@ -82,8 +88,18 @@ public record VoucherTemplate(
         }
     }
 
+    /** New installations start with small modern cards. */
     public static VoucherTemplate defaults() {
-        return new VoucherTemplate("WiFi", "", Language.ENGLISH, "#1F5FA8", Map.of(), true, true, true, true, null);
+        return new VoucherTemplate("WiFi", "", Language.ENGLISH, "#1F5FA8", Map.of(), true, true, true, true, null,
+                VoucherStyle.MODERN, CardSize.SMALL, CardImage.defaults());
+    }
+
+    /** The original tall voucher layout (kept for templates saved before compact styles). */
+    public VoucherTemplate(String networkName, String note, Language language, String accentColor,
+            Map<String, String> prices, boolean showQr, boolean showUptime, boolean showPrice, boolean showProfile,
+            Path logo) {
+        this(networkName, note, language, accentColor, prices, showQr, showUptime, showPrice, showProfile, logo,
+                VoucherStyle.CLASSIC, CardSize.SMALL, CardImage.defaults());
     }
 
     public VoucherTemplate {
@@ -92,6 +108,9 @@ public record VoucherTemplate(
         language = language == null ? Language.ENGLISH : language;
         accentColor = accentColor == null || !COLOR.matcher(accentColor).matches() ? "#1F5FA8" : accentColor;
         prices = Map.copyOf(cleanPrices(prices));
+        style = style == null ? VoucherStyle.MODERN : style;
+        size = size == null ? CardSize.SMALL : size;
+        image = image == null ? CardImage.defaults() : image;
     }
 
     /** Price text for a profile, if one is set. */
@@ -114,6 +133,9 @@ public record VoucherTemplate(
         if (note.length() > MAX_NOTE) {
             errors.add(Messages.get("template.validation.note", MAX_NOTE));
         }
+        if (style == VoucherStyle.IMAGE && image.background() == null) {
+            errors.add(Messages.get("template.validation.image"));
+        }
         prices.forEach((profile, price) -> {
             if (price.length() > MAX_PRICE) {
                 errors.add(Messages.get("template.validation.price", profile, MAX_PRICE));
@@ -124,7 +146,12 @@ public record VoucherTemplate(
 
     public VoucherTemplate withLogo(Path newLogo) {
         return new VoucherTemplate(networkName, note, language, accentColor, prices, showQr, showUptime, showPrice,
-                showProfile, newLogo);
+                showProfile, newLogo, style, size, image);
+    }
+
+    public VoucherTemplate withImage(CardImage newImage) {
+        return new VoucherTemplate(networkName, note, language, accentColor, prices, showQr, showUptime, showPrice,
+                showProfile, logo, style, size, newImage);
     }
 
     /** Drops blank entries and line breaks, which would break the layout and the settings file. */

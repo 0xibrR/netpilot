@@ -20,9 +20,29 @@
             <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
         </HBox>
 
-        <VBox fx:id="offlineCard" styleClass="card" spacing="8">
-            <Label text="%main.notConnected.title" styleClass="card-title"/>
+        <VBox fx:id="offlineCard" styleClass="card, welcome-card" spacing="12">
+            <Label text="%dashboard.welcome" styleClass="card-title"/>
             <Label text="%dashboard.offline" styleClass="muted" wrapText="true"/>
+            <FlowPane hgap="12" vgap="12">
+                <VBox styleClass="step-card" spacing="6" prefWidth="220">
+                    <Label text="1" styleClass="step-number"/>
+                    <Label text="%dashboard.step1" styleClass="step-title" wrapText="true"/>
+                    <Label text="%dashboard.step1.body" styleClass="muted" wrapText="true"/>
+                    <Button text="%menu.router.connect" onAction="#onConnect" styleClass="primary"/>
+                </VBox>
+                <VBox styleClass="step-card" spacing="6" prefWidth="220">
+                    <Label text="2" styleClass="step-number"/>
+                    <Label text="%dashboard.step2" styleClass="step-title" wrapText="true"/>
+                    <Label text="%dashboard.step2.body" styleClass="muted" wrapText="true"/>
+                    <Button text="%nav.DESIGN" onAction="#onDesign"/>
+                </VBox>
+                <VBox styleClass="step-card" spacing="6" prefWidth="220">
+                    <Label text="3" styleClass="step-number"/>
+                    <Label text="%dashboard.step3" styleClass="step-title" wrapText="true"/>
+                    <Label text="%dashboard.step3.body" styleClass="muted" wrapText="true"/>
+                    <Button text="%nav.GENERATE" onAction="#onGenerate"/>
+                </VBox>
+            </FlowPane>
         </VBox>
 
         <VBox fx:id="routerCard" styleClass="card" spacing="4">

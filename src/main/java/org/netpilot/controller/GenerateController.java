@@ -132,6 +132,8 @@ public class GenerateController implements Page {
 
     @FXML
     private Button sendButton;
+    @FXML
+    private Button openFolderButton;
 
     private RouterSession router;
 
@@ -165,6 +167,10 @@ public class GenerateController implements Page {
 
         users.addListener((javafx.collections.ListChangeListener<HotspotUser>) change -> updateCountLabel());
         updateCountLabel();
+        generateButton.setGraphic(Icons.of(Icons.TICKET));
+        exportButton.setGraphic(Icons.of(Icons.DOWNLOAD));
+        sendButton.setGraphic(Icons.of(Icons.SEND));
+        openFolderButton.setGraphic(Icons.of(Icons.FOLDER));
         generateButton.disableProperty().bind(busy);
         exportButton.disableProperty().bind(Bindings.isEmpty(users).or(busy));
         users.addListener((ListChangeListener<HotspotUser>) change -> {

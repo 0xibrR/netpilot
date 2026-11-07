@@ -1,6 +1,8 @@
 package org.netpilot.controller;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -11,12 +13,17 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.AddressInput;
+import org.netpilot.model.Neighbor;
+import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.service.router.CertificateFingerprints;
@@ -33,12 +40,33 @@ import org.netpilot.service.router.RouterException;
 public class RouterConnectionController {
 
     private static final System.Logger LOG = System.getLogger(RouterConnectionController.class.getName());
+    private static final java.time.Duration SCAN_TIME = java.time.Duration.ofSeconds(3);
 
     private final AppContext context;
 
     private RouterSettings settings = RouterSettings.defaults();
     private RouterConnector.Connection connection;
 
+    @FXML
+    private TableView<Neighbor> neighborsTable;
+    @FXML
+    private TableColumn<Neighbor, String> neighborAddressColumn;
+    @FXML
+    private TableColumn<Neighbor, String> neighborMacColumn;
+    @FXML
+    private TableColumn<Neighbor, String> neighborIdentityColumn;
+    @FXML
+    private TableColumn<Neighbor, String> neighborVersionColumn;
+    @FXML
+    private TableColumn<Neighbor, String> neighborBoardColumn;
+    @FXML
+    private TableColumn<Neighbor, String> neighborUptimeColumn;
+    @FXML
+    private Label neighborsPlaceholder;
+    @FXML
+    private Button scanButton;
+    @FXML
+    private ProgressIndicator scanProgress;
     @FXML
     private TextField hostField;
     @FXML
@@ -85,6 +113,81 @@ public class RouterConnectionController {
             }
         });
         portField.textProperty().addListener((obs, old, value) -> updateCertificateLabel());
+        setUpNeighbors();
+    }
+
+    // ------------------------------------------------------------------ neighbors (like WinBox)
+
+    private void setUpNeighbors() {
+        neighborAddressColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+                c.getValue().reachable() ? c.getValue().address() : Messages.get("connect.neighbor.noIp")));
+        neighborMacColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().macAddress()));
+        neighborMacColumn.getStyleClass().add("monospace");
+        neighborIdentityColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().identity()));
+        neighborVersionColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().version().split(" ")[0]));
+        neighborBoardColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().board()));
+        neighborUptimeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+                RouterDuration.format(c.getValue().uptime())));
+        neighborsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, neighbor) -> {
+            if (neighbor != null && neighbor.reachable()) {
+                hostField.setText(neighbor.address());
+            }
+        });
+        neighborsTable.setRowFactory(table -> {
+            TableRow<Neighbor> row = new TableRow<>() {
+
+                @Override
+                protected void updateItem(Neighbor item, boolean empty) {
+                    super.updateItem(item, empty);
+                    getStyleClass().remove("unreachable");
+                    if (!empty && item != null && !item.reachable()) {
+                        getStyleClass().add("unreachable");
+                    }
+                }
+            };
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && !row.isEmpty() && row.getItem().reachable()) {
+                    hostField.setText(row.getItem().address());
+                    (usernameField.getText().isBlank() ? usernameField : passwordField).requestFocus();
+                }
+            });
+            return row;
+        });
+    }
+
+    /** Looks for routers for 3 seconds; the dialog stays usable meanwhile. */
+    @FXML
+    private void onScan() {
+        Task<List<Neighbor>> task = new Task<>() {
+
+            @Override
+            protected List<Neighbor> call() throws IOException {
+                return context.neighborDiscovery().scan(SCAN_TIME);
+            }
+        };
+        task.setOnRunning(e -> setScanning(true));
+        task.setOnSucceeded(e -> {
+            setScanning(false);
+            neighborsTable.getItems().setAll(task.getValue());
+            neighborsPlaceholder.setText(Messages.get("connect.neighbors.none"));
+        });
+        task.setOnFailed(e -> {
+            setScanning(false);
+            LOG.log(System.Logger.Level.WARNING, "Neighbor discovery failed", task.getException());
+            neighborsPlaceholder.setText(Messages.get("connect.neighbors.failed"));
+        });
+        Thread thread = new Thread(task, "netpilot-neighbors");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void setScanning(boolean scanning) {
+        scanProgress.setVisible(scanning);
+        scanProgress.setManaged(scanning);
+        scanButton.setDisable(scanning);
+        if (scanning) {
+            neighborsPlaceholder.setText(Messages.get("connect.neighbors.searching"));
+        }
     }
 
     /** Fills the form from the saved settings. */
@@ -97,6 +200,7 @@ public class RouterConnectionController {
         usernameField.setText(last.username());
         showHttpWarning(!last.https());
         updateCertificateLabel();
+        onScan();
     }
 
     /** The open session if the user pressed Connect successfully. */

@@ -8,7 +8,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.netpilot.model.CardSize;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.VoucherStyle;
 import org.netpilot.model.VoucherTemplate;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
@@ -18,7 +20,11 @@ import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
 import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
+import org.openpdf.text.pdf.ColumnText;
+import org.openpdf.text.pdf.PdfContentByte;
+import org.openpdf.text.pdf.PdfGState;
 import org.openpdf.text.pdf.PdfPCell;
+import org.openpdf.text.pdf.PdfPCellEvent;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
 
@@ -56,6 +62,10 @@ public final class PdfVoucherGenerator {
         if (withQr) {
             QrCodeService.validateLoginUrl(loginUrl);
         }
+        if (template.style().compact()) {
+            exportCompact(users, file, withQr ? loginUrl : null, template);
+            return;
+        }
         Optional<Image> logo = loadLogo(template);
 
         Document document = new Document(PageSize.A4, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
@@ -83,6 +93,165 @@ public final class PdfVoucherGenerator {
             document.close(); // must happen before the stream is closed
         } catch (DocumentException e) {
             throw new IOException("Failed to write PDF: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Small cards in a fixed grid ({@link CardSize}); each card is drawn from {@link CardLayout},
+     * the same layout the preview shows. Light dashed borders mark where to cut.
+     */
+    private void exportCompact(List<HotspotUser> users, Path file, String loginUrl, VoucherTemplate template)
+            throws IOException {
+        CardSize size = template.size();
+        float margin = (float) CardSize.MARGIN;
+        Optional<Image> background = template.style() == VoucherStyle.IMAGE
+                ? loadImage(Optional.ofNullable(template.image().background()))
+                : Optional.empty();
+        Optional<Image> logo = loadImage(template.logoFile());
+        PdfText text = PdfText.instance();
+        Document document = new Document(PageSize.A4, margin, margin, margin, margin);
+        try (OutputStream out = Files.newOutputStream(file)) {
+            PdfWriter.getInstance(document, out);
+            document.addTitle("NetPilot hotspot vouchers");
+            document.addCreator("NetPilot");
+            document.open();
+
+            PdfPTable table = new PdfPTable(size.columns());
+            table.setTotalWidth((float) (size.width() * size.columns()));
+            table.setLockedWidth(true);
+            for (HotspotUser user : users) {
+                PdfPCell cell = new PdfPCell();
+                cell.setFixedHeight((float) size.height());
+                cell.setBorder(Rectangle.NO_BORDER);
+                CardLayout.Card card = CardLayout.Card.of(user, template, loginUrl != null);
+                byte[] qr = card.qr() ? qrCodeService.png(qrCodeService.loginLink(loginUrl, user), 240) : null;
+                List<CardLayout.Element> elements = CardLayout.layout(template, card, size.width(), size.height(),
+                        (value, fontSize) -> text.width(value, new PdfText.Style((float) fontSize, Color.BLACK)));
+                cell.setCellEvent(new CardDrawer(text, elements, background, logo, qr));
+                table.addCell(cell);
+            }
+            table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            table.getDefaultCell().setFixedHeight((float) size.height());
+            table.completeRow();
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            throw new IOException("Failed to write PDF: " + e.getMessage(), e);
+        }
+    }
+
+    /** Draws one compact card at its place on the page. */
+    private record CardDrawer(PdfText text, List<CardLayout.Element> elements, Optional<Image> background,
+            Optional<Image> logo, byte[] qrPng) implements PdfPCellEvent {
+
+        private static final Color CUT = new Color(0xC8, 0xCE, 0xD6);
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            PdfContentByte back = canvases[PdfPTable.BACKGROUNDCANVAS];
+            PdfContentByte front = canvases[PdfPTable.TEXTCANVAS];
+            float left = position.getLeft();
+            float top = position.getTop();
+            for (CardLayout.Element element : elements) {
+                switch (element) {
+                    case CardLayout.Background b -> background.ifPresent(image -> place(back, image, left, top,
+                            b.x(), b.y(), b.width(), b.height()));
+                    case CardLayout.Fill f -> {
+                        back.setColorFill(Color.decode(f.color()));
+                        back.rectangle(left + (float) f.x(), top - (float) (f.y() + f.height()), (float) f.width(),
+                                (float) f.height());
+                        back.fill();
+                    }
+                    case CardLayout.Line l -> {
+                        front.saveState();
+                        front.setLineDash(2f, 2f, 0f);
+                        front.setLineWidth(0.5f);
+                        front.setColorStroke(Color.decode(l.color()));
+                        front.moveTo(left + (float) l.x1(), top - (float) l.y1());
+                        front.lineTo(left + (float) l.x2(), top - (float) l.y2());
+                        front.stroke();
+                        front.restoreState();
+                    }
+                    case CardLayout.Logo g -> logo.ifPresent(image -> fit(front, image, left, top, g));
+                    case CardLayout.Box x -> {
+                        front.saveState();
+                        PdfGState state = new PdfGState();
+                        state.setFillOpacity((float) x.opacity());
+                        front.setGState(state);
+                        front.setColorFill(Color.decode(x.color()));
+                        front.roundRectangle(left + (float) x.x(), top - (float) (x.y() + x.height()),
+                                (float) x.width(), (float) x.height(), (float) (x.height() / 4));
+                        front.fill();
+                        front.restoreState();
+                    }
+                    case CardLayout.Qr q -> drawQr(front, left, top, q);
+                    case CardLayout.Text t -> drawText(front, left, top, t);
+                }
+            }
+            // cut marks
+            front.saveState();
+            front.setLineDash(1.5f, 2.5f, 0f);
+            front.setLineWidth(0.4f);
+            front.setColorStroke(CUT);
+            front.rectangle(left, position.getBottom(), position.getWidth(), position.getHeight());
+            front.stroke();
+            front.restoreState();
+        }
+
+        private void drawQr(PdfContentByte canvas, float left, float top, CardLayout.Qr q) {
+            if (qrPng == null) {
+                return;
+            }
+            try {
+                place(canvas, Image.getInstance(qrPng), left, top, q.x(), q.y(), q.size(), q.size());
+            } catch (IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        }
+
+        private void drawText(PdfContentByte canvas, float left, float top, CardLayout.Text t) {
+            if (t.text().isEmpty()) {
+                return;
+            }
+            Phrase phrase = text.phrase(t.text(), new PdfText.Style((float) t.size(), Color.decode(t.color())));
+            int align = switch (t.align()) {
+                case LEFT -> Element.ALIGN_LEFT;
+                case CENTER -> Element.ALIGN_CENTER;
+                case RIGHT -> Element.ALIGN_RIGHT;
+            };
+            ColumnText.showTextAligned(canvas, align, phrase, left + (float) t.x(), top - (float) t.baseline(), 0);
+        }
+
+        private static void fit(PdfContentByte canvas, Image source, float left, float top, CardLayout.Logo box) {
+            Image image = Image.getInstance(source);
+            image.scaleToFit((float) box.width(), (float) box.height());
+            double x = box.x() + (box.width() - image.getScaledWidth()) / 2;
+            double y = box.y() + (box.height() - image.getScaledHeight()) / 2;
+            image.setAbsolutePosition(left + (float) x, top - (float) y - image.getScaledHeight());
+            canvas.addImage(image);
+        }
+
+        private static void place(PdfContentByte canvas, Image source, float left, float top, double x, double y,
+                double width, double height) {
+            Image image = Image.getInstance(source);
+            image.scaleAbsolute((float) width, (float) height);
+            image.setAbsolutePosition(left + (float) x, top - (float) (y + height));
+            canvas.addImage(image);
+        }
+    }
+
+    /** A missing or unreadable picture is left out rather than failing the whole export. */
+    private static Optional<Image> loadImage(Optional<Path> file) {
+        Optional<Path> path = file.filter(Files::isRegularFile);
+        if (path.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Image.getInstance(Files.readAllBytes(path.get())));
+        } catch (IOException | RuntimeException e) {
+            System.getLogger(PdfVoucherGenerator.class.getName()).log(System.Logger.Level.WARNING,
+                    "Voucher picture could not be read and is left out: " + path.get(), e);
+            return Optional.empty();
         }
     }
 

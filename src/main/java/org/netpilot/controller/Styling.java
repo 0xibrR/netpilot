@@ -37,13 +37,11 @@ public final class Styling {
     private Styling() {
     }
 
-    /** Loads the Arabic font when needed and follows the system colour scheme for {@link Theme#SYSTEM}. */
+    /** Loads the Cairo font and follows the system colour scheme for {@link Theme#SYSTEM}. */
     public static void init(UiPreferences ui) {
         theme = ui.theme();
         accent = ui.accent();
-        if (Messages.isArabic()) {
-            loadCairo();
-        }
+        loadCairo(); // the Arabic interface and the voucher preview use it
         Platform.getPreferences().colorSchemeProperty().addListener((obs, old, scheme) -> {
             if (theme == Theme.SYSTEM) {
                 refreshAll();

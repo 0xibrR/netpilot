@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Compact cards, router discovery and a modern look:
+  - New voucher styles: Modern (coloured band), QR on the side, Minimal (code only) and My own picture;
+    sizes Tiny (65 per A4 page), Small (40) and Medium (24), with light cut lines; the Classic style stays
+  - Upload your own card picture and drag the username, password, price and QR to where it has room
+  - The preview and the PDF are drawn from the same layout (`CardLayout`), so they always match
+  - Connect dialog lists MikroTik routers on the network (MNDP, like WinBox Neighbors); click one to use it
+  - The top bar takes the chosen main colour; softer cards, button icons, first-run steps on the dashboard and
+    short messages that fade out for results such as "Voucher design saved"
 - Phase 7, WinBox-style interface:
   - One main window with a side menu instead of separate windows: Dashboard, Create cards, Hotspot, Reports,
     Voucher design, Export history and Settings (`Ctrl+1` … `Ctrl+7`)

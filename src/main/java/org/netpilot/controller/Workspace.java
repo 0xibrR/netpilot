@@ -28,6 +28,10 @@ final class Workspace {
     };
     private Consumer<PageId> navigator = page -> {
     };
+    private Consumer<String> toaster = message -> {
+    };
+    private Runnable connector = () -> {
+    };
 
     Workspace(AppContext context, RouterSession router, Supplier<Window> window, AppSettings settings) {
         this.context = context;
@@ -86,5 +90,23 @@ final class Workspace {
 
     void setNavigator(Consumer<PageId> navigator) {
         this.navigator = navigator;
+    }
+
+    /** Shows a short message that fades out by itself. */
+    void toast(String message) {
+        toaster.accept(message);
+    }
+
+    /** Opens the router connection dialog. */
+    void connect() {
+        connector.run();
+    }
+
+    void setToaster(Consumer<String> toaster) {
+        this.toaster = toaster;
+    }
+
+    void setConnector(Runnable connector) {
+        this.connector = connector;
     }
 }

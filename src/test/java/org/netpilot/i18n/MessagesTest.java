@@ -93,7 +93,7 @@ class MessagesTest {
             Matcher m = attribute.matcher(view);
             while (m.find()) {
                 String value = m.group(1);
-                if (!value.startsWith("%") && !NOT_TEXT.contains(value)) {
+                if (!value.startsWith("%") && !NOT_TEXT.contains(value) && !value.matches("\\d+")) {
                     untranslated.add(value);
                 }
             }
