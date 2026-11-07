@@ -28,6 +28,7 @@ final class Icons {
             + " M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4 M7 13h10v8H7z";
     static final String REFRESH = "M20 11a8 8 0 0 0-15.5-2 M4 5v4h4 M4 13a8 8 0 0 0 15.5 2 M20 19v-4h-4";
     static final String UNPLUG = "M7 7l10 10 M12 3v4 M8 7h8v4a4 4 0 0 1-8 0z M12 15v6";
+    static final String CLOCK = "M12 7v5l3 2 M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0";
     static final String MOON = "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9";
     static final String SEND = "M10 14L21 3 M21 3l-6.5 18a.6.6 0 0 1-1 0L10 14l-7-3.5a.6.6 0 0 1 0-1z";
     static final String DOWNLOAD = "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2 M7 11l5 5 5-5 M12 4v12";

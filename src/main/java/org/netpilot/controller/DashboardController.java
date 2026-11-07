@@ -76,6 +76,20 @@ public class DashboardController implements Page {
         onRefresh();
     }
 
+    /** Live figures without the busy indicator. */
+    @Override
+    public void tick() {
+        if (++ticks % 3 != 0) {
+            return; // every 15 seconds is plenty for totals (and saves usage history less often)
+        }
+        quiet = true;
+        onRefresh();
+        quiet = false;
+    }
+
+    private boolean quiet;
+    private int ticks;
+
     @Override
     public void routerConnected(RouterClient routerClient, String name) {
         this.client = routerClient;
@@ -163,8 +177,9 @@ public class DashboardController implements Page {
 
     private void setBusy(boolean busy) {
         loading = busy;
-        progressIndicator.setVisible(busy);
-        progressIndicator.setManaged(busy);
+        boolean show = busy && !quiet;
+        progressIndicator.setVisible(show);
+        progressIndicator.setManaged(show);
     }
 
     @FXML

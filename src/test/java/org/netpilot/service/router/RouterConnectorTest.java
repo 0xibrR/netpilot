@@ -62,6 +62,26 @@ class RouterConnectorTest {
         }
 
         @Test
+        void managesProfilesWithTheUsersOwnSpeeds() throws Exception {
+            try (FakeRouter router = FakeRouter.http(USER, PASSWORD);
+                    RouterClient client = connector.connect(http(router.port()), PASSWORD.toCharArray(), null)
+                            .client()) {
+
+                String id = client.createHotspotProfile(new HotspotProfile("", "Fiber-1G", "100M/1G", 3));
+                client.updateHotspotProfile(new HotspotProfile("*1", "2M", "", 1));
+                client.deleteHotspotProfile("*1");
+
+                assertEquals("*9", id);
+                assertEquals("{\"name\":\"Fiber-1G\",\"rate-limit\":\"100M/1G\",\"shared-users\":\"3\"}",
+                        router.lastProfileWrite("PUT /rest/ip/hotspot/user/profile"));
+                assertEquals("{\"name\":\"2M\",\"rate-limit\":\"\",\"shared-users\":\"1\"}",
+                        router.lastProfileWrite("PATCH /rest/ip/hotspot/user/profile/*1"),
+                        "an empty speed removes the limit");
+                assertEquals("", router.lastProfileWrite("DELETE /rest/ip/hotspot/user/profile/*1"));
+            }
+        }
+
+        @Test
         void readsLiveResources() throws Exception {
             try (FakeRouter router = FakeRouter.http(USER, PASSWORD);
                     RouterClient client = connector.connect(http(router.port()), PASSWORD.toCharArray(), null)
@@ -82,8 +102,8 @@ class RouterConnectorTest {
                     RouterClient client = connector.connect(http(router.port()), PASSWORD.toCharArray(), null)
                             .client()) {
 
-                assertEquals(List.of(new HotspotProfile("default", ""), new HotspotProfile("2M", "2M/2M")),
-                        client.hotspotProfiles());
+                assertEquals(List.of(new HotspotProfile("*0", "default", "", 1), new HotspotProfile("*1", "2M",
+                        "2M/2M", 1)), client.hotspotProfiles());
                 assertEquals(List.of(new HotspotServer("hotspot1", "bridge_hotspot", false),
                         new HotspotServer("old", "ether5", true)), client.hotspotServers());
             }

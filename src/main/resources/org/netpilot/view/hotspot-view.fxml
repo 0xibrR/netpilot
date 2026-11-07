@@ -46,19 +46,34 @@
     </Tab>
 
     <Tab text="%hotspot.tab.profiles">
-        <TableView fx:id="profilesTable">
-            <columnResizePolicy>
-                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
-            </columnResizePolicy>
-            <columns>
-                <TableColumn fx:id="profileNameColumn" text="%column.profile" prefWidth="180"/>
-                <TableColumn fx:id="profileRateColumn" text="%hotspot.column.rateLimit" prefWidth="160"/>
-                <TableColumn fx:id="profilePriceColumn" text="%report.column.price" prefWidth="140"/>
-            </columns>
-            <placeholder>
-                <Label text="%reports.noProfiles" styleClass="muted"/>
-            </placeholder>
-        </TableView>
+        <BorderPane>
+            <top>
+                <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="4">
+                    <Button fx:id="newProfileButton" text="%profile.new" onAction="#onNewProfile" styleClass="tool-button"/>
+                    <Button fx:id="editProfileButton" text="%profile.edit" onAction="#onEditProfile" styleClass="tool-button"/>
+                    <Button fx:id="deleteProfileButton" text="%users.delete" onAction="#onDeleteProfile" styleClass="tool-button, danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="%profile.toolbarHint" styleClass="muted"/>
+                </HBox>
+            </top>
+            <center>
+                <TableView fx:id="profilesTable">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                    </columnResizePolicy>
+                    <columns>
+                        <TableColumn fx:id="profileNameColumn" text="%column.profile" prefWidth="160"/>
+                        <TableColumn fx:id="profileDownloadColumn" text="%profile.download" prefWidth="120"/>
+                        <TableColumn fx:id="profileUploadColumn" text="%profile.upload" prefWidth="120"/>
+                        <TableColumn fx:id="profileSharedColumn" text="%profile.sharedUsers" prefWidth="110"/>
+                        <TableColumn fx:id="profilePriceColumn" text="%report.column.price" prefWidth="120"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="%reports.noProfiles" styleClass="muted"/>
+                    </placeholder>
+                </TableView>
+            </center>
+        </BorderPane>
     </Tab>
 
     <Tab text="%hotspot.tab.servers">

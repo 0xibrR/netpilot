@@ -33,6 +33,18 @@ public interface RouterClient extends AutoCloseable {
 
     List<HotspotServer> hotspotServers() throws RouterException;
 
+    /**
+     * Adds a hotspot user profile.
+     *
+     * @return the router's id for the new profile
+     */
+    String createHotspotProfile(HotspotProfile profile) throws RouterException;
+
+    /** Changes name, speed and shared users of an existing profile ({@link HotspotProfile#routerId()}). */
+    void updateHotspotProfile(HotspotProfile profile) throws RouterException;
+
+    void deleteHotspotProfile(String routerId) throws RouterException;
+
     /** Names of all hotspot users that exist on the router. */
     Set<String> hotspotUsernames() throws RouterException;
 

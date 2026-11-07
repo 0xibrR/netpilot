@@ -198,6 +198,41 @@ final class RouterSession {
         thread.start();
     }
 
+    private boolean quietRefreshRunning;
+
+    /**
+     * Reloads profiles and servers in the background without any message, and tells listeners
+     * only when something changed (e.g. a profile added in WinBox).
+     */
+    void refreshQuietly() {
+        RouterClient current = client;
+        if (current == null || quietRefreshRunning) {
+            return;
+        }
+        quietRefreshRunning = true;
+        Task<RouterLists> task = new Task<>() {
+
+            @Override
+            protected RouterLists call() throws RouterException {
+                return new RouterLists(current.hotspotProfiles(), current.hotspotServers());
+            }
+        };
+        task.setOnSucceeded(e -> {
+            quietRefreshRunning = false;
+            if (client == current && !task.getValue().equals(lists)) {
+                lists = task.getValue();
+                List.copyOf(listeners).forEach(l -> l.routerListsLoaded(lists));
+            }
+        });
+        task.setOnFailed(e -> {
+            quietRefreshRunning = false;
+            LOG.log(System.Logger.Level.DEBUG, "Live refresh of hotspot lists failed", task.getException());
+        });
+        Thread thread = new Thread(task, "netpilot-router-live");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     /** Reloads hotspot profiles and servers from the connected router. */
     void refresh() {
         RouterClient current = client;

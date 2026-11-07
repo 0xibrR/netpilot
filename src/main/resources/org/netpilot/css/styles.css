@@ -546,3 +546,15 @@
 .card-preview {
     -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.18), 14, 0, 0, 3);
 }
+
+.status-bar .icon {
+    -fx-stroke: -np-chrome-muted;
+}
+
+.status-bar .clock {
+    -fx-graphic-text-gap: 6;
+}
+
+.status-bar .live {
+    -fx-text-fill: #2ea043;
+}

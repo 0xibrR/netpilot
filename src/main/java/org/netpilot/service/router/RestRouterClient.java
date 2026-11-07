@@ -39,6 +39,7 @@ final class RestRouterClient implements RouterClient {
 
     private static final String USERS = "/ip/hotspot/user";
     private static final String ACTIVE = "/ip/hotspot/active";
+    private static final String PROFILES = "/ip/hotspot/user/profile";
     private static final Pattern ROUTER_ID = Pattern.compile("^\\*[0-9A-Fa-f]{1,16}$");
     private static final JsonMapper JSON = JsonMapper.shared();
 
@@ -82,13 +83,48 @@ final class RestRouterClient implements RouterClient {
     @Override
     public List<HotspotProfile> hotspotProfiles() throws RouterException {
         List<HotspotProfile> profiles = new ArrayList<>();
-        for (JsonNode item : array(get("/ip/hotspot/user/profile", "name,rate-limit"), "hotspot profiles")) {
+        for (JsonNode item : array(get(PROFILES, ".id,name,rate-limit,shared-users"), "hotspot profiles")) {
             String name = text(item, "name");
             if (!name.isEmpty()) {
-                profiles.add(new HotspotProfile(name, text(item, "rate-limit")));
+                profiles.add(new HotspotProfile(text(item, ".id"), name, text(item, "rate-limit"),
+                        (int) Math.max(1, number(item, "shared-users"))));
             }
         }
         return List.copyOf(profiles);
+    }
+
+    @Override
+    public String createHotspotProfile(HotspotProfile profile) throws RouterException {
+        JsonNode created = send(PROFILES, HttpRequest.newBuilder(URI.create(baseUri + PROFILES))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(profileBody(profile)))));
+        String id = text(created, ".id");
+        if (!ROUTER_ID.matcher(id).matches()) {
+            throw new RouterException(Kind.UNEXPECTED_RESPONSE, Messages.get("router.error.noId", profile.name()));
+        }
+        return id;
+    }
+
+    @Override
+    public void updateHotspotProfile(HotspotProfile profile) throws RouterException {
+        requireRouterId(profile.routerId());
+        String path = PROFILES + "/" + profile.routerId();
+        send(path, HttpRequest.newBuilder(URI.create(baseUri + path))
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(profileBody(profile)))));
+    }
+
+    @Override
+    public void deleteHotspotProfile(String routerId) throws RouterException {
+        deleteIgnoringMissing(PROFILES, routerId);
+    }
+
+    /** An empty rate limit removes the limit. */
+    private static ObjectNode profileBody(HotspotProfile profile) {
+        return JSON.createObjectNode()
+                .put("name", profile.name())
+                .put("rate-limit", profile.speed().format())
+                .put("shared-users", String.valueOf(profile.sharedUsers()));
     }
 
     @Override

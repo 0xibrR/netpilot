@@ -93,6 +93,7 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 - `Workspace` holds what pages share: services, the `RouterSession`, the saved `AppSettings` (`updateSettings` saves at once) and navigation.
 - `RouterSession` notifies listeners (`routerConnected`, `routerListsLoaded`, `routerDisconnected`); `MainController` forwards the events to loaded pages and replays them to pages loaded later. Pages marked `needsRouter` show a Connect button while no router is connected.
 - The status bar reads `/system/resource` every 5 seconds (`RouterClient.resource()`), never two reads at once.
+- Live updates: every 5 seconds `MainController` calls `Page.tick()` on the visible page (not when the window is minimised). Pages reload quietly — no dialogs or busy indicators — redraw only when the data changed, and keep the selection, filters and folded batches. `RouterSession.refreshQuietly()` tells listeners only about real changes to profiles or servers.
 
 ## Interface language and theme
 

@@ -12,4 +12,12 @@ interface Page extends RouterSession.Listener {
     /** Called each time the page becomes visible. */
     default void shown() {
     }
+
+    /**
+     * Called every few seconds while the page is visible and a router is connected, so changes
+     * made elsewhere (WinBox, another NetPilot) show up without pressing Refresh. Must stay quiet:
+     * no dialogs, no busy indicators, and keep the user's selection and filters.
+     */
+    default void tick() {
+    }
 }

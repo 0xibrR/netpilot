@@ -46,12 +46,15 @@ final class FakeRouter implements AutoCloseable {
 
     private static final String USERS = "/rest/ip/hotspot/user";
     private static final String ACTIVE = "/rest/ip/hotspot/active";
+    private static final String PROFILES = "/rest/ip/hotspot/user/profile";
     private static final JsonMapper JSON = JsonMapper.shared();
 
     private final HttpServer server;
     private final String expectedAuthorization;
     private final Map<String, Reply> routes = new ConcurrentHashMap<>();
     private final Map<String, String> lastQuery = new ConcurrentHashMap<>();
+    /** Last body sent with each method to a profile path, e.g. {@code "PATCH /rest/.../*1"}. */
+    private final Map<String, String> lastProfileWrite = new ConcurrentHashMap<>();
     private final Map<String, StoredUser> users = new LinkedHashMap<>();
     private final Map<String, StoredSession> sessions = new LinkedHashMap<>();
     private final AtomicInteger nextId = new AtomicInteger(0x10);
@@ -98,6 +101,11 @@ final class FakeRouter implements AutoCloseable {
 
     String lastQuery(String path) {
         return lastQuery.get(path);
+    }
+
+    /** @param request method and path, e.g. {@code PUT /rest/ip/hotspot/user/profile} */
+    String lastProfileWrite(String request) {
+        return lastProfileWrite.get(request);
     }
 
     /** A user that exists on the "router" before the test starts. */
@@ -170,6 +178,15 @@ final class FakeRouter implements AutoCloseable {
                 reply = handleUsers(method, path, exchange.getRequestBody().readAllBytes());
             } else if (path.startsWith(ACTIVE)) {
                 reply = handleSessions(method, path);
+            } else if (path.startsWith(PROFILES)) {
+                lastProfileWrite.put(method + " " + path,
+                        new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+                reply = switch (method) {
+                    case "PUT" -> ok("{\".id\":\"*9\",\"name\":\"new\"}");
+                    case "PATCH" -> ok("{}");
+                    case "DELETE" -> new Reply(204, "", Map.of());
+                    default -> notFound();
+                };
             } else {
                 reply = notFound();
             }
@@ -257,7 +274,7 @@ final class FakeRouter implements AutoCloseable {
     }
 
     private static boolean isCreate(String method, String path) {
-        return method.equals("PUT") && path.equals(USERS);
+        return method.equals("PUT") && (path.equals(USERS) || path.equals(PROFILES));
     }
 
     private static Reply ok(String body) {

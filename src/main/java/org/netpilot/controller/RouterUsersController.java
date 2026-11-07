@@ -170,6 +170,40 @@ public class RouterUsersController {
         onRefresh();
     }
 
+    private boolean liveRunning;
+
+    /**
+     * Reloads users and sessions without any busy indicator or dialog, keeping filters, selection
+     * and collapsed batches; skipped while an action runs.
+     */
+    void liveRefresh() {
+        RouterClient target = client;
+        if (target == null || busy.get() || liveRunning) {
+            return;
+        }
+        liveRunning = true;
+        Task<Snapshot> task = new Task<>() {
+
+            @Override
+            protected Snapshot call() throws Exception {
+                return new Snapshot(target.hotspotUsers(), target.activeSessions());
+            }
+        };
+        task.setOnSucceeded(e -> {
+            liveRunning = false;
+            if (client == target && !busy.get() && changed(task.getValue())) {
+                show(task.getValue());
+            }
+        });
+        task.setOnFailed(e -> {
+            liveRunning = false;
+            LOG.log(System.Logger.Level.DEBUG, "Live refresh of users failed", task.getException());
+        });
+        Thread thread = new Thread(task, "netpilot-users-live");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     /** Forgets the router's users after a disconnect. */
     void stop() {
         client = null;
@@ -278,6 +312,12 @@ public class RouterUsersController {
         applyFilter();
     }
 
+    /** Nothing changed: leave the table alone (no flicker). */
+    private boolean changed(Snapshot snapshot) {
+        return !snapshot.users().equals(users) || !snapshot.sessions().stream()
+                .collect(Collectors.groupingBy(ActiveSession::user)).equals(sessionsByUser);
+    }
+
     /** Replaces the choices but keeps the current selection if it still exists. */
     private static void keepChoices(ComboBox<String> box, String all, List<String> values) {
         String current = box.getValue();
@@ -313,9 +353,36 @@ public class RouterUsersController {
             members.forEach(user -> group.getChildren().add(new TreeItem<>(new UserRow(user))));
             items.add(group);
         });
+        // keep what the user selected and which batches they folded
+        Set<String> selectedNames = selected().stream().map(RouterUser::name).collect(Collectors.toSet());
+        Set<String> selectedBatches = new java.util.HashSet<>();
+        Set<String> collapsed = new java.util.HashSet<>();
+        for (TreeItem<Row> group : root.getChildren()) {
+            if (group.getValue() instanceof GroupRow(String batch, int count)) {
+                if (!group.isExpanded()) {
+                    collapsed.add(batch);
+                }
+                if (usersTable.getSelectionModel().getSelectedItems().contains(group)) {
+                    selectedBatches.add(batch);
+                }
+            }
+        }
         usersTable.getSelectionModel().clearSelection();
         root.getChildren().setAll(items);
         usersTable.sort();
+        for (TreeItem<Row> group : items) {
+            String batch = ((GroupRow) group.getValue()).batch();
+            group.setExpanded(!collapsed.contains(batch));
+            if (selectedBatches.contains(batch)) {
+                usersTable.getSelectionModel().select(group);
+            }
+            for (TreeItem<Row> child : group.getChildren()) {
+                if (child.getValue() instanceof UserRow(RouterUser user) && selectedNames.contains(user.name())
+                        && !selectedBatches.contains(batch)) {
+                    usersTable.getSelectionModel().select(child);
+                }
+            }
+        }
     }
 
     private static String batchOf(RouterUser user) {

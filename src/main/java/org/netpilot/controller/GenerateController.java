@@ -60,8 +60,6 @@ public class GenerateController implements Page {
 
     private static final System.Logger LOG = System.getLogger(GenerateController.class.getName());
 
-    private static final List<String> PROFILE_SUGGESTIONS = List.of("default", "1M", "2M", "3M", "4M", "5M", "10M",
-            "20M", "30M", "40M");
     private static final List<String> UPTIME_SUGGESTIONS = List.of("30m", "1h", "2h", "4h", "8h", "1d", "7d", "30d");
 
     private final AppContext context;
@@ -158,7 +156,6 @@ public class GenerateController implements Page {
 
         usernameModeBox.getItems().setAll(UsernameMode.values());
         passwordModeBox.getItems().setAll(PasswordMode.values());
-        profileBox.getItems().setAll(PROFILE_SUGGESTIONS);
         serverBox.getItems().setAll("all");
         uptimeBox.getItems().setAll(UPTIME_SUGGESTIONS);
 
@@ -186,6 +183,7 @@ public class GenerateController implements Page {
         this.router = shared.router();
         shared.setPrinter(this::exportUsers);
         showSettings(shared.settings());
+        profileBox.getItems().setAll(offlineProfiles());
         clearPreviewWhenSettingsChange();
         BooleanBinding noUsers = Bindings.isEmpty(users);
         sendButton.disableProperty().bind(noUsers.or(busy).or(sent).or(router.connectedProperty().not()));
@@ -222,11 +220,26 @@ public class GenerateController implements Page {
     public void routerDisconnected() {
         String profile = comboText(profileBox);
         String server = comboText(serverBox);
-        profileBox.getItems().setAll(PROFILE_SUGGESTIONS);
+        profileBox.getItems().setAll(offlineProfiles());
         serverBox.getItems().setAll("all");
         profileBox.setValue(profile);
         serverBox.setValue(server);
         setStatus(Messages.get("main.status.disconnected"), false);
+    }
+
+    /**
+     * Without a router, offer only profiles the user already uses (priced in Voucher design, or
+     * typed last time); speeds and names are the user's choice, so nothing is invented here.
+     */
+    private List<String> offlineProfiles() {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+        names.add("default");
+        names.addAll(workspace.settings().voucherTemplate().prices().keySet());
+        String current = comboText(profileBox);
+        if (!current.isEmpty()) {
+            names.add(current);
+        }
+        return List.copyOf(names);
     }
 
     /** Creates the previewed users on the connected router, then offers Print and Undo. */

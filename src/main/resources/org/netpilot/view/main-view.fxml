@@ -66,6 +66,13 @@
             <Label fx:id="memoryLabel" styleClass="status-item"/>
             <Label fx:id="uptimeLabel" styleClass="status-item"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="liveLabel" text="%status.live" styleClass="status-item, live" visible="false" managed="false">
+                <tooltip>
+                    <Tooltip text="%status.live.tooltip"/>
+                </tooltip>
+            </Label>
+            <Label fx:id="clockLabel" styleClass="status-item, clock"/>
+            <Separator orientation="VERTICAL"/>
             <Label fx:id="versionLabel" styleClass="status-item"/>
             <padding>
                 <Insets top="4" right="12" bottom="4" left="12"/>

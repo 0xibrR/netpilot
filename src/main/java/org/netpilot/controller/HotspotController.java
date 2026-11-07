@@ -1,6 +1,7 @@
 package org.netpilot.controller;
 
 import java.util.List;
+import java.util.Set;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -70,7 +71,17 @@ public class HotspotController implements Page {
     @FXML
     private TableColumn<HotspotProfile, String> profileNameColumn;
     @FXML
-    private TableColumn<HotspotProfile, String> profileRateColumn;
+    private TableColumn<HotspotProfile, String> profileDownloadColumn;
+    @FXML
+    private TableColumn<HotspotProfile, String> profileUploadColumn;
+    @FXML
+    private TableColumn<HotspotProfile, String> profileSharedColumn;
+    @FXML
+    private Button newProfileButton;
+    @FXML
+    private Button editProfileButton;
+    @FXML
+    private Button deleteProfileButton;
     @FXML
     private TableColumn<HotspotProfile, String> profilePriceColumn;
 
@@ -106,8 +117,30 @@ public class HotspotController implements Page {
         kickButton.disableProperty().bind(Bindings.isEmpty(activeTable.getSelectionModel().getSelectedItems()));
 
         profileNameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().name()));
-        profileRateColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                c.getValue().rateLimit().isEmpty() ? Messages.get("common.unlimited") : c.getValue().rateLimit()));
+        profileDownloadColumn
+                .setCellValueFactory(c -> new ReadOnlyStringWrapper(speed(c.getValue().speed().download())));
+        profileUploadColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(speed(c.getValue().speed().upload())));
+        profileSharedColumn.setCellValueFactory(
+                c -> new ReadOnlyStringWrapper(String.valueOf(c.getValue().sharedUsers())));
+        var noProfile = profilesTable.getSelectionModel().selectedItemProperty().isNull();
+        editProfileButton.disableProperty().bind(noProfile);
+        deleteProfileButton.disableProperty().bind(noProfile.or(Bindings.createBooleanBinding(
+                () -> {
+                    HotspotProfile p = profilesTable.getSelectionModel().getSelectedItem();
+                    return p != null && p.builtIn();
+                }, profilesTable.getSelectionModel().selectedItemProperty())));
+        newProfileButton.setGraphic(Icons.of(Icons.PLUS));
+        editProfileButton.setGraphic(Icons.of(Icons.SETTINGS));
+        deleteProfileButton.setGraphic(Icons.of(Icons.CROSS));
+        profilesTable.setRowFactory(table -> {
+            javafx.scene.control.TableRow<HotspotProfile> row = new javafx.scene.control.TableRow<>();
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && !row.isEmpty()) {
+                    onEditProfile();
+                }
+            });
+            return row;
+        });
         profilePriceColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
                 workspace == null
                         ? ""
@@ -136,6 +169,43 @@ public class HotspotController implements Page {
         profilesTable.refresh();
     }
 
+    private boolean activeLive;
+
+    /** Every few seconds: users, online sessions (when that tab is open) and the profile lists. */
+    @Override
+    public void tick() {
+        RouterClient target = client;
+        if (target == null) {
+            return;
+        }
+        usersController.liveRefresh(); // profiles and servers are refreshed for every page by the main window
+        if (tabs.getSelectionModel().getSelectedItem() == activeTab && !activeLive) {
+            activeLive = true;
+            Task<List<ActiveSession>> task = new Task<>() {
+
+                @Override
+                protected List<ActiveSession> call() throws Exception {
+                    return target.activeSessions();
+                }
+            };
+            task.setOnSucceeded(e -> {
+                activeLive = false;
+                if (client == target && !task.getValue().equals(activeTable.getItems())) {
+                    Set<String> selected = activeTable.getSelectionModel().getSelectedItems().stream()
+                            .map(ActiveSession::routerId).collect(java.util.stream.Collectors.toSet());
+                    activeTable.getItems().setAll(task.getValue());
+                    activeTable.getItems().stream().filter(s -> selected.contains(s.routerId()))
+                            .forEach(s -> activeTable.getSelectionModel().select(s));
+                    activeSummary.setText(Messages.get("hotspot.activeCount", task.getValue().size()));
+                }
+            });
+            task.setOnFailed(e -> activeLive = false);
+            Thread thread = new Thread(task, "netpilot-active-live");
+            thread.setDaemon(true);
+            thread.start();
+        }
+    }
+
     @Override
     public void routerConnected(RouterClient routerClient, String name) {
         this.client = routerClient;
@@ -149,7 +219,12 @@ public class HotspotController implements Page {
 
     @Override
     public void routerListsLoaded(RouterSession.RouterLists lists) {
+        HotspotProfile selected = profilesTable.getSelectionModel().getSelectedItem();
         profilesTable.getItems().setAll(lists.profiles());
+        if (selected != null) {
+            lists.profiles().stream().filter(p -> p.routerId().equals(selected.routerId())).findFirst()
+                    .ifPresent(p -> profilesTable.getSelectionModel().select(p));
+        }
         serversTable.getItems().setAll(lists.servers());
     }
 
@@ -160,6 +235,64 @@ public class HotspotController implements Page {
         activeTable.getItems().clear();
         profilesTable.getItems().clear();
         serversTable.getItems().clear();
+    }
+
+    // ------------------------------------------------------------------ profiles (speeds are the user's)
+
+    /** {@code 1000M} → {@code 1000 Mbps}; empty → unlimited. */
+    private static String speed(String rate) {
+        if (rate.isEmpty()) {
+            return Messages.get("common.unlimited");
+        }
+        char unit = rate.charAt(rate.length() - 1);
+        return Character.isLetter(unit) ? rate.substring(0, rate.length() - 1) + " " + unit + "bps" : rate + " bps";
+    }
+
+    @FXML
+    private void onNewProfile() {
+        RouterClient target = client;
+        if (target == null) {
+            return;
+        }
+        ProfileEditor.show(workspace.window(), null)
+                .ifPresent(profile -> run(() -> target.createHotspotProfile(profile),
+                        id -> afterProfileChange(Messages.get("profile.added", profile.name()))));
+    }
+
+    @FXML
+    private void onEditProfile() {
+        RouterClient target = client;
+        HotspotProfile selected = profilesTable.getSelectionModel().getSelectedItem();
+        if (target == null || selected == null) {
+            return;
+        }
+        ProfileEditor.show(workspace.window(), selected).ifPresent(profile -> run(() -> {
+            target.updateHotspotProfile(profile);
+            return profile;
+        }, done -> afterProfileChange(Messages.get("profile.saved", profile.name()))));
+    }
+
+    @FXML
+    private void onDeleteProfile() {
+        RouterClient target = client;
+        HotspotProfile selected = profilesTable.getSelectionModel().getSelectedItem();
+        if (target == null || selected == null || selected.builtIn()) {
+            return;
+        }
+        if (!Dialogs.confirm(workspace.window(), Messages.get("profile.delete.title", selected.name()),
+                Messages.get("profile.delete.body"))) {
+            return;
+        }
+        run(() -> {
+            target.deleteHotspotProfile(selected.routerId());
+            return selected;
+        }, done -> afterProfileChange(Messages.get("profile.deleted", selected.name())));
+    }
+
+    /** Reloads the lists, so Create cards and Voucher design see the change too. */
+    private void afterProfileChange(String message) {
+        workspace.router().refresh();
+        workspace.toast("✓ " + message);
     }
 
     @FXML

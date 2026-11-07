@@ -181,15 +181,38 @@ public class VoucherDesignController implements Page {
         prepare(shared.settings(), shared.profileNames());
     }
 
-    /** Adds a price row for router profiles that are not listed yet, keeping unsaved edits. */
+    /**
+     * Follows the router's profiles live: new ones get a row, deleted ones without a price go away,
+     * and prices typed but not saved yet are kept. A profile that has a price stays listed even if
+     * it was deleted, so its price (and the sales reports that use it) is not lost silently.
+     */
     @Override
     public void routerListsLoaded(RouterSession.RouterLists lists) {
-        Set<String> listed = new LinkedHashSet<>();
-        pricesTable.getItems().forEach(row -> listed.add(row.profile()));
-        lists.profiles().stream()
-                .map(org.netpilot.model.HotspotProfile::name)
-                .filter(name -> !listed.contains(name))
-                .forEach(name -> pricesTable.getItems().add(new PriceRow(name, "")));
+        Map<String, String> typed = new java.util.LinkedHashMap<>();
+        pricesTable.getItems().forEach(row -> typed.put(row.profile(), row.priceProperty().get()));
+        String selected = selectedProfile().orElse(null);
+
+        Set<String> names = new LinkedHashSet<>();
+        lists.profiles().forEach(p -> names.add(p.name()));
+        typed.forEach((profile, price) -> {
+            if (price != null && !price.isBlank()) {
+                names.add(profile);
+            }
+        });
+        List<PriceRow> rows = new ArrayList<>();
+        for (String name : names) {
+            rows.add(new PriceRow(name, typed.getOrDefault(name, "")));
+        }
+        boolean same = rows.size() == pricesTable.getItems().size() && java.util.stream.IntStream
+                .range(0, rows.size())
+                .allMatch(i -> rows.get(i).profile().equals(pricesTable.getItems().get(i).profile()));
+        if (same) {
+            return; // nothing to change: keep the table (and any cell being edited) as it is
+        }
+        pricesTable.getItems().setAll(rows);
+        rows.stream().filter(r -> r.profile().equals(selected)).findFirst()
+                .ifPresentOrElse(r -> pricesTable.getSelectionModel().select(r),
+                        () -> pricesTable.getSelectionModel().selectFirst());
         updatePreview();
     }
 

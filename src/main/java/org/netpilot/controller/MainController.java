@@ -51,6 +51,8 @@ public class MainController implements RouterSession.Listener {
     private final Map<PageId, ToggleButton> menuButtons = new EnumMap<>(PageId.class);
     private final ToggleGroup menuGroup = new ToggleGroup();
     private final Timeline resourcePoller = new Timeline(new KeyFrame(RESOURCE_INTERVAL, e -> pollResources()));
+    /** Live updates of the visible page, like WinBox lists that change by themselves. */
+    private final Timeline liveUpdates = new Timeline(new KeyFrame(RESOURCE_INTERVAL, e -> tickVisiblePage()));
 
     private RouterSession router;
     private Workspace workspace;
@@ -85,6 +87,15 @@ public class MainController implements RouterSession.Listener {
     private Label uptimeLabel;
     @FXML
     private Label versionLabel;
+    @FXML
+    private Label clockLabel;
+    @FXML
+    private Label liveLabel;
+
+    private static final java.time.format.DateTimeFormatter CLOCK = java.time.format.DateTimeFormatter
+            .ofPattern("yyyy-MM-dd  HH:mm:ss", java.util.Locale.ROOT);
+    /** Ticks once a second; the date and time come from this computer. */
+    private final Timeline clock = new Timeline(new KeyFrame(Duration.seconds(1), e -> showTime()));
 
     /** A loaded page: its view and its controller. */
     private record LoadedPage(Node view, Page controller) {
@@ -109,7 +120,12 @@ public class MainController implements RouterSession.Listener {
         routerMenu.setGraphic(Icons.of(Icons.ROUTER));
         themeButton.setGraphic(Icons.of(Icons.MOON));
         versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
+        clockLabel.setGraphic(Icons.of(Icons.CLOCK));
+        showTime();
+        clock.setCycleCount(Timeline.INDEFINITE);
+        clock.play();
         resourcePoller.setCycleCount(Timeline.INDEFINITE);
+        liveUpdates.setCycleCount(Timeline.INDEFINITE);
         showResources(null);
 
         buildSideMenu();
@@ -126,6 +142,8 @@ public class MainController implements RouterSession.Listener {
     /** Saves page state and ends the router session; called when the app closes. */
     public void close() {
         resourcePoller.stop();
+        liveUpdates.stop();
+        clock.stop();
         pages.values().forEach(p -> {
             if (p.controller() instanceof GenerateController generate) {
                 generate.saveSettings();
@@ -229,6 +247,9 @@ public class MainController implements RouterSession.Listener {
         pages.values().forEach(p -> p.controller().routerConnected(client, name));
         router.info().ifPresent(info -> routerInfoLabel.setText(info.summary()));
         resourcePoller.play();
+        liveUpdates.play();
+        liveLabel.setVisible(true);
+        liveLabel.setManaged(true);
         pollResources();
         if (current != null && current.needsRouter()) {
             show(current);
@@ -243,10 +264,27 @@ public class MainController implements RouterSession.Listener {
     @Override
     public void routerDisconnected() {
         resourcePoller.stop();
+        liveUpdates.stop();
+        liveLabel.setVisible(false);
+        liveLabel.setManaged(false);
         showResources(null);
         pages.values().forEach(p -> p.controller().routerDisconnected());
         if (current != null && current.needsRouter()) {
             show(current);
+        }
+    }
+
+    private void tickVisiblePage() {
+        if (current == null || router.client().isEmpty() || !(window() instanceof javafx.stage.Stage stage)
+                || stage.isIconified()) {
+            return; // minimised: nobody is looking, so the router is not loaded
+        }
+        // profiles and servers feed several pages (Create cards, Voucher design, Hotspot), so they are
+        // kept current whichever page is open; listeners hear only about real changes
+        router.refreshQuietly();
+        LoadedPage page = pages.get(current);
+        if (page != null && page.view().isVisible()) {
+            page.controller().tick();
         }
     }
 
@@ -295,6 +333,10 @@ public class MainController implements RouterSession.Listener {
                 mebibytes(resource.totalMemory())));
         uptimeLabel.setText(Messages.get("status.uptime",
                 RouterDuration.parse(resource.uptime()).map(RouterDuration::format).orElse(resource.uptime())));
+    }
+
+    private void showTime() {
+        clockLabel.setText(java.time.LocalDateTime.now().format(CLOCK));
     }
 
     private static String mebibytes(long bytes) {
