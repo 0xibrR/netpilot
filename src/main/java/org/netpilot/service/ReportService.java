@@ -149,7 +149,10 @@ public final class ReportService {
                 .collect(Collectors.groupingBy(UsageRecord::profile, Collectors.counting()));
         Map<String, Long> unused = cards.stream().filter(RouterUser::neverUsed)
                 .collect(Collectors.groupingBy(RouterUser::profile, Collectors.counting()));
+        // data of the cards sold in this period only, so the column agrees with "Sold"
+        Set<String> soldNames = sold.stream().map(UsageRecord::username).collect(Collectors.toSet());
         Map<String, Long> bytes = cards.stream()
+                .filter(c -> soldNames.contains(c.name()))
                 .collect(Collectors.groupingBy(RouterUser::profile, Collectors.summingLong(RouterUser::totalBytes)));
 
         Set<String> names = new java.util.TreeSet<>();

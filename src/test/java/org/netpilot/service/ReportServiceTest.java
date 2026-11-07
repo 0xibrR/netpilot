@@ -118,7 +118,7 @@ class ReportServiceTest {
         assertEquals(2, all.batches().getFirst().cards());
         assertEquals("500", all.revenue().format());
         assertTrue(week.batches().isEmpty(), "\"Other\" has no creation date, so only All time shows it");
-        assertTrue(week.warnings().stream().anyMatch(w -> w.contains("before NetPilot started tracking")));
+        assertTrue(week.warnings().stream().anyMatch(w -> w.contains("before NetPilot started recording first use")));
     }
 
     @Test
@@ -144,7 +144,7 @@ class ReportServiceTest {
                 ReportPeriod.ALL, TODAY);
 
         assertEquals("0", report.revenue().format());
-        assertTrue(report.warnings().stream().anyMatch(w -> w.contains("Voucher Design")));
+        assertTrue(report.warnings().stream().anyMatch(w -> w.contains("Voucher design page")));
     }
 
     @Test
@@ -162,6 +162,20 @@ class ReportServiceTest {
         assertEquals(1, twoM.sold());
         assertEquals(1, twoM.unused());
         assertEquals(6000, twoM.bytes());
+    }
+
+    @Test
+    void dataColumnCountsOnlyCardsSoldInThePeriod() {
+        List<RouterUser> users = List.of(card("old", "2M", true, ""), card("new", "2M", true, ""));
+        List<UsageRecord> history = List.of(new UsageRecord(ROUTER, "old", "2M", "", Optional.empty()),
+                new UsageRecord(ROUTER, "new", "2M", "", Optional.of(TODAY)));
+
+        SalesReport week = service.build(ROUTER, users, history, prices(Map.of("2M", "1000")),
+                ReportPeriod.LAST_7_DAYS, TODAY);
+
+        SalesReport.ProfileRow twoM = week.profiles().getFirst();
+        assertEquals(1, twoM.sold());
+        assertEquals(6000, twoM.bytes(), "the card used before tracking started is not in this period");
     }
 
     @Test

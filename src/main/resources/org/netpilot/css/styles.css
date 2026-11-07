@@ -558,3 +558,9 @@
 .status-bar .live {
     -fx-text-fill: #2ea043;
 }
+
+.report-warning {
+    -fx-background-color: rgba(240, 140, 0, 0.12);
+    -fx-background-radius: 8;
+    -fx-padding: 8 12 8 12;
+}

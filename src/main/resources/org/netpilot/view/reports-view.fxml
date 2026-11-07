@@ -51,6 +51,9 @@
                 </VBox>
             </HBox>
 
+            <Label fx:id="warningsLabel" styleClass="warning, report-warning" wrapText="true" visible="false"
+                   managed="false" minHeight="-Infinity" maxWidth="Infinity"/>
+
             <BarChart fx:id="dailyChart" title="%reports.chart" legendVisible="false"
                       animated="false" prefHeight="220" minHeight="180">
                 <xAxis>
@@ -101,7 +104,6 @@
                 </Tab>
             </TabPane>
 
-            <Label fx:id="warningsLabel" styleClass="warning" wrapText="true" visible="false" managed="false"/>
             <padding>
                 <Insets top="10" right="12" bottom="12" left="12"/>
             </padding>
