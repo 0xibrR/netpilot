@@ -1,13 +1,16 @@
 package org.netpilot.controller;
 
-import java.util.Optional;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Window;
 import org.netpilot.NetPilotApp;
+import org.netpilot.i18n.Messages;
 
 /**
  * Small helpers for consistent alert dialogs.
+ *
+ * <p>Buttons get translated text: JavaFX's own OK/Cancel labels are not available in Arabic.
  */
 final class Dialogs {
 
@@ -23,8 +26,9 @@ final class Dialogs {
     }
 
     static boolean confirm(Window owner, String header, String message) {
-        Optional<ButtonType> answer = alert(Alert.AlertType.CONFIRMATION, owner, header, message).showAndWait();
-        return answer.isPresent() && answer.get() == ButtonType.OK;
+        return alert(Alert.AlertType.CONFIRMATION, owner, header, message).showAndWait()
+                .map(answer -> answer.getButtonData() == ButtonBar.ButtonData.OK_DONE)
+                .orElse(false);
     }
 
     static Alert alert(Alert.AlertType type, Window owner, String header, String message) {
@@ -32,7 +36,14 @@ final class Dialogs {
         alert.initOwner(owner);
         alert.setTitle(NetPilotApp.NAME);
         alert.setHeaderText(header);
-        alert.getDialogPane().getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+        ButtonType ok = new ButtonType(Messages.get("button.ok"), ButtonBar.ButtonData.OK_DONE);
+        if (type == Alert.AlertType.CONFIRMATION) {
+            alert.getButtonTypes().setAll(ok,
+                    new ButtonType(Messages.get("button.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE));
+        } else {
+            alert.getButtonTypes().setAll(ok);
+        }
+        Styling.apply(alert.getDialogPane());
         return alert;
     }
 }

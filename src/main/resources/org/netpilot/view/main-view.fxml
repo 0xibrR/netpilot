@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!-- Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.netpilot.controller.MainController"
@@ -13,33 +14,35 @@
     <top>
         <VBox>
             <MenuBar>
-                <Menu text="_File">
-                    <MenuItem text="Open Output Folder" onAction="#onOpenOutputFolder"/>
-                    <MenuItem text="Change Output Folder…" onAction="#onBrowseOutputFolder"/>
+                <Menu text="%menu.file">
+                    <MenuItem text="%menu.file.openFolder" onAction="#onOpenOutputFolder"/>
+                    <MenuItem text="%menu.file.changeFolder" onAction="#onBrowseOutputFolder"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Exit" onAction="#onExit"/>
+                    <MenuItem text="%menu.file.exit" onAction="#onExit"/>
                 </Menu>
-                <Menu text="_Router">
-                    <MenuItem text="Connect…" onAction="#onConnectRouter" accelerator="Shortcut+R"/>
-                    <MenuItem fx:id="manageUsersItem" text="Manage Users…" onAction="#onManageUsers" accelerator="Shortcut+U"/>
-                    <MenuItem fx:id="reportsItem" text="Reports…" onAction="#onReports" accelerator="Shortcut+T"/>
-                    <MenuItem fx:id="refreshRouterItem" text="Reload Profiles and Servers" onAction="#onRefreshRouter"/>
+                <Menu text="%menu.router">
+                    <MenuItem text="%menu.router.connect" onAction="#onConnectRouter" accelerator="Shortcut+R"/>
+                    <MenuItem fx:id="manageUsersItem" text="%menu.router.manageUsers" onAction="#onManageUsers" accelerator="Shortcut+U"/>
+                    <MenuItem fx:id="reportsItem" text="%menu.router.reports" onAction="#onReports" accelerator="Shortcut+T"/>
+                    <MenuItem fx:id="refreshRouterItem" text="%menu.router.reload" onAction="#onRefreshRouter"/>
                     <SeparatorMenuItem/>
-                    <MenuItem fx:id="disconnectRouterItem" text="Disconnect" onAction="#onDisconnectRouter"/>
+                    <MenuItem fx:id="disconnectRouterItem" text="%menu.router.disconnect" onAction="#onDisconnectRouter"/>
                 </Menu>
-                <Menu text="_Tools">
-                    <MenuItem text="Voucher Design…" onAction="#onVoucherDesign" accelerator="Shortcut+D"/>
-                    <MenuItem text="Export History…" onAction="#onShowHistory"/>
-                    <MenuItem text="Reset Settings" onAction="#onResetSettings"/>
+                <Menu text="%menu.tools">
+                    <MenuItem text="%menu.tools.voucherDesign" onAction="#onVoucherDesign" accelerator="Shortcut+D"/>
+                    <MenuItem text="%menu.tools.history" onAction="#onShowHistory"/>
+                    <MenuItem text="%menu.tools.preferences" onAction="#onPreferences" accelerator="Shortcut+COMMA"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="%menu.tools.reset" onAction="#onResetSettings"/>
                 </Menu>
-                <Menu text="_Help">
-                    <MenuItem text="GitHub Repository" onAction="#onOpenRepository"/>
-                    <MenuItem text="About NetPilot" onAction="#onAbout"/>
+                <Menu text="%menu.help">
+                    <MenuItem text="%menu.help.github" onAction="#onOpenRepository"/>
+                    <MenuItem text="%menu.help.about" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
             <HBox styleClass="header" alignment="CENTER_LEFT" spacing="12">
                 <Label text="NetPilot" styleClass="header-title"/>
-                <Label text="MikroTik Hotspot users · QR vouchers · RouterOS scripts" styleClass="header-subtitle"/>
+                <Label text="%main.subtitle" styleClass="header-subtitle"/>
             </HBox>
         </VBox>
     </top>
@@ -50,72 +53,71 @@
             <VBox spacing="14" styleClass="form">
 
                 <VBox styleClass="card" spacing="10">
-                    <Label text="Users" styleClass="card-title"/>
+                    <Label text="%main.users" styleClass="card-title"/>
                     <GridPane hgap="10" vgap="8">
                         <columnConstraints>
                             <ColumnConstraints minWidth="120"/>
                             <ColumnConstraints hgrow="ALWAYS"/>
                         </columnConstraints>
-                        <Label text="Count" GridPane.rowIndex="0"/>
+                        <Label text="%main.count" GridPane.rowIndex="0"/>
                         <Spinner fx:id="countSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="Username mode" GridPane.rowIndex="1"/>
+                        <Label text="%main.usernameMode" GridPane.rowIndex="1"/>
                         <ComboBox fx:id="usernameModeBox" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="Username length" GridPane.rowIndex="2"/>
+                        <Label text="%main.usernameLength" GridPane.rowIndex="2"/>
                         <Spinner fx:id="usernameLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                        <Label text="Start number" GridPane.rowIndex="3"/>
+                        <Label text="%main.startNumber" GridPane.rowIndex="3"/>
                         <Spinner fx:id="usernameStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
                     </GridPane>
                 </VBox>
 
                 <VBox styleClass="card" spacing="10">
-                    <Label text="Passwords" styleClass="card-title"/>
+                    <Label text="%main.passwords" styleClass="card-title"/>
                     <GridPane hgap="10" vgap="8">
                         <columnConstraints>
                             <ColumnConstraints minWidth="120"/>
                             <ColumnConstraints hgrow="ALWAYS"/>
                         </columnConstraints>
-                        <Label text="Password mode" GridPane.rowIndex="0"/>
+                        <Label text="%main.passwordMode" GridPane.rowIndex="0"/>
                         <ComboBox fx:id="passwordModeBox" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="Password length" GridPane.rowIndex="1"/>
+                        <Label text="%main.passwordLength" GridPane.rowIndex="1"/>
                         <Spinner fx:id="passwordLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="Start number" GridPane.rowIndex="2"/>
+                        <Label text="%main.startNumber" GridPane.rowIndex="2"/>
                         <Spinner fx:id="passwordStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                        <Label text="Prefix" GridPane.rowIndex="3"/>
-                        <TextField fx:id="prefixField" promptText="e.g. vip" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <Label text="%main.prefix" GridPane.rowIndex="3"/>
+                        <TextField fx:id="prefixField" promptText="%main.prefix.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
                     </GridPane>
-                    <Label fx:id="weakPasswordWarning" styleClass="warning" wrapText="true"
-                           text="⚠ This mode creates passwords that are easy to guess."/>
+                    <Label fx:id="weakPasswordWarning" styleClass="warning" wrapText="true" text="%main.weakPassword"/>
                 </VBox>
 
                 <VBox styleClass="card" spacing="10">
-                    <Label text="Hotspot" styleClass="card-title"/>
+                    <Label text="%main.hotspot" styleClass="card-title"/>
                     <GridPane hgap="10" vgap="8">
                         <columnConstraints>
                             <ColumnConstraints minWidth="120"/>
                             <ColumnConstraints hgrow="ALWAYS"/>
                         </columnConstraints>
-                        <Label text="Profile" GridPane.rowIndex="0"/>
+                        <Label text="%main.profile" GridPane.rowIndex="0"/>
                         <ComboBox fx:id="profileBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="Server" GridPane.rowIndex="1"/>
+                        <Label text="%main.server" GridPane.rowIndex="1"/>
                         <ComboBox fx:id="serverBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="Uptime limit" GridPane.rowIndex="2"/>
-                        <ComboBox fx:id="uptimeBox" editable="true" maxWidth="Infinity" promptText="blank = unlimited"
+                        <Label text="%main.uptimeLimit" GridPane.rowIndex="2"/>
+                        <ComboBox fx:id="uptimeBox" editable="true" maxWidth="Infinity" promptText="%main.uptimeLimit.prompt"
                                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
                     </GridPane>
                 </VBox>
 
                 <VBox styleClass="card" spacing="10">
-                    <Label text="Vouchers" styleClass="card-title"/>
+                    <Label text="%main.vouchers" styleClass="card-title"/>
                     <GridPane hgap="10" vgap="8">
                         <columnConstraints>
                             <ColumnConstraints minWidth="120"/>
                             <ColumnConstraints hgrow="ALWAYS"/>
                         </columnConstraints>
-                        <Label text="QR login URL" GridPane.rowIndex="0"/>
-                        <TextField fx:id="loginUrlField" promptText="blank = no QR code" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="Vouchers per row" GridPane.rowIndex="1"/>
+                        <Label text="%main.loginUrl" GridPane.rowIndex="0"/>
+                        <TextField fx:id="loginUrlField" promptText="%main.loginUrl.prompt" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="%main.perRow" GridPane.rowIndex="1"/>
                         <Spinner fx:id="perRowSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="Output folder" GridPane.rowIndex="2"/>
+                        <Label text="%main.outputFolder" GridPane.rowIndex="2"/>
                         <HBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="1">
                             <TextField fx:id="outputDirField" editable="false" HBox.hgrow="ALWAYS"/>
                             <Button text="…" onAction="#onBrowseOutputFolder"/>
@@ -130,7 +132,7 @@
     <center>
         <VBox spacing="8" styleClass="preview">
             <HBox alignment="CENTER_LEFT" spacing="8">
-                <Label text="Preview" styleClass="section-title"/>
+                <Label text="%main.preview" styleClass="section-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label fx:id="usersCountLabel" styleClass="muted"/>
             </HBox>
@@ -140,14 +142,14 @@
                 </columnResizePolicy>
                 <columns>
                     <TableColumn fx:id="indexColumn" text="#" prefWidth="60" maxWidth="80" sortable="false"/>
-                    <TableColumn fx:id="usernameColumn" text="Username" prefWidth="170"/>
-                    <TableColumn fx:id="passwordColumn" text="Password" prefWidth="170"/>
-                    <TableColumn fx:id="profileColumn" text="Profile" prefWidth="100"/>
-                    <TableColumn fx:id="serverColumn" text="Server" prefWidth="100"/>
-                    <TableColumn fx:id="uptimeColumn" text="Uptime limit" prefWidth="110"/>
+                    <TableColumn fx:id="usernameColumn" text="%column.username" prefWidth="170"/>
+                    <TableColumn fx:id="passwordColumn" text="%column.password" prefWidth="170"/>
+                    <TableColumn fx:id="profileColumn" text="%column.profile" prefWidth="100"/>
+                    <TableColumn fx:id="serverColumn" text="%column.server" prefWidth="100"/>
+                    <TableColumn fx:id="uptimeColumn" text="%column.uptimeLimit" prefWidth="110"/>
                 </columns>
                 <placeholder>
-                    <Label text="Choose your settings, then press “Generate” to preview users." styleClass="muted"/>
+                    <Label text="%main.preview.empty" styleClass="muted"/>
                 </placeholder>
             </TableView>
         </VBox>
@@ -159,19 +161,19 @@
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="20" prefHeight="20"/>
             <Label fx:id="routerStatusLabel" styleClass="router-status" onMouseClicked="#onRouterStatusClicked">
                 <tooltip>
-                    <Tooltip text="Click to connect to a router"/>
+                    <Tooltip text="%main.routerStatus.tooltip"/>
                 </tooltip>
             </Label>
             <Separator orientation="VERTICAL"/>
-            <Label fx:id="statusLabel" text="Ready" styleClass="status"/>
+            <Label fx:id="statusLabel" text="%status.ready" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="History" onAction="#onShowHistory"/>
-            <Button text="Open Folder" onAction="#onOpenOutputFolder"/>
-            <Button fx:id="generateButton" text="Generate" onAction="#onGenerate" defaultButton="true"/>
-            <Button fx:id="exportButton" text="Export CSV + RSC + PDF" onAction="#onExport"/>
-            <Button fx:id="sendButton" text="Send to Router" onAction="#onSendToRouter" styleClass="primary">
+            <Button text="%main.history" onAction="#onShowHistory"/>
+            <Button text="%main.openFolder" onAction="#onOpenOutputFolder"/>
+            <Button fx:id="generateButton" text="%main.generate" onAction="#onGenerate" defaultButton="true"/>
+            <Button fx:id="exportButton" text="%main.export" onAction="#onExport"/>
+            <Button fx:id="sendButton" text="%main.send" onAction="#onSendToRouter" styleClass="primary">
                 <tooltip>
-                    <Tooltip text="Create the previewed users directly on the connected router"/>
+                    <Tooltip text="%main.send.tooltip"/>
                 </tooltip>
             </Button>
             <padding>

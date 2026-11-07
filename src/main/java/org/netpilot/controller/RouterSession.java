@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +16,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.RouterInfo;
@@ -83,12 +83,12 @@ final class RouterSession {
             return Optional.empty();
         }
         if (lists.profiles().stream().noneMatch(p -> p.name().equals(profile))) {
-            return Optional.of("Profile '" + profile + "' does not exist on the router. Choose one from the list.");
+            return Optional.of(Messages.get("main.status.profileMissing", profile));
         }
         boolean serverExists = server.equals("all")
                 || lists.servers().stream().anyMatch(s -> s.name().equals(server) && !s.disabled());
         if (!serverExists) {
-            return Optional.of("Server '" + server + "' does not exist on the router or is disabled.");
+            return Optional.of(Messages.get("send.serverMissing", server));
         }
         return Optional.empty();
     }
@@ -106,11 +106,11 @@ final class RouterSession {
             RouterConnectionController dialog = loader.getController();
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
             Stage stage = new Stage();
             stage.initOwner(owner.get());
             stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle("Connect to Router - " + NetPilotApp.NAME);
+            stage.setTitle(Messages.get("window.connect") + " - " + NetPilotApp.NAME);
             stage.setResizable(false);
             stage.setScene(scene);
             dialog.prepare(current);
@@ -120,7 +120,7 @@ final class RouterSession {
             return Optional.of(dialog.settings());
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open router dialog", e);
-            Dialogs.error(owner.get(), "Cannot open the router dialog", e.getMessage());
+            Dialogs.error(owner.get(), Messages.get("error.openWindow"), e.getMessage());
             return Optional.empty();
         }
     }
@@ -138,7 +138,7 @@ final class RouterSession {
                 return new RouterLists(current.hotspotProfiles(), current.hotspotServers());
             }
         };
-        task.setOnRunning(e -> statusLabel.setText("Loading hotspot profiles…"));
+        task.setOnRunning(e -> statusLabel.setText(Messages.get("router.loadingLists")));
         task.setOnSucceeded(e -> {
             showState();
             lists = task.getValue();
@@ -148,7 +148,7 @@ final class RouterSession {
             showState();
             Throwable error = task.getException();
             LOG.log(System.Logger.Level.WARNING, "Cannot load hotspot data", error);
-            Dialogs.error(owner.get(), "Cannot load hotspot profiles", String.valueOf(error.getMessage()));
+            Dialogs.error(owner.get(), Messages.get("router.loadListsFailed"), String.valueOf(error.getMessage()));
         });
         Thread thread = new Thread(task, "netpilot-router-refresh");
         thread.setDaemon(true);
@@ -188,7 +188,7 @@ final class RouterSession {
     private void showState() {
         statusLabel.getStyleClass().removeAll("router-connected", "router-disconnected");
         if (client == null) {
-            statusLabel.setText("● Router: not connected");
+            statusLabel.setText("● " + Messages.get("router.notConnected"));
             statusLabel.getStyleClass().add("router-disconnected");
         } else {
             statusLabel.setText("● " + info.summary() + " (" + client.endpoint().address() + ")");

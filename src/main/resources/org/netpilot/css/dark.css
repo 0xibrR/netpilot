@@ -1,0 +1,56 @@
+/* NetPilot dark theme: loaded after styles.css and only overrides colours. */
+
+.root {
+    -np-accent: #4a8fdb;
+    -np-accent-hover: #6aa5e6;
+    -np-bg: #1b1f25;
+    -np-card: #252a32;
+    -np-border: #3a414c;
+    -np-text: #e4e8ee;
+    -np-muted: #9aa5b4;
+    -np-warning: #f0a548;
+    -fx-base: #2c323b;
+    -fx-background: #1b1f25;
+    -fx-control-inner-background: #232830;
+    -fx-control-inner-background-alt: #282e37;
+    -fx-text-background-color: -np-text;
+    -fx-selection-bar-non-focused: #3a414c;
+}
+
+.header {
+    -fx-background-color: linear-gradient(to right, #0f2a4a, #1f5fa8);
+}
+
+.status-error, .summary-error, .button.danger {
+    -fx-text-fill: #ff7b72;
+}
+
+.summary-ok, .stat-money, .router-status.router-connected, .table-cell.online-dot {
+    -fx-text-fill: #56d364;
+}
+
+.chart-plot-background {
+    -fx-background-color: -np-card;
+}
+
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: #3a414c;
+}
+
+/* The voucher preview is a sheet of paper: it stays white, with dark text. */
+.voucher-card {
+    -fx-background-color: white;
+    -fx-text-fill: black;
+}
+
+.voucher-card .label {
+    -fx-text-fill: black;
+}
+
+.voucher-card .voucher-label, .voucher-card .voucher-small {
+    -fx-text-fill: #555e6b;
+}
+
+.voucher-card .voucher-qr {
+    -fx-text-fill: #9aa3b0;
+}

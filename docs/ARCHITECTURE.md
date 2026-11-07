@@ -43,7 +43,8 @@ This document explains how the code is organized and **why**, so it stays easy t
 | `org.netpilot.service` | `UserGenerator`, `ExportService`, the exporters (CSV, RSC, PDF, QR), `PdfText` (Arabic shaping and bidirectional layout for the PDF), `ReportService` (sales calculation, pure logic) and `ReportExporter` (CSV) |
 | `org.netpilot.service.router` | `RouterConnector` (opens sessions), `RouterClient` (interface) + `RestRouterClient` (RouterOS 7 REST API), `PinnedTrustManager`, `RouterErrors`, `RouterException`, `RouterUploadService` (send a batch), `RouterUserActions` (bulk enable/disable/delete/disconnect/reprint) |
 | `org.netpilot.repository` | `SettingsRepository`, `HistoryRepository`, `UsageRepository` (first-use day of each card), `AppPaths` |
-| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `ReportsController` (Reports window), `Dialogs` |
+| `org.netpilot.controller` | `MainController`, `HistoryController`, `RouterConnectionController` (dialog), `RouterSession` (status bar + loaded lists), `UploadController` (send progress + summary), `RouterUsersController` (Router Users window), `VoucherDesignController` (Voucher Design window), `ReportsController` (Reports window), `PreferencesController` (language and theme), `Styling` (stylesheets, theme, right-to-left), `Dialogs` |
+| `org.netpilot.i18n` | `Messages`: every text shown to the user, from `messages_en.properties` / `messages_ar.properties` |
 
 ## Main flows
 
@@ -84,6 +85,14 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 2. The **first** time a router is tracked, cards that are already used get **no date**. Dating them "today" would show a fake spike. They count in "All time" only, and the report says so.
 3. Records stay when cards are deleted from the router, so past revenue never disappears.
 4. Revenue = sold cards × the price of their profile. Prices come from the Voucher Design text and are parsed by `Money`. Prices without a number, or in a different currency from the rest, are listed as warnings and left out of the total.
+
+## Interface language and theme
+
+- Every user-visible text lives in `resources/org/netpilot/i18n/messages_en.properties` and `messages_ar.properties`. Views use `%key` (FXMLLoader gets `Messages.bundle()`); code uses `Messages.get("key", args...)`, which formats with `MessageFormat` (numbers are not grouped, so `1000` never becomes `1,000`).
+- The language is chosen once at start-up (`NetPilotApp.start`), before any window is built; changing it in Preferences applies on the next start. Logs stay in English.
+- `Styling.apply` is called on every scene and dialog: it adds `styles.css` (plus `dark.css` for the dark theme), sets right-to-left orientation for Arabic and the `arabic` style class (Cairo font). `Styling.setTheme` restyles all open windows; the system theme follows `Platform.getPreferences()`.
+- `dark.css` only overrides colour tokens (`-np-*`, `-fx-base`, ...). The voucher preview card keeps white paper colours in both themes.
+- `MessagesTest` fails when a key is missing in one language, placeholders differ, a used key does not exist, or a view has text that is not a `%key`.
 
 ## Arabic in PDFs
 

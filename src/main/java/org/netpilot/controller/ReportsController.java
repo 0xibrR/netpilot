@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -24,12 +23,14 @@ import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.Money;
 import org.netpilot.model.ReportPeriod;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.SalesReport;
 import org.netpilot.model.UsageRecord;
 import org.netpilot.model.VoucherTemplate;
+import org.netpilot.service.ReportService;
 import org.netpilot.service.router.RouterClient;
 
 /**
@@ -125,7 +126,7 @@ public class ReportsController {
     public void start(RouterClient routerClient, String routerName, Supplier<VoucherTemplate> voucherTemplate) {
         this.client = routerClient;
         this.template = voucherTemplate;
-        stage().setTitle("Reports - " + routerName);
+        stage().setTitle(Messages.get("window.reports", routerName));
         onRefresh();
     }
 
@@ -155,7 +156,7 @@ public class ReportsController {
         task.setOnFailed(e -> {
             setBusy(false);
             LOG.log(System.Logger.Level.WARNING, "Cannot build report", task.getException());
-            Dialogs.error(stage(), "Cannot build the report", String.valueOf(task.getException().getMessage()));
+            Dialogs.error(stage(), Messages.get("reports.failed"), String.valueOf(task.getException().getMessage()));
         });
         Thread thread = new Thread(task, "netpilot-reports");
         thread.setDaemon(true);
@@ -168,7 +169,7 @@ public class ReportsController {
             return;
         }
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export report");
+        chooser.setTitle(Messages.get("reports.exportTitle"));
         chooser.setInitialFileName("netpilot-report-" + LocalDate.now() + ".csv");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
         File file = chooser.showSaveDialog(stage());
@@ -180,7 +181,7 @@ public class ReportsController {
             context.hostServices().showDocument(file.toURI().toString());
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Report export failed", e);
-            Dialogs.error(stage(), "Export failed", e.getMessage());
+            Dialogs.error(stage(), Messages.get("error.exportFailed"), e.getMessage());
         }
     }
 
@@ -224,10 +225,11 @@ public class ReportsController {
     }
 
     private void setUpTables() {
-        batchColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().batch()));
+        batchColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(ReportService.batchLabel(c.getValue().batch())));
         batchCreatedColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
                 c.getValue().created().map(BATCH_TIME::format).orElse("")));
-        batchProfileColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().profile()));
+        batchProfileColumn.setCellValueFactory(
+                c -> new ReadOnlyStringWrapper(ReportService.profileLabel(c.getValue().profile())));
         batchCardsColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().cards()));
         batchUsedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().used()));
         batchUnusedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().unused()));

@@ -1,28 +1,28 @@
 package org.netpilot.model;
 
+import org.netpilot.i18n.Messages;
+
 /**
- * How hotspot usernames are generated.
+ * How hotspot usernames are generated. Display names come from the {@code mode.username.*} texts.
  */
 public enum UsernameMode {
 
     /** Random letters and digits of a fixed length. */
-    RANDOM_ALPHANUMERIC("Random (letters + digits)", true, false),
+    RANDOM_ALPHANUMERIC(true, false),
 
     /** Random digits of a fixed length. */
-    RANDOM_NUMERIC("Random (digits only)", true, false),
+    RANDOM_NUMERIC(true, false),
 
     /** {@code user0001}, {@code user0002}, ... starting from the sequence start. */
-    SEQUENTIAL("Sequential (user0001)", false, true),
+    SEQUENTIAL(false, true),
 
     /** Profile name followed by a sequence number, e.g. {@code 2M0001}. */
-    PROFILE_BASED("Profile based (2M0001)", false, true);
+    PROFILE_BASED(false, true);
 
-    private final String label;
     private final boolean usesLength;
     private final boolean usesSequence;
 
-    UsernameMode(String label, boolean usesLength, boolean usesSequence) {
-        this.label = label;
+    UsernameMode(boolean usesLength, boolean usesSequence) {
         this.usesLength = usesLength;
         this.usesSequence = usesSequence;
     }
@@ -42,6 +42,6 @@ public enum UsernameMode {
 
     @Override
     public String toString() {
-        return label;
+        return Messages.get("mode.username." + name());
     }
 }

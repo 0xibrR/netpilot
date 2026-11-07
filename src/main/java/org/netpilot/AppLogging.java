@@ -1,5 +1,4 @@
 package org.netpilot;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -16,6 +15,8 @@ import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextArea;
+import org.netpilot.controller.Styling;
+import org.netpilot.i18n.Messages;
 
 /**
  * Sets up file logging and a last-resort handler for unexpected errors.
@@ -79,10 +80,10 @@ public final class AppLogging {
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle(NetPilotApp.NAME);
-            alert.setHeaderText("Something went wrong");
-            alert.setContentText(String.valueOf(error.getMessage())
-                    + "\n\nDetails were saved to the log file in ~/.netpilot/logs.");
+            alert.setHeaderText(Messages.get("error.unexpected.title"));
+            alert.setContentText(String.valueOf(error.getMessage()) + "\n\n" + Messages.get("error.unexpected.body"));
             alert.getDialogPane().setExpandableContent(details);
+            Styling.apply(alert.getDialogPane());
             alert.show();
         } catch (RuntimeException dialogFailure) {
             // Never throw from the last-resort handler; the error is already logged.

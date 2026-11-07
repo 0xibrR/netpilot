@@ -2,6 +2,7 @@ package org.netpilot.model;
 
 import java.util.Locale;
 import java.util.Set;
+import org.netpilot.i18n.Messages;
 
 /**
  * Which router users to show. All conditions must match; empty text/batch/profile means "any".
@@ -13,23 +14,18 @@ import java.util.Set;
  */
 public record UserFilter(String text, String batch, String profile, Status status) {
 
+    /** Display names come from the {@code filter.status.*} texts. */
     public enum Status {
 
-        ALL("All"),
-        ONLINE("Online now"),
-        NEVER_USED("Never used"),
-        EXPIRED("Expired (time used up)"),
-        DISABLED("Disabled");
-
-        private final String label;
-
-        Status(String label) {
-            this.label = label;
-        }
+        ALL,
+        ONLINE,
+        NEVER_USED,
+        EXPIRED,
+        DISABLED;
 
         @Override
         public String toString() {
-            return label;
+            return Messages.get("filter.status." + name());
         }
     }
 

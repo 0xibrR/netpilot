@@ -1,5 +1,4 @@
 package org.netpilot.service.router;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
@@ -126,7 +126,7 @@ final class RestRouterClient implements RouterClient {
         String id = text(created, ".id");
         if (!ROUTER_ID.matcher(id).matches()) {
             throw new RouterException(Kind.UNEXPECTED_RESPONSE,
-                    "The router created user " + user.username() + " but did not return its id.");
+                    Messages.get("router.error.noId", user.username()));
         }
         return id;
     }
@@ -245,14 +245,14 @@ final class RestRouterClient implements RouterClient {
             throw RouterErrors.fromIo(e, endpoint);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RouterException(Kind.UNREACHABLE, "The connection was cancelled.", e);
+            throw new RouterException(Kind.UNREACHABLE, Messages.get("router.error.cancelled"), e);
         }
         return RouterErrors.fromResponse(response.statusCode(), response.body(), path, endpoint);
     }
 
     private static Iterable<JsonNode> array(JsonNode node, String what) throws RouterException {
         if (!node.isArray()) {
-            throw new RouterException(Kind.UNEXPECTED_RESPONSE, "The router sent an unexpected list of " + what + ".");
+            throw new RouterException(Kind.UNEXPECTED_RESPONSE, Messages.get("router.error.badList", what));
         }
         return node;
     }

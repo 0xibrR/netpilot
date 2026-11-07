@@ -2,23 +2,18 @@ package org.netpilot.model;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import org.netpilot.i18n.Messages;
 
 /**
  * The time range a report covers. "Sold" cards are counted by the day they were first used.
  */
 public enum ReportPeriod {
 
-    LAST_7_DAYS("Last 7 days"),
-    LAST_30_DAYS("Last 30 days"),
-    THIS_MONTH("This month"),
-    LAST_MONTH("Last month"),
-    ALL("All time");
-
-    private final String label;
-
-    ReportPeriod(String label) {
-        this.label = label;
-    }
+    LAST_7_DAYS,
+    LAST_30_DAYS,
+    THIS_MONTH,
+    LAST_MONTH,
+    ALL;
 
     /** First day of the period; {@link LocalDate#MIN} for {@link #ALL}. */
     public LocalDate from(LocalDate today) {
@@ -40,8 +35,9 @@ public enum ReportPeriod {
         return !day.isBefore(from(today)) && !day.isAfter(to(today));
     }
 
+    /** Display name from the {@code period.*} texts. */
     @Override
     public String toString() {
-        return label;
+        return Messages.get("period." + name());
     }
 }

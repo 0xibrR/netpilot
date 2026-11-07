@@ -1,5 +1,4 @@
 package org.netpilot.service;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.BatchTag;
 import org.netpilot.model.Money;
 import org.netpilot.model.ReportPeriod;
@@ -27,8 +27,20 @@ import org.netpilot.model.VoucherTemplate;
  */
 public final class ReportService {
 
+    /** Internal batch name for hand-made users; shown through {@link #batchLabel}. */
     static final String OTHER = "Other";
+    /** Internal profile name for batches with several profiles; shown through {@link #profileLabel}. */
     private static final String MIXED = "mixed";
+
+    /** Display text for a batch row's name, translated for the internal "Other" group. */
+    public static String batchLabel(String batch) {
+        return OTHER.equals(batch) ? Messages.get("report.otherBatch") : batch;
+    }
+
+    /** Display text for a batch row's profile, translated for "mixed". */
+    public static String profileLabel(String profile) {
+        return MIXED.equals(profile) ? Messages.get("report.mixedProfile") : profile;
+    }
 
     /**
      * Records cards that have been used since the last time, with today's date.
@@ -70,8 +82,7 @@ public final class ReportService {
                 .toList();
         long undated = usage.stream().filter(r -> r.firstUsed().isEmpty()).count();
         if (undated > 0 && period != ReportPeriod.ALL) {
-            warnings.add(undated + " cards were already used before NetPilot started tracking; they are counted in"
-                    + " \"All time\" only.");
+            warnings.add(Messages.get("report.warning.undated", undated));
         }
 
         Money revenue = prices.total(sold.stream().map(UsageRecord::profile).toList());
@@ -172,13 +183,13 @@ public final class ReportService {
             template.prices().forEach((profile, text) -> {
                 Optional<Money> money = Money.parse(text);
                 if (money.isEmpty()) {
-                    warnings.add("The price of " + profile + " (\"" + text + "\") has no number and is not counted.");
+                    warnings.add(Messages.get("report.warning.priceNoNumber", profile, text));
                 } else {
                     parsed.put(profile, money.get());
                 }
             });
             if (parsed.isEmpty()) {
-                warnings.add("No prices are set. Add them in Tools → Voucher Design to see revenue.");
+                warnings.add(Messages.get("report.warning.noPrices"));
                 return new Prices(Map.of(), "");
             }
             // the currency most prices use is the report currency
@@ -191,8 +202,7 @@ public final class ReportService {
                 if (money.currency().equalsIgnoreCase(currency)) {
                     sameCurrency.put(profile, money);
                 } else {
-                    warnings.add("The price of " + profile + " uses another currency (" + money.format()
-                            + ") and is not counted.");
+                    warnings.add(Messages.get("report.warning.otherCurrency", profile, money.format()));
                 }
             });
             String display = sameCurrency.values().iterator().next().currency();

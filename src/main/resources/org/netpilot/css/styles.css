@@ -16,6 +16,11 @@
     -fx-focus-color: -np-accent;
 }
 
+/* Arabic interface (set by Styling): Cairo has every Arabic letter and joins them properly. */
+.arabic {
+    -fx-font-family: "Cairo", "Segoe UI", sans-serif;
+}
+
 .app-root {
     -fx-background-color: -np-bg;
 }

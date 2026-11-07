@@ -1,5 +1,4 @@
 package org.netpilot.service;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.random.RandomGenerator;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.PasswordMode;
@@ -87,7 +87,7 @@ public final class UserGenerator {
                 return candidate;
             }
         }
-        throw new IllegalStateException("Could not create a unique username. Increase the username length.");
+        throw new IllegalStateException(Messages.get("generator.noUniqueName"));
     }
 
     private String username(GenerationSettings s, int index) {

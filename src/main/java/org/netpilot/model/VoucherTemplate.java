@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.netpilot.i18n.Messages;
 
 /**
  * How printed vouchers look.
@@ -108,14 +109,14 @@ public record VoucherTemplate(
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
         if (networkName.length() > MAX_NAME) {
-            errors.add("Network name can have at most " + MAX_NAME + " characters.");
+            errors.add(Messages.get("template.validation.name", MAX_NAME));
         }
         if (note.length() > MAX_NOTE) {
-            errors.add("Note can have at most " + MAX_NOTE + " characters.");
+            errors.add(Messages.get("template.validation.note", MAX_NOTE));
         }
         prices.forEach((profile, price) -> {
             if (price.length() > MAX_PRICE) {
-                errors.add("Price for " + profile + " can have at most " + MAX_PRICE + " characters.");
+                errors.add(Messages.get("template.validation.price", profile, MAX_PRICE));
             }
         });
         return errors;

@@ -14,12 +14,12 @@
 
     <top>
         <HBox spacing="8" alignment="CENTER_LEFT">
-            <Label text="Period" styleClass="section-title"/>
+            <Label text="%reports.period" styleClass="section-title"/>
             <ComboBox fx:id="periodBox" prefWidth="160"/>
             <Region HBox.hgrow="ALWAYS"/>
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-            <Button fx:id="exportButton" text="Export CSV…" onAction="#onExport"/>
-            <Button fx:id="refreshButton" text="⟳ Refresh" onAction="#onRefresh"/>
+            <Button fx:id="exportButton" text="%reports.export" onAction="#onExport"/>
+            <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
             <padding>
                 <Insets top="12" right="12" bottom="0" left="12"/>
             </padding>
@@ -30,28 +30,28 @@
         <VBox spacing="10">
             <HBox spacing="10">
                 <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-                    <Label text="Revenue" styleClass="stat-title"/>
+                    <Label text="%report.revenue" styleClass="stat-title"/>
                     <Label fx:id="revenueLabel" styleClass="stat-value, stat-money"/>
                 </VBox>
                 <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-                    <Label text="Still to come (unused cards)" styleClass="stat-title"/>
+                    <Label text="%report.potential" styleClass="stat-title"/>
                     <Label fx:id="potentialLabel" styleClass="stat-value"/>
                 </VBox>
                 <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-                    <Label text="Cards sold" styleClass="stat-title"/>
+                    <Label text="%report.sold" styleClass="stat-title"/>
                     <Label fx:id="soldLabel" styleClass="stat-value"/>
                 </VBox>
                 <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-                    <Label text="Never used" styleClass="stat-title"/>
+                    <Label text="%report.unused" styleClass="stat-title"/>
                     <Label fx:id="unusedLabel" styleClass="stat-value"/>
                 </VBox>
                 <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
-                    <Label text="Cards created" styleClass="stat-title"/>
+                    <Label text="%report.created" styleClass="stat-title"/>
                     <Label fx:id="createdLabel" styleClass="stat-value"/>
                 </VBox>
             </HBox>
 
-            <BarChart fx:id="dailyChart" title="Revenue per day (by first use)" legendVisible="false"
+            <BarChart fx:id="dailyChart" title="%reports.chart" legendVisible="false"
                       animated="false" prefHeight="220" minHeight="180">
                 <xAxis>
                     <CategoryAxis fx:id="dayAxis"/>
@@ -62,40 +62,40 @@
             </BarChart>
 
             <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
-                <Tab text="By batch">
+                <Tab text="%reports.byBatch">
                     <TableView fx:id="batchTable">
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
                         </columnResizePolicy>
                         <columns>
-                            <TableColumn fx:id="batchColumn" text="Batch" prefWidth="280"/>
-                            <TableColumn fx:id="batchCreatedColumn" text="Created" prefWidth="130"/>
-                            <TableColumn fx:id="batchProfileColumn" text="Profile" prefWidth="80"/>
-                            <TableColumn fx:id="batchCardsColumn" text="Cards" prefWidth="70"/>
-                            <TableColumn fx:id="batchUsedColumn" text="Used" prefWidth="70"/>
-                            <TableColumn fx:id="batchUnusedColumn" text="Unused" prefWidth="70"/>
-                            <TableColumn fx:id="batchRevenueColumn" text="Revenue" prefWidth="120"/>
+                            <TableColumn fx:id="batchColumn" text="%report.column.batch" prefWidth="280"/>
+                            <TableColumn fx:id="batchCreatedColumn" text="%report.column.created" prefWidth="130"/>
+                            <TableColumn fx:id="batchProfileColumn" text="%report.column.profile" prefWidth="80"/>
+                            <TableColumn fx:id="batchCardsColumn" text="%report.column.cards" prefWidth="70"/>
+                            <TableColumn fx:id="batchUsedColumn" text="%report.column.used" prefWidth="70"/>
+                            <TableColumn fx:id="batchUnusedColumn" text="%report.column.unused" prefWidth="70"/>
+                            <TableColumn fx:id="batchRevenueColumn" text="%report.column.revenue" prefWidth="120"/>
                         </columns>
                         <placeholder>
-                            <Label text="No batches in this period." styleClass="muted"/>
+                            <Label text="%reports.noBatches" styleClass="muted"/>
                         </placeholder>
                     </TableView>
                 </Tab>
-                <Tab text="By profile">
+                <Tab text="%reports.byProfile">
                     <TableView fx:id="profileTable">
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
                         </columnResizePolicy>
                         <columns>
-                            <TableColumn fx:id="profileColumn" text="Profile" prefWidth="120"/>
-                            <TableColumn fx:id="profilePriceColumn" text="Price" prefWidth="110"/>
-                            <TableColumn fx:id="profileSoldColumn" text="Sold" prefWidth="70"/>
-                            <TableColumn fx:id="profileUnusedColumn" text="Unused" prefWidth="70"/>
-                            <TableColumn fx:id="profileRevenueColumn" text="Revenue" prefWidth="120"/>
-                            <TableColumn fx:id="profileDataColumn" text="Data used" prefWidth="100"/>
+                            <TableColumn fx:id="profileColumn" text="%report.column.profile" prefWidth="120"/>
+                            <TableColumn fx:id="profilePriceColumn" text="%report.column.price" prefWidth="110"/>
+                            <TableColumn fx:id="profileSoldColumn" text="%report.column.sold" prefWidth="70"/>
+                            <TableColumn fx:id="profileUnusedColumn" text="%report.column.unused" prefWidth="70"/>
+                            <TableColumn fx:id="profileRevenueColumn" text="%report.column.revenue" prefWidth="120"/>
+                            <TableColumn fx:id="profileDataColumn" text="%reports.dataUsed" prefWidth="100"/>
                         </columns>
                         <placeholder>
-                            <Label text="No profiles." styleClass="muted"/>
+                            <Label text="%reports.noProfiles" styleClass="muted"/>
                         </placeholder>
                     </TableView>
                 </Tab>

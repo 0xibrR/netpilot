@@ -17,6 +17,9 @@ import org.netpilot.model.HistoryRecord;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
+import org.netpilot.model.Theme;
+import org.netpilot.model.UiLanguage;
+import org.netpilot.model.UiPreferences;
 import org.netpilot.model.UsernameMode;
 import org.netpilot.model.VoucherTemplate;
 
@@ -36,7 +39,8 @@ class RepositoriesTest {
                         "10.0.0.1:8443", "ab".repeat(32),
                         "[fe80::1]:443", "cd".repeat(32))),
                 new VoucherTemplate("شبكة الأمل", "صالح لمدة 30 يوماً", VoucherTemplate.Language.ARABIC, "#AA3300",
-                        Map.of("2M", "1000 ل.س", "My Profile", "5$"), true, false, true, false, null));
+                        Map.of("2M", "1000 ل.س", "My Profile", "5$"), true, false, true, false, null),
+                new UiPreferences(UiLanguage.ARABIC, Theme.DARK));
 
         repo.save(saved);
 

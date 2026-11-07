@@ -12,11 +12,15 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.MainController;
+import org.netpilot.controller.PreferencesController;
 import org.netpilot.controller.ReportsController;
 import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
+import org.netpilot.controller.Styling;
 import org.netpilot.controller.UploadController;
 import org.netpilot.controller.VoucherDesignController;
+import org.netpilot.i18n.Messages;
+import org.netpilot.model.UiPreferences;
 import org.netpilot.repository.AppPaths;
 
 /**
@@ -43,6 +47,11 @@ public class NetPilotApp extends Application {
     public void start(Stage stage) throws IOException {
         AppContext context = AppContext.create(getHostServices());
 
+        // language and theme must be known before the first window is built
+        UiPreferences ui = context.settingsRepository().load().ui();
+        Messages.use(ui.language().locale());
+        Styling.init(ui.theme());
+
         FXMLLoader loader = loader("view/main-view.fxml", context);
         Parent root = loader.load();
         mainController = loader.getController();
@@ -52,7 +61,7 @@ public class NetPilotApp extends Application {
         double width = Math.min(1180, screen.getWidth() - 40);
         double height = Math.min(760, screen.getHeight() - 60);
         Scene scene = new Scene(root, width, height);
-        scene.getStylesheets().add(resource("css/styles.css").toExternalForm());
+        Styling.apply(scene);
 
         stage.setTitle(NAME);
         stage.setMinWidth(Math.min(900, width));
@@ -71,9 +80,9 @@ public class NetPilotApp extends Application {
         LOG.log(System.Logger.Level.INFO, "{0} stopped", NAME);
     }
 
-    /** Creates a loader whose controllers receive the shared context. */
+    /** Creates a loader whose controllers receive the shared context and whose texts use the UI language. */
     public static FXMLLoader loader(String view, AppContext context) {
-        FXMLLoader loader = new FXMLLoader(resource(view));
+        FXMLLoader loader = new FXMLLoader(resource(view), Messages.bundle());
         loader.setControllerFactory(type -> {
             if (type == MainController.class) {
                 return new MainController(context);
@@ -95,6 +104,9 @@ public class NetPilotApp extends Application {
             }
             if (type == ReportsController.class) {
                 return new ReportsController(context);
+            }
+            if (type == PreferencesController.class) {
+                return new PreferencesController();
             }
             throw new IllegalArgumentException("Unknown controller: " + type);
         });

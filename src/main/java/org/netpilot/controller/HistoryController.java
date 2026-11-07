@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +13,7 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.HistoryRecord;
 
 /**
@@ -78,8 +78,7 @@ public class HistoryController {
 
     @FXML
     private void onClear() {
-        if (!Dialogs.confirm(stage(), "Clear export history?",
-                "History entries are removed. Exported files stay on disk.")) {
+        if (!Dialogs.confirm(stage(), Messages.get("history.clear.title"), Messages.get("history.clear.body"))) {
             return;
         }
         try {
@@ -87,7 +86,7 @@ public class HistoryController {
             reload();
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot clear history", e);
-            Dialogs.error(stage(), "Cannot clear history", e.getMessage());
+            Dialogs.error(stage(), Messages.get("history.clear.failed"), e.getMessage());
         }
     }
 
@@ -101,17 +100,18 @@ public class HistoryController {
             List<HistoryRecord> records = context.historyRepository().findAll();
             historyTable.getItems().setAll(records);
             int totalUsers = records.stream().mapToInt(HistoryRecord::userCount).sum();
-            summaryLabel.setText(records.size() + " exports · " + totalUsers + " users in total");
+            summaryLabel.setText(Messages.get("history.summary", records.size(), totalUsers));
             clearButton.setDisable(records.isEmpty());
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot read history", e);
-            summaryLabel.setText("Cannot read history: " + e.getMessage());
+            summaryLabel.setText(Messages.get("history.readFailed", e.getMessage()));
         }
     }
 
     private void openFolder(HistoryRecord record) {
         if (!Files.isDirectory(record.folder())) {
-            Dialogs.info(stage(), "Folder not found", "This export folder was moved or deleted:\n" + record.folder());
+            Dialogs.info(stage(), Messages.get("history.folderMissing.title"),
+                    Messages.get("history.folderMissing.body", record.folder()));
             return;
         }
         context.hostServices().showDocument(record.folder().toUri().toString());

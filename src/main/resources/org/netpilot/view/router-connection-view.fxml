@@ -12,33 +12,32 @@
     <center>
         <VBox spacing="12" styleClass="form">
             <VBox styleClass="card" spacing="10">
-                <Label text="Router" styleClass="card-title"/>
+                <Label text="%connect.router" styleClass="card-title"/>
                 <GridPane hgap="10" vgap="8">
                     <columnConstraints>
                         <ColumnConstraints minWidth="110"/>
                         <ColumnConstraints hgrow="ALWAYS"/>
                     </columnConstraints>
-                    <Label text="Address" GridPane.rowIndex="0"/>
-                    <TextField fx:id="hostField" promptText="e.g. 10.0.0.1" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                    <Label text="Port" GridPane.rowIndex="1"/>
+                    <Label text="%connect.address" GridPane.rowIndex="0"/>
+                    <TextField fx:id="hostField" promptText="%connect.address.prompt" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="%connect.port" GridPane.rowIndex="1"/>
                     <HBox spacing="12" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
                         <TextField fx:id="portField" prefColumnCount="6"/>
-                        <CheckBox fx:id="httpsCheck" text="Use HTTPS (recommended)"/>
+                        <CheckBox fx:id="httpsCheck" text="%connect.https"/>
                     </HBox>
-                    <Label text="User name" GridPane.rowIndex="2"/>
+                    <Label text="%connect.username" GridPane.rowIndex="2"/>
                     <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                    <Label text="Password" GridPane.rowIndex="3"/>
-                    <PasswordField fx:id="passwordField" promptText="never saved" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    <Label text="%connect.password" GridPane.rowIndex="3"/>
+                    <PasswordField fx:id="passwordField" promptText="%connect.password.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
                 </GridPane>
-                <Label fx:id="httpWarning" styleClass="warning" wrapText="true"
-                       text="⚠ HTTP is not encrypted: the password can be read by anyone on the network. Use it only on a trusted local network."/>
+                <Label fx:id="httpWarning" styleClass="warning" wrapText="true" text="%connect.httpWarning"/>
             </VBox>
 
             <VBox styleClass="card" spacing="8">
-                <Label text="HTTPS certificate" styleClass="card-title"/>
+                <Label text="%connect.certificate" styleClass="card-title"/>
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label fx:id="certificateLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Button fx:id="forgetCertificateButton" text="Forget" onAction="#onForgetCertificate"/>
+                    <Button fx:id="forgetCertificateButton" text="%connect.forget" onAction="#onForgetCertificate"/>
                 </HBox>
             </VBox>
 
@@ -54,9 +53,9 @@
 
     <bottom>
         <HBox styleClass="action-bar" alignment="CENTER_RIGHT" spacing="10">
-            <Button fx:id="testButton" text="Test" onAction="#onTest"/>
-            <Button text="Cancel" onAction="#onCancel" cancelButton="true"/>
-            <Button fx:id="connectButton" text="Connect" onAction="#onConnect" defaultButton="true" styleClass="primary"/>
+            <Button fx:id="testButton" text="%connect.test" onAction="#onTest"/>
+            <Button text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
+            <Button fx:id="connectButton" text="%connect.connect" onAction="#onConnect" defaultButton="true" styleClass="primary"/>
             <padding>
                 <Insets top="10" right="16" bottom="10" left="16"/>
             </padding>

@@ -37,11 +37,11 @@
 
     <bottom>
         <HBox styleClass="action-bar" alignment="CENTER_RIGHT" spacing="10">
-            <Button fx:id="undoButton" text="Undo (delete these users)" onAction="#onUndo" visible="false" managed="false"/>
+            <Button fx:id="undoButton" text="%upload.undo" onAction="#onUndo" visible="false" managed="false"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="cancelButton" text="Cancel" onAction="#onCancel" cancelButton="true"/>
-            <Button fx:id="closeButton" text="Close" onAction="#onClose" visible="false" managed="false"/>
-            <Button fx:id="printButton" text="Print vouchers (PDF)" onAction="#onPrint" styleClass="primary"
+            <Button fx:id="cancelButton" text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
+            <Button fx:id="closeButton" text="%button.close" onAction="#onClose" visible="false" managed="false"/>
+            <Button fx:id="printButton" text="%upload.print" onAction="#onPrint" styleClass="primary"
                     defaultButton="true" visible="false" managed="false"/>
             <padding>
                 <Insets top="10" right="16" bottom="10" left="16"/>

@@ -1,5 +1,4 @@
 package org.netpilot.repository;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -12,11 +11,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
+import org.netpilot.model.Theme;
+import org.netpilot.model.UiLanguage;
+import org.netpilot.model.UiPreferences;
 import org.netpilot.model.UsernameMode;
 import org.netpilot.model.VoucherTemplate;
 
@@ -44,7 +47,8 @@ public class SettingsRepository {
 
     public AppSettings defaults() {
         return new AppSettings(GenerationSettings.defaults(), DEFAULT_LOGIN_URL, DEFAULT_PER_ROW,
-                AppPaths.defaultOutputDirectory(), RouterSettings.defaults(), VoucherTemplate.defaults());
+                AppPaths.defaultOutputDirectory(), RouterSettings.defaults(), VoucherTemplate.defaults(),
+                UiPreferences.defaults());
     }
 
     /**
@@ -59,10 +63,10 @@ public class SettingsRepository {
         String name = fileName == null ? "" : fileName.toString().toLowerCase(Locale.ROOT);
         String extension = name.endsWith(".png") ? "png" : name.endsWith(".jpg") || name.endsWith(".jpeg") ? "jpg" : "";
         if (extension.isEmpty()) {
-            throw new IllegalArgumentException("Choose a PNG or JPEG image.");
+            throw new IllegalArgumentException(Messages.get("logo.notImage"));
         }
         if (Files.size(source) > MAX_LOGO_BYTES) {
-            throw new IllegalArgumentException("The logo can be at most 2 MB.");
+            throw new IllegalArgumentException(Messages.get("logo.tooBig"));
         }
         FileSupport.createParentDirectories(file);
         Path target = file.resolveSibling("voucher-logo." + extension);
@@ -113,7 +117,9 @@ public class SettingsRepository {
                 intValue(p, "vouchersPerRow", d.vouchersPerRow()),
                 output,
                 loadRouter(p, d.router()),
-                loadTemplate(p, d.voucherTemplate()));
+                loadTemplate(p, d.voucherTemplate()),
+                new UiPreferences(enumValue(p, "ui.language", UiLanguage.class, d.ui().language()),
+                        enumValue(p, "ui.theme", Theme.class, d.ui().theme())));
     }
 
     private static VoucherTemplate loadTemplate(Properties p, VoucherTemplate d) {
@@ -204,6 +210,8 @@ public class SettingsRepository {
         p.setProperty("voucher.showProfile", String.valueOf(t.showProfile()));
         p.setProperty("voucher.logo", t.logoFile().map(Path::toString).orElse(""));
         t.prices().forEach((profile, price) -> p.setProperty(PRICE_PREFIX + profile, price));
+        p.setProperty("ui.language", settings.ui().language().name());
+        p.setProperty("ui.theme", settings.ui().theme().name());
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

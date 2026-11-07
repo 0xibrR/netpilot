@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,6 +13,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.UploadReport;
@@ -83,7 +83,7 @@ public class UploadController {
     public void start(RouterClient routerClient, String routerName, List<HotspotUser> users,
             GenerationSettings settings) {
         this.client = routerClient;
-        headerLabel.setText("Creating " + users.size() + " users on " + routerName + "…");
+        headerLabel.setText(Messages.get("upload.creating", users.size(), routerName));
         stage().setOnCloseRequest(event -> {
             if (running) {
                 event.consume(); // closing mid-way would hide what was created; cancel instead
@@ -133,7 +133,7 @@ public class UploadController {
         if (running) {
             cancelRequested.set(true);
             cancelButton.setDisable(true);
-            cancelButton.setText("Stopping…");
+            cancelButton.setText(Messages.get("upload.stopping"));
         } else {
             stage().close();
         }
@@ -153,8 +153,7 @@ public class UploadController {
     @FXML
     private void onUndo() {
         int count = report.created().size();
-        if (!Dialogs.confirm(stage(), "Delete the " + count + " users just created?",
-                "They are removed from the router. Users that existed before are not touched.")) {
+        if (!Dialogs.confirm(stage(), Messages.get("upload.undo.title", count), Messages.get("upload.undo.body"))) {
             return;
         }
         Task<RouterUploadService.UndoResult> task = new Task<>() {
@@ -168,21 +167,21 @@ public class UploadController {
             setVisible(undoButton, false);
             setVisible(printButton, false);
             closeButton.setDisable(true);
-            headerLabel.setText("Deleting " + count + " users…");
+            headerLabel.setText(Messages.get("users.deleting", count));
         });
         task.setOnSucceeded(e -> {
             RouterUploadService.UndoResult result = task.getValue();
             undone = result.problems().isEmpty();
             closeButton.setDisable(false);
-            headerLabel.setText(result.deleted() + " of " + count + " users deleted from the router.");
+            headerLabel.setText(Messages.get("upload.undo.done", result.deleted(), count));
             if (!result.problems().isEmpty()) {
-                showDetails("Could not delete:\n" + String.join("\n", result.problems()));
+                showDetails(Messages.get("upload.undo.problems") + "\n" + String.join("\n", result.problems()));
             }
         });
         task.setOnFailed(e -> {
             closeButton.setDisable(false);
             LOG.log(System.Logger.Level.ERROR, "Undo failed", task.getException());
-            headerLabel.setText("Undo failed: " + task.getException().getMessage());
+            headerLabel.setText(Messages.get("upload.undo.failed", task.getException().getMessage()));
         });
         Thread thread = new Thread(task, "netpilot-undo");
         thread.setDaemon(true);
@@ -198,25 +197,26 @@ public class UploadController {
         progressBar.setProgress(1);
         progressLabel.textProperty().unbind();
 
-        headerLabel.setText(result.completeSuccess() ? "Done ✓" : "Finished with problems");
-        createdLabel.setText("✓ Created: " + result.created().size());
+        headerLabel.setText(Messages.get(result.completeSuccess() ? "upload.done" : "upload.doneWithProblems"));
+        createdLabel.setText("✓ " + Messages.get("upload.created", result.created().size()));
         show(replacedLabel, result.replaced() > 0,
-                "↻ " + result.replaced() + " of them got a new name because the name already existed");
+                "↻ " + Messages.get("upload.replaced", result.replaced()));
         show(skippedLabel, !result.skipped().isEmpty(),
-                "⏭ Skipped (name already exists): " + result.skipped().size());
-        show(failedLabel, !result.failed().isEmpty(), "✗ Failed: " + result.failed().size());
-        show(notSentLabel, !result.notSent().isEmpty(), "⏸ Not sent: " + result.notSent().size());
+                "⏭ " + Messages.get("upload.skipped", result.skipped().size()));
+        show(failedLabel, !result.failed().isEmpty(), "✗ " + Messages.get("upload.failed", result.failed().size()));
+        show(notSentLabel, !result.notSent().isEmpty(),
+                "⏸ " + Messages.get("upload.notSent", result.notSent().size()));
         show(stopLabel, result.stopReason().isPresent(), result.stopReason().orElse(""));
-        commentLabel.setText("Comment on the router: " + result.batchComment());
+        commentLabel.setText(Messages.get("upload.comment", result.batchComment()));
 
         List<String> details = new java.util.ArrayList<>();
         if (!result.failed().isEmpty()) {
-            details.add("Failed users:\n" + result.failed().stream()
+            details.add(Messages.get("upload.failedUsers") + "\n" + result.failed().stream()
                     .map(f -> "  " + f.user().username() + ": " + f.reason())
                     .collect(Collectors.joining("\n")));
         }
         if (!result.skipped().isEmpty()) {
-            details.add("Skipped users:\n  " + result.skipped().stream()
+            details.add(Messages.get("upload.skippedUsers") + "\n  " + result.skipped().stream()
                     .map(HotspotUser::username)
                     .collect(Collectors.joining(", ")));
         }
@@ -231,7 +231,7 @@ public class UploadController {
         boolean anyCreated = !result.created().isEmpty();
         setVisible(printButton, anyCreated);
         setVisible(undoButton, anyCreated);
-        printButton.setText("Print " + result.created().size() + " vouchers (PDF)");
+        printButton.setText(Messages.get("upload.printCount", result.created().size()));
         stage().sizeToScene();
     }
 
@@ -240,7 +240,7 @@ public class UploadController {
         LOG.log(System.Logger.Level.WARNING, "Upload could not start", error);
         progressBar.progressProperty().unbind();
         progressLabel.textProperty().unbind();
-        headerLabel.setText("Nothing was created");
+        headerLabel.setText(Messages.get("upload.nothingCreated"));
         progressLabel.setText(String.valueOf(error.getMessage()));
         progressLabel.getStyleClass().add("status-error");
         setVisible(cancelButton, false);

@@ -1,33 +1,33 @@
 package org.netpilot.model;
 
+import org.netpilot.i18n.Messages;
+
 /**
- * How hotspot passwords are generated.
+ * How hotspot passwords are generated. Display names come from the {@code mode.password.*} texts.
  */
 public enum PasswordMode {
 
     /** Random digits of a fixed length (easy to type on phones). */
-    RANDOM_NUMERIC("Random (digits only)", true, false, false, false),
+    RANDOM_NUMERIC(true, false, false, false),
 
     /** Random letters and digits of a fixed length (strongest). */
-    RANDOM_ALPHANUMERIC("Random (letters + digits)", true, false, false, false),
+    RANDOM_ALPHANUMERIC(true, false, false, false),
 
     /** Password equals the username. Convenient but weak. */
-    SAME_AS_USERNAME("Same as username", false, false, false, true),
+    SAME_AS_USERNAME(false, false, false, true),
 
     /** Prefix followed by the username. Weak. */
-    PREFIX_USERNAME("Prefix + username", false, false, true, true),
+    PREFIX_USERNAME(false, false, true, true),
 
     /** Sequential numbers starting from the password start value. Predictable. */
-    SEQUENTIAL("Sequential numbers", false, true, false, true);
+    SEQUENTIAL(false, true, false, true);
 
-    private final String label;
     private final boolean usesLength;
     private final boolean usesSequence;
     private final boolean usesPrefix;
     private final boolean weak;
 
-    PasswordMode(String label, boolean usesLength, boolean usesSequence, boolean usesPrefix, boolean weak) {
-        this.label = label;
+    PasswordMode(boolean usesLength, boolean usesSequence, boolean usesPrefix, boolean weak) {
         this.usesLength = usesLength;
         this.usesSequence = usesSequence;
         this.usesPrefix = usesPrefix;
@@ -53,6 +53,6 @@ public enum PasswordMode {
 
     @Override
     public String toString() {
-        return label;
+        return Messages.get("mode.password." + name());
     }
 }

@@ -1,9 +1,9 @@
 package org.netpilot.service.router;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterUser;
@@ -53,8 +53,7 @@ public final class RouterUserActions {
     /** "Select all" must never take RouterOS's own trial user with it. */
     private static void protectBuiltIn(RouterUser user) throws RouterException {
         if (user.builtIn()) {
-            throw new RouterException(RouterException.Kind.NOT_SUPPORTED,
-                    "built-in RouterOS user for trial logins, skipped");
+            throw new RouterException(RouterException.Kind.NOT_SUPPORTED, Messages.get("actions.builtInSkipped"));
         }
     }
 

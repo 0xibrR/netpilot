@@ -1,5 +1,4 @@
 package org.netpilot.service.router;
-
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -12,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.random.RandomGenerator;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.UploadReport;
@@ -89,8 +89,7 @@ public final class RouterUploadService {
 
         for (int i = 0; i < users.size(); i++) {
             if (cancelled.getAsBoolean()) {
-                batch.stop("Cancelled. Users created before cancelling are on the router.",
-                        users.subList(i, users.size()));
+                batch.stop(Messages.get("upload.cancelled"), users.subList(i, users.size()));
                 break;
             }
             HotspotUser user = users.get(i);
@@ -211,14 +210,14 @@ public final class RouterUploadService {
             failed.add(new UploadReport.Failure(user, e.getMessage()));
             if (e.affectsEveryRequest()) {
                 stopReason = e.kind() == Kind.TIMEOUT
-                        ? e.getMessage() + " The last user may or may not have been created."
+                        ? Messages.get("upload.timeoutMaybeCreated", e.getMessage())
                         : e.getMessage();
                 return false;
             }
             consecutiveFailures = e.getMessage().equals(lastFailure) ? consecutiveFailures + 1 : 1;
             lastFailure = e.getMessage();
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                stopReason = "Stopped after " + MAX_CONSECUTIVE_FAILURES + " users in a row failed: " + e.getMessage();
+                stopReason = Messages.get("upload.stoppedAfterFailures", MAX_CONSECUTIVE_FAILURES, e.getMessage());
                 return false;
             }
             return true;

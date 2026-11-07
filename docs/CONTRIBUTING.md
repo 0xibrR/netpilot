@@ -34,6 +34,17 @@ feat: connect to router through RouterOS REST API
 fix: keep incomplete last row in voucher PDF
 ```
 
+## Adding or changing texts
+
+Never write user-visible text directly in Java or FXML:
+
+1. Add the key to **both** `src/main/resources/org/netpilot/i18n/messages_en.properties` and `messages_ar.properties`, in the matching section.
+2. Use it as `text="%my.key"` in FXML, or `Messages.get("my.key", value)` in Java (`{0}`, `{1}` are the values; write `''` for an apostrophe in a text that has values).
+3. Enum labels use `prefix.CONSTANT_NAME` keys, e.g. `theme.DARK`.
+4. Run `./mvnw test`: `MessagesTest` reports missing keys, different placeholders and untranslated view text.
+
+Log messages stay in English and are not translated.
+
 ## Useful commands
 
 | Command | Purpose |

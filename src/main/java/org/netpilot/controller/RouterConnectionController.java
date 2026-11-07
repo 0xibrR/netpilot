@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.util.List;
 import java.util.Optional;
 import javafx.concurrent.Task;
@@ -16,6 +15,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AddressInput;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
@@ -132,7 +132,7 @@ public class RouterConnectionController {
         readEndpoint().ifPresent(endpoint -> {
             settings = settings.withoutTrustedFingerprint(endpoint);
             updateCertificateLabel();
-            showResult("The saved certificate was removed. You will be asked to confirm it again.", false);
+            showResult(Messages.get("connect.forgotten"), false);
         });
     }
 
@@ -150,7 +150,7 @@ public class RouterConnectionController {
             return;
         }
         if (passwordField.getText().isEmpty()) {
-            showResult("Enter the password.", true);
+            showResult(Messages.get("connect.enterPassword"), true);
             return;
         }
 
@@ -187,7 +187,7 @@ public class RouterConnectionController {
             stage().close();
         } else {
             result.client().close();
-            showResult("✓ Connected: " + result.info().summary(), false);
+            showResult(Messages.get("connect.connected", result.info().summary()), false);
         }
     }
 
@@ -210,13 +210,13 @@ public class RouterConnectionController {
         String fingerprint = error.presentedFingerprint().orElse("");
         boolean changed = error.kind() == RouterException.Kind.CERTIFICATE_CHANGED;
 
-        ButtonType trust = new ButtonType(changed ? "Trust new certificate" : "Trust", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType trust = new ButtonType(Messages.get(changed ? "connect.trustNew" : "connect.trust"),
+                ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancel = new ButtonType(Messages.get("button.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
         Alert alert = Dialogs.alert(changed ? Alert.AlertType.WARNING : Alert.AlertType.CONFIRMATION, stage(),
-                changed ? "Router certificate changed!" : "Trust this router?",
-                error.getMessage() + "\n\nSHA-256 fingerprint:\n" + CertificateFingerprints.readable(fingerprint)
-                        + "\n\nCompare it with the router: WinBox > System > Certificates > open the certificate"
-                        + " used by www-ssl > Fingerprint.");
+                Messages.get(changed ? "connect.changed.title" : "connect.trust.title"),
+                error.getMessage() + "\n\n" + Messages.get("connect.fingerprint") + "\n"
+                        + CertificateFingerprints.readable(fingerprint) + "\n\n" + Messages.get("connect.compare"));
         alert.getButtonTypes().setAll(cancel, trust);
         ((Button) alert.getDialogPane().lookupButton(cancel)).setDefaultButton(changed);
         ((Button) alert.getDialogPane().lookupButton(trust)).setDefaultButton(!changed);
@@ -226,7 +226,7 @@ public class RouterConnectionController {
             updateCertificateLabel();
             attempt(keepSession);
         } else {
-            showResult("Not connected: the certificate was not trusted.", true);
+            showResult(Messages.get("connect.notTrusted"), true);
         }
     }
 
@@ -250,7 +250,7 @@ public class RouterConnectionController {
         try {
             port = Integer.parseInt(portField.getText());
         } catch (NumberFormatException e) {
-            showResult("Enter a port number.", true);
+            showResult(Messages.get("connect.enterPort"), true);
             return Optional.empty();
         }
         return Optional.of(new RouterEndpoint(hostField.getText(), port, httpsCheck.isSelected(),
@@ -267,7 +267,7 @@ public class RouterConnectionController {
 
     private void updateCertificateLabel() {
         if (!httpsCheck.isSelected()) {
-            certificateLabel.setText("Not used with HTTP.");
+            certificateLabel.setText(Messages.get("connect.certificate.http"));
             forgetCertificateButton.setDisable(true);
             return;
         }
@@ -279,8 +279,9 @@ public class RouterConnectionController {
             // incomplete port while typing
         }
         certificateLabel.setText(trusted
-                .map(fp -> "Trusted: " + CertificateFingerprints.readable(fp).replace('\n', ' '))
-                .orElse("Not trusted yet. You will be asked to confirm it on the first connection."));
+                .map(fp -> Messages.get("connect.certificate.trusted",
+                        CertificateFingerprints.readable(fp).replace('\n', ' ')))
+                .orElse(Messages.get("connect.certificate.none")));
         forgetCertificateButton.setDisable(trusted.isEmpty());
     }
 
@@ -295,7 +296,7 @@ public class RouterConnectionController {
         testButton.setDisable(busy);
         connectButton.setDisable(busy);
         if (busy) {
-            showResult("Connecting…", false);
+            showResult(Messages.get("connect.connecting"), false);
         }
     }
 

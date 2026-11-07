@@ -1,5 +1,4 @@
 package org.netpilot.service;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.HistoryRecord;
 import org.netpilot.model.HotspotUser;
@@ -43,7 +43,7 @@ public final class ExportService {
 
     public ExportResult export(List<HotspotUser> users, AppSettings settings) throws IOException {
         if (users.isEmpty()) {
-            throw new IllegalArgumentException("Generate users before exporting.");
+            throw new IllegalArgumentException(Messages.get("export.noUsers"));
         }
         LocalDateTime now = LocalDateTime.now(clock);
         String profile = users.getFirst().profile();

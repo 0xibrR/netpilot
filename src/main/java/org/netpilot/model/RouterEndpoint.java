@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.netpilot.i18n.Messages;
 
 /**
  * Where and as whom to reach a router's REST API. Holds no password on purpose: passwords are
@@ -42,13 +43,13 @@ public record RouterEndpoint(String host, int port, boolean https, String userna
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
         if (!HOST.matcher(host).matches()) {
-            errors.add("Enter the router address, e.g. 10.0.0.1.");
+            errors.add(Messages.get("router.validation.host"));
         }
         if (port < 1 || port > 65_535) {
-            errors.add("Port must be between 1 and 65535.");
+            errors.add(Messages.get("router.validation.port"));
         }
         if (!USERNAME.matcher(username).matches()) {
-            errors.add("Enter a user name without spaces or ':' (max 64 characters).");
+            errors.add(Messages.get("router.validation.username"));
         }
         return errors;
     }

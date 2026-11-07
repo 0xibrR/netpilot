@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.netpilot.i18n.Messages;
 
 /**
  * Everything needed to generate one batch of hotspot users.
@@ -57,45 +58,44 @@ public record GenerationSettings(
         List<String> errors = new ArrayList<>();
 
         if (count < 1 || count > MAX_COUNT) {
-            errors.add("Users count must be between 1 and " + MAX_COUNT + ".");
+            errors.add(Messages.get("validation.count", MAX_COUNT));
         }
         if (usernameMode == null) {
-            errors.add("Choose a username mode.");
+            errors.add(Messages.get("validation.usernameMode"));
         }
         if (passwordMode == null) {
-            errors.add("Choose a password mode.");
+            errors.add(Messages.get("validation.passwordMode"));
         }
         if (usernameMode != null && usernameMode.usesLength()) {
-            checkLength("Username", usernameLength, errors);
+            checkLength("validation.usernameLength", usernameLength, errors);
         }
         if (usernameMode != null && usernameMode.usesSequence() && usernameStart < 0) {
-            errors.add("Username start number cannot be negative.");
+            errors.add(Messages.get("validation.usernameStart"));
         }
         if (passwordMode != null && passwordMode.usesLength()) {
-            checkLength("Password", passwordLength, errors);
+            checkLength("validation.passwordLength", passwordLength, errors);
         }
         if (passwordMode != null && passwordMode.usesSequence() && passwordStart < 0) {
-            errors.add("Password start number cannot be negative.");
+            errors.add(Messages.get("validation.passwordStart"));
         }
         if (passwordMode == PasswordMode.PREFIX_USERNAME && passwordPrefix.isEmpty()) {
-            errors.add("Enter a password prefix.");
+            errors.add(Messages.get("validation.prefixMissing"));
         }
         if (!PREFIX.matcher(passwordPrefix).matches()) {
-            errors.add("Prefix may contain only letters, digits, '.', '_' or '-' (max 16).");
+            errors.add(Messages.get("validation.prefixChars"));
         }
         if (!NAME.matcher(profile).matches()) {
-            errors.add("Enter a profile name (max 64 characters, no quotes).");
+            errors.add(Messages.get("validation.profile"));
         }
         if (!NAME.matcher(server).matches()) {
-            errors.add("Enter a server name, or 'all' (max 64 characters, no quotes).");
+            errors.add(Messages.get("validation.server"));
         }
         if (!DURATION.matcher(limitUptime).matches()) {
-            errors.add("Uptime limit must look like 30m, 1h, 1d12h or 01:30:00 (blank = unlimited).");
+            errors.add(Messages.get("validation.uptime"));
         }
         if (errors.isEmpty() && usernameMode.usesLength()
                 && !hasRoomFor(usernameMode == UsernameMode.RANDOM_NUMERIC ? 10 : 56, usernameLength)) {
-            errors.add("Username length " + usernameLength + " is too short to create "
-                    + count + " unique users. Increase the length.");
+            errors.add(Messages.get("validation.usernameTooShort", usernameLength, count));
         }
         return errors;
     }
@@ -106,9 +106,9 @@ public record GenerationSettings(
         return capacity.compareTo(BigInteger.valueOf(count).multiply(BigInteger.TEN)) >= 0;
     }
 
-    private static void checkLength(String field, int length, List<String> errors) {
+    private static void checkLength(String messageKey, int length, List<String> errors) {
         if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            errors.add(field + " length must be between " + MIN_LENGTH + " and " + MAX_LENGTH + ".");
+            errors.add(Messages.get(messageKey, MIN_LENGTH, MAX_LENGTH));
         }
     }
 }

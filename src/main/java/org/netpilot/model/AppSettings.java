@@ -19,7 +19,8 @@ public record AppSettings(
         int vouchersPerRow,
         Path outputDirectory,
         RouterSettings router,
-        VoucherTemplate voucherTemplate) {
+        VoucherTemplate voucherTemplate,
+        UiPreferences ui) {
 
     public static final int MIN_PER_ROW = 2;
     public static final int MAX_PER_ROW = 8;
@@ -31,13 +32,24 @@ public record AppSettings(
         vouchersPerRow = Math.clamp(vouchersPerRow, MIN_PER_ROW, MAX_PER_ROW);
         router = router == null ? RouterSettings.defaults() : router;
         voucherTemplate = voucherTemplate == null ? VoucherTemplate.defaults() : voucherTemplate;
+        ui = ui == null ? UiPreferences.defaults() : ui;
+    }
+
+    /** Settings with the default interface preferences. */
+    public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
+            RouterSettings router, VoucherTemplate voucherTemplate) {
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null);
     }
 
     public AppSettings withRouter(RouterSettings newRouter) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate, ui);
     }
 
     public AppSettings withVoucherTemplate(VoucherTemplate newTemplate) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate, ui);
+    }
+
+    public AppSettings withUi(UiPreferences newUi) {
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, newUi);
     }
 }

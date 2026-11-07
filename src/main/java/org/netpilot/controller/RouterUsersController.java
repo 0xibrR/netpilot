@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
@@ -47,8 +47,8 @@ import org.netpilot.service.router.RouterUserActions.BulkResult;
 public class RouterUsersController {
 
     private static final System.Logger LOG = System.getLogger(RouterUsersController.class.getName());
-    private static final String ALL_BATCHES = "All batches";
-    private static final String ALL_PROFILES = "All profiles";
+    private static final String ALL_BATCHES = Messages.get("users.allBatches");
+    private static final String ALL_PROFILES = Messages.get("users.allProfiles");
     private static final String BATCH_PREFIX = "NetPilot ";
 
     private final AppContext context;
@@ -141,7 +141,7 @@ public class RouterUsersController {
     public void start(RouterClient routerClient, String routerName, Consumer<List<HotspotUser>> voucherPrinter) {
         this.client = routerClient;
         this.printer = voucherPrinter;
-        stage().setTitle("Router Users - " + routerName);
+        stage().setTitle(Messages.get("window.users", routerName));
         onRefresh();
     }
 
@@ -149,7 +149,8 @@ public class RouterUsersController {
 
     @FXML
     private void onRefresh() {
-        run("Loading users…", () -> new Snapshot(client.hotspotUsers(), client.activeSessions()), this::show);
+        run(Messages.get("users.loading"), () -> new Snapshot(client.hotspotUsers(), client.activeSessions()),
+                this::show);
     }
 
     @FXML
@@ -169,13 +170,15 @@ public class RouterUsersController {
     @FXML
     private void onEnable() {
         List<RouterUser> selected = selected();
-        bulk("Enabling " + selected.size() + " users…", () -> context.routerUserActions().enable(client, selected));
+        bulk(Messages.get("users.enabling", selected.size()),
+                () -> context.routerUserActions().enable(client, selected));
     }
 
     @FXML
     private void onDisable() {
         List<RouterUser> selected = selected();
-        bulk("Disabling " + selected.size() + " users…", () -> context.routerUserActions().disable(client, selected));
+        bulk(Messages.get("users.disabling", selected.size()),
+                () -> context.routerUserActions().disable(client, selected));
     }
 
     @FXML
@@ -184,10 +187,10 @@ public class RouterUsersController {
                 .flatMap(u -> sessionsByUser.getOrDefault(u.name(), List.of()).stream())
                 .toList();
         if (sessions.isEmpty()) {
-            Dialogs.info(stage(), "Nobody to disconnect", "None of the selected users is online right now.");
+            Dialogs.info(stage(), Messages.get("users.noneOnline.title"), Messages.get("users.noneOnline.body"));
             return;
         }
-        bulk("Disconnecting " + sessions.size() + " sessions…",
+        bulk(Messages.get("users.disconnecting", sessions.size()),
                 () -> context.routerUserActions().disconnect(client, sessions));
     }
 
@@ -196,20 +199,22 @@ public class RouterUsersController {
         List<RouterUser> selected = selected();
         String names = selected.stream().limit(8).map(RouterUser::name).collect(Collectors.joining(", "))
                 + (selected.size() > 8 ? ", …" : "");
-        if (!Dialogs.confirm(stage(), "Delete " + selected.size() + " users from the router?",
-                names + "\n\nThis cannot be undone. Online users lose their connection.")) {
+        if (!Dialogs.confirm(stage(), Messages.get("users.delete.title", selected.size()),
+                names + "\n\n" + Messages.get("users.delete.body"))) {
             return;
         }
-        bulk("Deleting " + selected.size() + " users…", () -> context.routerUserActions().delete(client, selected));
+        bulk(Messages.get("users.deleting", selected.size()),
+                () -> context.routerUserActions().delete(client, selected));
     }
 
     @FXML
     private void onPrint() {
         List<RouterUser> selected = selected();
-        run("Reading passwords for " + selected.size() + " vouchers…",
+        run(Messages.get("users.readingPasswords", selected.size()),
                 () -> context.routerUserActions().voucherUsers(client, selected), vouchers -> {
                     if (vouchers.isEmpty()) {
-                        Dialogs.info(stage(), "Nothing to print", "The selected users no longer exist on the router.");
+                        Dialogs.info(stage(), Messages.get("users.nothingToPrint.title"),
+                                Messages.get("users.nothingToPrint.body"));
                     } else {
                         printer.accept(vouchers);
                     }
@@ -233,7 +238,7 @@ public class RouterUsersController {
                 .toList());
         keepChoices(profileBox, ALL_PROFILES,
                 snapshot.users().stream().map(RouterUser::profile).distinct().sorted().toList());
-        placeholderLabel.setText("No users match the filters.");
+        placeholderLabel.setText(Messages.get("users.noMatch"));
         applyFilter();
     }
 
@@ -258,8 +263,9 @@ public class RouterUsersController {
         long online = users.stream().filter(u -> sessionsByUser.containsKey(u.name())).count();
         long expired = users.stream().filter(RouterUser::expired).count();
         int selectedCount = usersTable.getSelectionModel().getSelectedItems().size();
-        summaryLabel.setText(users.size() + " users · " + online + " online · " + expired + " expired · showing "
-                + filtered.size() + (selectedCount > 0 ? " · " + selectedCount + " selected" : ""));
+        String summary = Messages.get("users.summary", users.size(), online, expired, filtered.size());
+        summaryLabel
+                .setText(selectedCount > 0 ? summary + " · " + Messages.get("users.selected", selectedCount) : summary);
     }
 
     private List<RouterUser> selected() {
@@ -271,7 +277,7 @@ public class RouterUsersController {
     private void bulk(String message, Callable<BulkResult> work) {
         run(message, work, result -> {
             if (!result.problems().isEmpty()) {
-                Dialogs.error(stage(), result.succeeded() + " of " + result.total() + " done",
+                Dialogs.error(stage(), Messages.get("users.partlyDone", result.succeeded(), result.total()),
                         String.join("\n", result.problems()));
             }
             onRefresh();
@@ -296,8 +302,8 @@ public class RouterUsersController {
             Throwable error = task.getException();
             LOG.log(error instanceof RouterException ? System.Logger.Level.WARNING : System.Logger.Level.ERROR,
                     "Router users action failed", error);
-            placeholderLabel.setText("Could not load users.");
-            Dialogs.error(stage(), "The router did not complete the request", String.valueOf(error.getMessage()));
+            placeholderLabel.setText(Messages.get("users.loadFailed"));
+            Dialogs.error(stage(), Messages.get("users.requestFailed"), String.valueOf(error.getMessage()));
         });
         Thread thread = new Thread(task, "netpilot-router-users");
         thread.setDaemon(true);
@@ -346,15 +352,15 @@ public class RouterUsersController {
 
     private static String state(RouterUser user) {
         if (user.builtIn()) {
-            return "Built-in";
+            return Messages.get("users.state.builtIn");
         }
         if (user.disabled()) {
-            return "Disabled";
+            return Messages.get("users.state.disabled");
         }
         if (user.expired()) {
-            return "Expired";
+            return Messages.get("users.state.expired");
         }
-        return user.neverUsed() ? "New" : "In use";
+        return Messages.get(user.neverUsed() ? "users.state.new" : "users.state.inUse");
     }
 
     /** {@code 0 B}, {@code 512 KB}, {@code 1.2 GB}. */

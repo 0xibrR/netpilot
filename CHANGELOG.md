@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Phase 6, Arabic interface and themes (**Tools → Preferences…**, `Ctrl+,`):
+  - The whole interface in English or Arabic: menus, windows, dialogs, router and validation messages, report CSV headers
+  - Arabic uses a right-to-left layout and the Cairo font; the language applies on the next start
+  - Light, dark, or the system theme (followed live); the voucher preview stays white like paper
+  - First start picks Arabic on an Arabic system, English otherwise
+  - Tests keep both languages complete: same keys, same placeholders, no untranslated text in the views
 - Phase 5, sales reports (**Router → Reports…**, `Ctrl+T`):
   - Revenue, money still to come from unused cards, cards sold, never used and created, for a chosen period
   - Revenue-per-day chart, plus tables by batch and by profile (with data used)

@@ -31,4 +31,11 @@
         <Package name="org.netpilot.controller"/>
         <Bug pattern="UWF_UNWRITTEN_FIELD,NP_UNWRITTEN_FIELD,UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
+
+    <!-- A ResourceBundle cannot be changed by callers; FXMLLoader needs the shared one for %key texts. -->
+    <Match>
+        <Class name="org.netpilot.i18n.Messages"/>
+        <Method name="bundle"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
 </FindBugsFilter>

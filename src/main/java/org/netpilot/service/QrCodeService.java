@@ -1,5 +1,4 @@
 package org.netpilot.service;
-
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -14,6 +13,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.HotspotUser;
 
 /**
@@ -40,8 +40,7 @@ public class QrCodeService {
      */
     public static void validateLoginUrl(String loginUrl) {
         if (!isValidLoginUrl(loginUrl)) {
-            throw new IllegalArgumentException(
-                    "Login URL must look like http://10.10.0.1/login (got: " + loginUrl + ")");
+            throw new IllegalArgumentException(Messages.get("qr.invalidUrl", loginUrl));
         }
     }
 

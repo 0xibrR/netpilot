@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,6 +41,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotProfile;
@@ -244,7 +244,7 @@ public class MainController {
             Parent root = loader.load();
             RouterUsersController controller = loader.getController();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
             routerUsersStage = new Stage();
             routerUsersStage.initOwner(window()); // not modal: it can stay open next to the main window
             routerUsersStage.setScene(scene);
@@ -252,7 +252,7 @@ public class MainController {
             controller.start(client.get(), router.displayName(), this::exportUsers);
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open Router Users", e);
-            Dialogs.error(window(), "Cannot open Router Users", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
         }
     }
 
@@ -277,12 +277,11 @@ public class MainController {
         serverBox.setValue(server);
 
         if (!profiles.contains(profile)) {
-            setStatus("Profile '" + profile + "' does not exist on the router. Choose one from the list.", true);
+            setStatus(Messages.get("main.status.profileMissing", profile), true);
         } else if (!servers.contains(server)) {
-            setStatus("Server '" + server + "' does not exist on the router. Choose one from the list.", true);
+            setStatus(Messages.get("main.status.serverMissing", server), true);
         } else {
-            setStatus("Loaded " + plural(profiles.size(), "profile") + " and "
-                    + plural(servers.size() - 1, "server") + " from the router.", false);
+            setStatus(Messages.get("main.status.loadedLists", profiles.size(), servers.size() - 1), false);
         }
     }
 
@@ -302,7 +301,7 @@ public class MainController {
         serverBox.getItems().setAll("all");
         profileBox.setValue(profile);
         serverBox.setValue(server);
-        setStatus("Disconnected from the router.", false);
+        setStatus(Messages.get("main.status.disconnected"), false);
     }
 
     /** Creates the previewed users on the connected router, then offers Print and Undo. */
@@ -316,18 +315,16 @@ public class MainController {
         HotspotUser first = batch.getFirst();
         Optional<String> problem = router.checkProfileAndServer(first.profile(), first.server());
         if (problem.isPresent()) {
-            Dialogs.error(window(), "Cannot send these users", problem.get());
+            Dialogs.error(window(), Messages.get("send.cannotSend"), problem.get());
             return;
         }
 
         String httpWarning = client.get().endpoint().https()
                 ? ""
-                : "\n\n⚠ The connection uses HTTP: the voucher passwords travel unencrypted.";
-        String uptime = first.limitUptime().isBlank() ? "unlimited" : first.limitUptime();
-        if (!Dialogs.confirm(window(), "Create " + batch.size() + " users on " + router.displayName() + "?",
-                "Profile: " + first.profile() + "    Server: " + first.server() + "    Uptime: " + uptime
-                        + "\n\nNames that already exist on the router get a new random name (random modes)"
-                        + " or are skipped (sequential modes)." + httpWarning)) {
+                : "\n\n" + Messages.get("send.httpWarning");
+        String uptime = first.limitUptime().isBlank() ? Messages.get("common.unlimited") : first.limitUptime();
+        if (!Dialogs.confirm(window(), Messages.get("send.confirm.title", batch.size(), router.displayName()),
+                Messages.get("send.confirm.body", first.profile(), first.server(), uptime) + httpWarning)) {
             return;
         }
 
@@ -336,11 +333,11 @@ public class MainController {
             Parent root = loader.load();
             UploadController upload = loader.getController();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
             Stage stage = new Stage();
             stage.initOwner(window());
             stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle("Send to Router - " + NetPilotApp.NAME);
+            stage.setTitle(Messages.get("window.send") + " - " + NetPilotApp.NAME);
             stage.setScene(scene);
             stage.show();
             upload.start(client.get(), router.displayName(), batch, readGenerationSettings());
@@ -351,7 +348,7 @@ public class MainController {
             });
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open upload window", e);
-            Dialogs.error(window(), "Cannot open the upload window", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
         }
     }
 
@@ -366,8 +363,8 @@ public class MainController {
             }
             sent.set(!upload.undone() && !users.isEmpty());
             setStatus(upload.undone()
-                    ? "The batch was removed from the router."
-                    : report.created().size() + " users are on the router (" + report.batchComment() + ").", false);
+                    ? Messages.get("send.status.undone")
+                    : Messages.get("send.status.done", report.created().size(), report.batchComment()), false);
             if (upload.printRequested()) {
                 exportUsers(report.createdUsers());
             }
@@ -381,15 +378,15 @@ public class MainController {
         GenerationSettings settings = readGenerationSettings();
         List<String> errors = settings.validate();
         if (!errors.isEmpty()) {
-            Dialogs.error(window(), "Please fix these settings", String.join("\n", errors));
+            Dialogs.error(window(), Messages.get("error.fixSettings"), String.join("\n", errors));
             return;
         }
         try {
             users.setAll(context.userGenerator().generate(settings));
-            setStatus(users.size() + " users generated. Review them, then export.", false);
+            setStatus(Messages.get("main.status.generated", users.size()), false);
         } catch (RuntimeException e) {
             LOG.log(System.Logger.Level.ERROR, "Generation failed", e);
-            Dialogs.error(window(), "Could not generate users", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.generate"), e.getMessage());
         }
     }
 
@@ -408,7 +405,7 @@ public class MainController {
             try {
                 QrCodeService.validateLoginUrl(loginUrl);
             } catch (IllegalArgumentException e) {
-                Dialogs.error(window(), "Invalid QR login URL", e.getMessage());
+                Dialogs.error(window(), Messages.get("error.invalidLoginUrl"), e.getMessage());
                 return;
             }
         }
@@ -422,11 +419,11 @@ public class MainController {
                 return context.exportService().export(batch, settings);
             }
         };
-        task.setOnRunning(e -> setBusy(true, "Exporting " + batch.size() + " users…"));
+        task.setOnRunning(e -> setBusy(true, Messages.get("main.status.exporting", batch.size())));
         task.setOnSucceeded(e -> {
             setBusy(false, null);
             ExportResult result = task.getValue();
-            setStatus("Exported " + result.userCount() + " users to " + result.folder().getFileName(), false);
+            setStatus(Messages.get("main.status.exported", result.userCount(), result.folder().getFileName()), false);
             saveSettings();
             showExportDone(result);
         });
@@ -434,8 +431,8 @@ public class MainController {
             setBusy(false, null);
             Throwable error = task.getException();
             LOG.log(System.Logger.Level.ERROR, "Export failed", error);
-            setStatus("Export failed", true);
-            Dialogs.error(window(), "Export failed", String.valueOf(error.getMessage()));
+            setStatus(Messages.get("error.exportFailed"), true);
+            Dialogs.error(window(), Messages.get("error.exportFailed"), String.valueOf(error.getMessage()));
         });
 
         Thread thread = new Thread(task, "netpilot-export");
@@ -459,7 +456,7 @@ public class MainController {
             Parent root = loader.load();
             ReportsController reports = loader.getController();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
             reportsStage = new Stage();
             reportsStage.initOwner(window()); // not modal: it can stay open next to the main window
             reportsStage.setScene(scene);
@@ -468,7 +465,7 @@ public class MainController {
             reports.start(client.get(), router.displayName(), () -> appSettings.voucherTemplate());
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open Reports", e);
-            Dialogs.error(window(), "Cannot open Reports", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
         }
     }
 
@@ -480,22 +477,55 @@ public class MainController {
             Parent root = loader.load();
             VoucherDesignController design = loader.getController();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
             Stage stage = new Stage();
             stage.initOwner(window());
             stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle("Voucher Design - " + NetPilotApp.NAME);
+            stage.setTitle(Messages.get("window.design") + " - " + NetPilotApp.NAME);
             stage.setScene(scene);
             design.prepare(currentAppSettings(), List.copyOf(profileBox.getItems()));
             stage.showAndWait();
             design.result().ifPresent(template -> {
                 appSettings = appSettings.withVoucherTemplate(template);
                 saveSettings();
-                setStatus("Voucher design saved.", false);
+                setStatus(Messages.get("main.status.designSaved"), false);
             });
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open Voucher Design", e);
-            Dialogs.error(window(), "Cannot open Voucher Design", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
+        }
+    }
+
+    /** Language (used from the next start) and theme (used at once). */
+    @FXML
+    private void onPreferences() {
+        try {
+            FXMLLoader loader = NetPilotApp.loader("view/preferences-view.fxml", context);
+            Parent root = loader.load();
+            PreferencesController preferences = loader.getController();
+            Scene scene = new Scene(root);
+            Styling.apply(scene);
+            Stage stage = new Stage();
+            stage.initOwner(window());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.setResizable(false);
+            stage.setTitle(Messages.get("window.preferences") + " - " + NetPilotApp.NAME);
+            stage.setScene(scene);
+            preferences.prepare(appSettings.ui());
+            stage.setOnCloseRequest(e -> Styling.setTheme(appSettings.ui().theme()));
+            stage.showAndWait();
+            preferences.result().ifPresent(ui -> {
+                boolean languageChanged = ui.language() != appSettings.ui().language();
+                appSettings = appSettings.withUi(ui);
+                saveSettings();
+                Styling.setTheme(ui.theme());
+                if (languageChanged) {
+                    Dialogs.info(window(), Messages.get("prefs.restartTitle"), Messages.get("prefs.restartBody"));
+                }
+            });
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot open Preferences", e);
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
         }
     }
 
@@ -505,17 +535,17 @@ public class MainController {
             FXMLLoader loader = NetPilotApp.loader("view/history-view.fxml", context);
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(NetPilotApp.resource("css/styles.css").toExternalForm());
+            Styling.apply(scene);
 
             Stage stage = new Stage();
             stage.initOwner(window());
             stage.initModality(Modality.WINDOW_MODAL);
-            stage.setTitle("Export History - " + NetPilotApp.NAME);
+            stage.setTitle(Messages.get("window.history") + " - " + NetPilotApp.NAME);
             stage.setScene(scene);
             stage.showAndWait();
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Cannot open history", e);
-            Dialogs.error(window(), "Cannot open history", e.getMessage());
+            Dialogs.error(window(), Messages.get("error.openWindow"), e.getMessage());
         }
     }
 
@@ -523,8 +553,7 @@ public class MainController {
     private void onOpenOutputFolder() {
         Path folder = Path.of(outputDirField.getText());
         if (!Files.isDirectory(folder)) {
-            Dialogs.info(window(), "Nothing exported yet",
-                    "The output folder will be created on the first export:\n" + folder);
+            Dialogs.info(window(), Messages.get("main.noExports.title"), Messages.get("main.noExports.body", folder));
             return;
         }
         open(folder);
@@ -533,7 +562,7 @@ public class MainController {
     @FXML
     private void onBrowseOutputFolder() {
         DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Choose output folder");
+        chooser.setTitle(Messages.get("main.chooseFolder"));
         Path current = Path.of(outputDirField.getText());
         if (Files.isDirectory(current)) {
             chooser.setInitialDirectory(current.toFile());
@@ -547,11 +576,11 @@ public class MainController {
 
     @FXML
     private void onResetSettings() {
-        if (Dialogs.confirm(window(), "Reset all settings?", "All fields return to their default values.")) {
+        if (Dialogs.confirm(window(), Messages.get("main.reset.title"), Messages.get("main.reset.body"))) {
             appSettings = context.settingsRepository().defaults();
             showSettings(appSettings);
             saveSettings();
-            setStatus("Settings reset", false);
+            setStatus(Messages.get("main.status.reset"), false);
         }
     }
 
@@ -563,16 +592,7 @@ public class MainController {
     @FXML
     private void onAbout() {
         Dialogs.info(window(), NetPilotApp.NAME + " " + NetPilotApp.VERSION,
-                """
-                        Network management toolkit.
-
-                        • Generate MikroTik Hotspot users with unique names
-                        • Printable A4 vouchers with QR auto-login
-                        • RouterOS import scripts (.rsc) and CSV export
-                        • Export history
-
-                        Developed by Ibrahim Ramadan
-                        """ + NetPilotApp.REPOSITORY_URL);
+                Messages.get("about.body") + "\n\n" + NetPilotApp.REPOSITORY_URL);
     }
 
     @FXML
@@ -598,7 +618,8 @@ public class MainController {
                 perRowSpinner.getValue(),
                 Path.of(outputDirField.getText()),
                 appSettings.router(), // edited only through the router connection dialog
-                appSettings.voucherTemplate()); // edited only through the Voucher Design window
+                appSettings.voucherTemplate(), // edited only through the Voucher Design window
+                appSettings.ui()); // edited only through the Preferences window
     }
 
     private GenerationSettings readGenerationSettings() {
@@ -661,7 +682,7 @@ public class MainController {
         profileColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().profile()));
         serverColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().server()));
         uptimeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                c.getValue().limitUptime().isBlank() ? "unlimited" : c.getValue().limitUptime()));
+                c.getValue().limitUptime().isBlank() ? Messages.get("common.unlimited") : c.getValue().limitUptime()));
         usernameColumn.getStyleClass().add("monospace");
         passwordColumn.getStyleClass().add("monospace");
     }
@@ -696,7 +717,7 @@ public class MainController {
             input.addListener((obs, old, value) -> {
                 if (!loadingForm && !users.isEmpty()) {
                     users.clear();
-                    setStatus("Settings changed - press Generate again.", false);
+                    setStatus(Messages.get("main.status.settingsChanged"), false);
                 }
             });
         }
@@ -704,16 +725,19 @@ public class MainController {
     }
 
     private void updateCountLabel() {
-        usersCountLabel.setText(users.isEmpty() ? "No users generated" : users.size() + " users");
+        usersCountLabel.setText(users.isEmpty()
+                ? Messages.get("main.count.none")
+                : Messages.get("main.count.users", users.size()));
     }
 
     private void showExportDone(ExportResult result) {
-        ButtonType openPdf = new ButtonType("Open PDF", ButtonBar.ButtonData.YES);
-        ButtonType openFolder = new ButtonType("Open Folder", ButtonBar.ButtonData.OTHER);
-        Alert alert = Dialogs.alert(Alert.AlertType.INFORMATION, window(), "Export complete",
-                result.userCount() + " users were saved to:\n" + result.folder().toAbsolutePath()
-                        + "\n\nImport on the router with:\n/import file-name=" + result.rscFile().getFileName());
-        alert.getButtonTypes().setAll(openPdf, openFolder, ButtonType.CLOSE);
+        ButtonType openPdf = new ButtonType(Messages.get("export.openPdf"), ButtonBar.ButtonData.YES);
+        ButtonType openFolder = new ButtonType(Messages.get("main.openFolder"), ButtonBar.ButtonData.OTHER);
+        ButtonType close = new ButtonType(Messages.get("button.close"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        Alert alert = Dialogs.alert(Alert.AlertType.INFORMATION, window(), Messages.get("export.done.title"),
+                Messages.get("export.done.body", result.userCount(), result.folder().toAbsolutePath(),
+                        result.rscFile().getFileName()));
+        alert.getButtonTypes().setAll(openPdf, openFolder, close);
         Optional<ButtonType> answer = alert.showAndWait();
         if (answer.isPresent() && answer.get() == openPdf) {
             open(result.pdfFile());
@@ -794,8 +818,4 @@ public class MainController {
         return Math.clamp(length, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
     }
 
-    /** {@code 1 server}, {@code 3 servers}. */
-    private static String plural(int count, String noun) {
-        return count + " " + noun + (count == 1 ? "" : "s");
-    }
 }

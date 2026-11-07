@@ -13,14 +13,14 @@
     <top>
         <VBox spacing="10">
             <HBox spacing="8" alignment="CENTER_LEFT">
-                <TextField fx:id="searchField" promptText="🔍 Search name or comment" prefColumnCount="18"/>
-                <ComboBox fx:id="batchBox" promptText="All batches" prefWidth="270"/>
-                <ComboBox fx:id="profileBox" promptText="All profiles" prefWidth="130"/>
+                <TextField fx:id="searchField" promptText="%users.search" prefColumnCount="18"/>
+                <ComboBox fx:id="batchBox" prefWidth="270"/>
+                <ComboBox fx:id="profileBox" prefWidth="130"/>
                 <ComboBox fx:id="statusBox" prefWidth="180"/>
-                <Button text="Clear" onAction="#onClearFilters"/>
+                <Button text="%users.clearFilters" onAction="#onClearFilters"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-                <Button fx:id="refreshButton" text="⟳ Refresh" onAction="#onRefresh"/>
+                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
             </HBox>
             <padding>
                 <Insets top="12" right="12" bottom="0" left="12"/>
@@ -36,17 +36,17 @@
             </columnResizePolicy>
             <columns>
                 <TableColumn fx:id="onlineColumn" text="●" prefWidth="34" maxWidth="40" sortable="true"/>
-                <TableColumn fx:id="nameColumn" text="Name" prefWidth="140"/>
-                <TableColumn fx:id="profileColumn" text="Profile" prefWidth="80"/>
-                <TableColumn fx:id="serverColumn" text="Server" prefWidth="90"/>
-                <TableColumn fx:id="usedColumn" text="Used" prefWidth="80"/>
-                <TableColumn fx:id="limitColumn" text="Limit" prefWidth="70"/>
-                <TableColumn fx:id="dataColumn" text="Data" prefWidth="85"/>
-                <TableColumn fx:id="stateColumn" text="State" prefWidth="80"/>
-                <TableColumn fx:id="commentColumn" text="Comment" prefWidth="260"/>
+                <TableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="140"/>
+                <TableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
+                <TableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
+                <TableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="80"/>
+                <TableColumn fx:id="limitColumn" text="%users.column.limit" prefWidth="70"/>
+                <TableColumn fx:id="dataColumn" text="%users.column.data" prefWidth="85"/>
+                <TableColumn fx:id="stateColumn" text="%users.column.state" prefWidth="80"/>
+                <TableColumn fx:id="commentColumn" text="%users.column.comment" prefWidth="260"/>
             </columns>
             <placeholder>
-                <Label fx:id="placeholderLabel" text="Loading users…" styleClass="muted"/>
+                <Label fx:id="placeholderLabel" text="%users.loading" styleClass="muted"/>
             </placeholder>
             <BorderPane.margin>
                 <Insets top="10" right="12" left="12"/>
@@ -59,13 +59,13 @@
         <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="8">
             <Label fx:id="summaryLabel" styleClass="muted"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Select all" onAction="#onSelectAll"/>
+            <Button text="%users.selectAll" onAction="#onSelectAll"/>
             <Separator orientation="VERTICAL"/>
-            <Button fx:id="enableButton" text="Enable" onAction="#onEnable"/>
-            <Button fx:id="disableButton" text="Disable" onAction="#onDisable"/>
-            <Button fx:id="disconnectButton" text="Disconnect" onAction="#onDisconnect"/>
-            <Button fx:id="deleteButton" text="Delete" onAction="#onDelete" styleClass="danger"/>
-            <Button fx:id="printButton" text="Print vouchers" onAction="#onPrint" styleClass="primary"/>
+            <Button fx:id="enableButton" text="%users.enable" onAction="#onEnable"/>
+            <Button fx:id="disableButton" text="%users.disable" onAction="#onDisable"/>
+            <Button fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect"/>
+            <Button fx:id="deleteButton" text="%users.delete" onAction="#onDelete" styleClass="danger"/>
+            <Button fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="primary"/>
             <padding>
                 <Insets top="10" right="12" bottom="10" left="12"/>
             </padding>

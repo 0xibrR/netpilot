@@ -1,5 +1,4 @@
 package org.netpilot.controller;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -35,6 +34,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.VoucherTemplate;
@@ -206,8 +206,9 @@ public class VoucherDesignController {
     @FXML
     private void onChooseLogo() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Choose logo");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg"));
+        chooser.setTitle(Messages.get("design.chooseLogo.title"));
+        chooser.getExtensionFilters()
+                .add(new FileChooser.ExtensionFilter(Messages.get("design.images"), "*.png", "*.jpg", "*.jpeg"));
         File chosen = chooser.showOpenDialog(stage());
         if (chosen == null) {
             return;
@@ -216,7 +217,7 @@ public class VoucherDesignController {
             setLogo(context.settingsRepository().storeLogo(chosen.toPath()));
             updatePreview();
         } catch (IllegalArgumentException | IOException e) {
-            Dialogs.error(stage(), "Cannot use this logo", e.getMessage());
+            Dialogs.error(stage(), Messages.get("design.logoFailed"), e.getMessage());
         }
     }
 
@@ -231,7 +232,7 @@ public class VoucherDesignController {
         VoucherTemplate template = currentTemplate();
         List<String> problems = template.validate();
         if (!problems.isEmpty()) {
-            Dialogs.error(stage(), "Please fix the design", String.join("\n", problems));
+            Dialogs.error(stage(), Messages.get("design.fix"), String.join("\n", problems));
             return;
         }
         List<HotspotUser> samples = sampleUsers();
@@ -251,7 +252,8 @@ public class VoucherDesignController {
         task.setOnFailed(e -> {
             testPrintButton.setDisable(false);
             LOG.log(System.Logger.Level.ERROR, "Test print failed", task.getException());
-            Dialogs.error(stage(), "Test print failed", String.valueOf(task.getException().getMessage()));
+            Dialogs.error(stage(), Messages.get("design.testPrintFailed"),
+                    String.valueOf(task.getException().getMessage()));
         });
         Thread thread = new Thread(task, "netpilot-test-print");
         thread.setDaemon(true);
@@ -268,7 +270,7 @@ public class VoucherDesignController {
         VoucherTemplate template = currentTemplate();
         List<String> problems = template.validate();
         if (!problems.isEmpty()) {
-            Dialogs.error(stage(), "Please fix the design", String.join("\n", problems));
+            Dialogs.error(stage(), Messages.get("design.fix"), String.join("\n", problems));
             return;
         }
         result = template;
@@ -308,7 +310,7 @@ public class VoucherDesignController {
     private void setLogo(Path path) {
         logo = path;
         Path fileName = path == null ? null : path.getFileName();
-        logoLabel.setText(fileName == null ? "No logo" : fileName.toString());
+        logoLabel.setText(fileName == null ? Messages.get("design.noLogo") : fileName.toString());
         removeLogoButton.setDisable(path == null);
         logoView.setImage(path == null ? null : new Image(path.toUri().toString(), true));
     }
