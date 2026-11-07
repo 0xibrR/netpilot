@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Remember password (optional, off by default): encrypted with the Windows account through DPAPI in
+  `~/.netpilot/credentials`, never in the settings; **Forget password**; optional automatic connection at start-up
 - Compact cards, router discovery and a modern look:
   - New voucher styles: Modern (coloured band), QR on the side, Minimal (code only) and My own picture;
     sizes Tiny (65 per A4 page), Small (40) and Medium (24), with light cut lines; the Classic style stays

@@ -24,6 +24,7 @@
         <javafx.version>27.0.1</javafx.version>
         <openpdf.version>3.0.5</openpdf.version>
         <zxing.version>3.5.4</zxing.version>
+        <jna.version>5.19.1</jna.version>
         <jackson.version>3.2.4</jackson.version>
         <junit.version>6.1.3</junit.version>
 
@@ -71,6 +72,13 @@
             <version>${zxing.version}</version>
         </dependency>
 
+        <!-- Windows DPAPI: encrypts a remembered router password with the user's Windows account -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+
         <!-- JSON responses from the RouterOS REST API -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
@@ -115,7 +123,7 @@
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <!-- @{argLine} keeps the JaCoCo agent -->
-                    <argLine>@{argLine} --add-modules jdk.httpserver --add-reads org.netpilot=jdk.httpserver</argLine>
+                    <argLine>@{argLine} --add-modules jdk.httpserver --add-reads org.netpilot=jdk.httpserver --enable-native-access=com.sun.jna,ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
 
@@ -249,7 +257,7 @@
                 <configuration>
                     <mainClass>${main.module}/${main.class}</mainClass>
                     <options>
-                        <option>--enable-native-access=javafx.graphics</option>
+                        <option>--enable-native-access=javafx.graphics,com.sun.jna</option>
                     </options>
                 </configuration>
             </plugin>

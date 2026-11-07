@@ -222,7 +222,7 @@ public class SettingsRepository {
                 }
             }
         }
-        return new RouterSettings(endpoint, trusted);
+        return new RouterSettings(endpoint, trusted, booleanValue(p, "router.autoConnect", defaults.autoConnect()));
     }
 
     public void save(AppSettings settings) throws IOException {
@@ -248,6 +248,7 @@ public class SettingsRepository {
         p.setProperty("router.port", String.valueOf(router.port()));
         p.setProperty("router.https", String.valueOf(router.https()));
         p.setProperty("router.username", router.username());
+        p.setProperty("router.autoConnect", String.valueOf(settings.router().autoConnect()));
         settings.router().trustedFingerprints()
                 .forEach((address, fingerprint) -> p.setProperty(TRUST_PREFIX + address, fingerprint));
 

@@ -24,6 +24,11 @@ public final class AppPaths {
         return dataDirectory().resolve("logs");
     }
 
+    /** Remembered router passwords, encrypted for the Windows account (only if the user asks). */
+    public static Path credentialsFile() {
+        return dataDirectory().resolve("credentials");
+    }
+
     public static Path historyFile() {
         return dataDirectory().resolve("history.csv");
     }

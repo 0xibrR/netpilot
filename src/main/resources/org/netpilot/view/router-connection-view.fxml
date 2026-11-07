@@ -60,6 +60,14 @@
                             <Label text="%connect.password" GridPane.rowIndex="3"/>
                             <PasswordField fx:id="passwordField" promptText="%connect.password.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
                         </GridPane>
+                        <VBox fx:id="rememberBox" spacing="6">
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <CheckBox fx:id="rememberCheck" text="%connect.remember"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="forgetPasswordButton" text="%connect.forgetPassword" onAction="#onForgetPassword" styleClass="flat"/>
+                            </HBox>
+                            <CheckBox fx:id="autoConnectCheck" text="%connect.autoConnect"/>
+                        </VBox>
                         <Label fx:id="httpWarning" styleClass="warning" wrapText="true" text="%connect.httpWarning"/>
                     </VBox>
 

@@ -18,6 +18,7 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
@@ -68,6 +69,14 @@ public class RouterConnectionController {
     @FXML
     private ProgressIndicator scanProgress;
     @FXML
+    private VBox rememberBox;
+    @FXML
+    private CheckBox rememberCheck;
+    @FXML
+    private CheckBox autoConnectCheck;
+    @FXML
+    private Button forgetPasswordButton;
+    @FXML
     private TextField hostField;
     @FXML
     private TextField portField;
@@ -114,6 +123,92 @@ public class RouterConnectionController {
         });
         portField.textProperty().addListener((obs, old, value) -> updateCertificateLabel());
         setUpNeighbors();
+        setUpRemember();
+    }
+
+    // ------------------------------------------------------------------ remembered password
+
+    private void setUpRemember() {
+        boolean available = context.passwordVault().available();
+        rememberBox.setVisible(available);
+        rememberBox.setManaged(available);
+        autoConnectCheck.disableProperty().bind(rememberCheck.selectedProperty().not());
+        rememberCheck.selectedProperty().addListener((obs, was, remember) -> {
+            if (!remember) {
+                autoConnectCheck.setSelected(false);
+            }
+        });
+        for (TextField field : List.of(hostField, usernameField, portField)) {
+            field.focusedProperty().addListener((obs, was, focused) -> {
+                if (!focused) {
+                    fillRememberedPassword();
+                }
+            });
+        }
+    }
+
+    /** Puts the remembered password of the endpoint in the form into the password field. */
+    private void fillRememberedPassword() {
+        Optional<RouterEndpoint> endpoint = quietEndpoint();
+        boolean saved = endpoint.isPresent() && context.passwordVault().has(endpoint.get());
+        forgetPasswordButton.setDisable(!saved);
+        if (!saved || !passwordField.getText().isEmpty()) {
+            return;
+        }
+        context.passwordVault().load(endpoint.get()).ifPresent(password -> {
+            passwordField.setText(new String(password));
+            java.util.Arrays.fill(password, '\0');
+            rememberCheck.setSelected(true);
+        });
+    }
+
+    /** Saves or forgets the password after a successful Connect, as the check box says. */
+    private void rememberOrForget(RouterEndpoint endpoint) {
+        if (!context.passwordVault().available()) {
+            return;
+        }
+        try {
+            if (rememberCheck.isSelected()) {
+                char[] password = passwordField.getText().toCharArray();
+                try {
+                    context.passwordVault().save(endpoint, password);
+                } finally {
+                    java.util.Arrays.fill(password, '\0');
+                }
+            } else {
+                context.passwordVault().forget(endpoint);
+            }
+        } catch (IOException | RuntimeException e) {
+            LOG.log(System.Logger.Level.WARNING, "Cannot update the remembered password: {0}", e.getMessage());
+        }
+        settings = settings.withAutoConnect(rememberCheck.isSelected() && autoConnectCheck.isSelected());
+    }
+
+    @FXML
+    private void onForgetPassword() {
+        quietEndpoint().ifPresent(endpoint -> {
+            try {
+                context.passwordVault().forget(endpoint);
+            } catch (IOException e) {
+                LOG.log(System.Logger.Level.WARNING, "Cannot forget the password: {0}", e.getMessage());
+            }
+            passwordField.clear();
+            rememberCheck.setSelected(false);
+            settings = settings.withAutoConnect(false);
+            forgetPasswordButton.setDisable(true);
+            showResult(Messages.get("connect.passwordForgotten"), false);
+        });
+    }
+
+    /** The endpoint in the form, or empty while it is incomplete (no message shown). */
+    private Optional<RouterEndpoint> quietEndpoint() {
+        try {
+            RouterEndpoint endpoint = new RouterEndpoint(hostField.getText(), Integer.parseInt(portField.getText()),
+                    httpsCheck.isSelected(), usernameField.getText());
+            return endpoint.validate().isEmpty() ? Optional.of(endpoint) : Optional.empty();
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
     }
 
     // ------------------------------------------------------------------ neighbors (like WinBox)
@@ -131,6 +226,7 @@ public class RouterConnectionController {
         neighborsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, neighbor) -> {
             if (neighbor != null && neighbor.reachable()) {
                 hostField.setText(neighbor.address());
+                fillRememberedPassword();
             }
         });
         neighborsTable.setRowFactory(table -> {
@@ -200,6 +296,8 @@ public class RouterConnectionController {
         usernameField.setText(last.username());
         showHttpWarning(!last.https());
         updateCertificateLabel();
+        autoConnectCheck.setSelected(routerSettings.autoConnect());
+        fillRememberedPassword();
         onScan();
     }
 
@@ -287,6 +385,7 @@ public class RouterConnectionController {
         LOG.log(System.Logger.Level.INFO, "Connected to {0} ({1})", endpoint.address(), result.info().summary());
         if (keepSession) {
             connection = result;
+            rememberOrForget(endpoint);
             passwordField.clear();
             stage().close();
         } else {

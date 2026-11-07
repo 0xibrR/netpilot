@@ -115,6 +115,7 @@ public class MainController implements RouterSession.Listener {
         buildSideMenu();
         load(PageId.GENERATE); // always loaded: other pages print vouchers through it
         show(PageId.GENERATE);
+        router.autoConnect(workspace.settings().router(), workspace::toast);
         root.sceneProperty().addListener((obs, old, scene) -> {
             if (scene != null) {
                 addShortcuts();

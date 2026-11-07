@@ -94,7 +94,7 @@ If NetPilot later says **"Router certificate changed!"**, someone may be interce
 
 ## Security notes
 
-- **The password is never saved.** You type it each time NetPilot starts. It is not written to settings, logs or error messages.
+- **The password is not saved unless you tick Remember password.** Then it is encrypted with your Windows account (DPAPI) in `~/.netpilot/credentials`; only you, on this computer, can read it back. **Connect automatically when NetPilot starts** uses it to connect at start-up. **Forget password** deletes it. It is never written to the settings file, logs or error messages.
 - NetPilot saves only the address, port, user name and the trusted certificate fingerprints, in `~/.netpilot/settings.properties`.
 - Use **Router → Forget** in the connection dialog if you replace the router's certificate.
 

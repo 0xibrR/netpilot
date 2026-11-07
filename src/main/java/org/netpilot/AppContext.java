@@ -3,7 +3,9 @@ package org.netpilot;
 import java.time.Clock;
 import javafx.application.HostServices;
 import org.netpilot.repository.AppPaths;
+import org.netpilot.repository.DpapiProtector;
 import org.netpilot.repository.HistoryRepository;
+import org.netpilot.repository.PasswordVault;
 import org.netpilot.repository.SettingsRepository;
 import org.netpilot.repository.UsageRepository;
 import org.netpilot.service.CsvExporter;
@@ -34,6 +36,7 @@ public record AppContext(
         UsageRepository usageRepository,
         ReportExporter reportExporter,
         NeighborDiscovery neighborDiscovery,
+        PasswordVault passwordVault,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -57,6 +60,7 @@ public record AppContext(
                 new UsageRepository(AppPaths.usageFile()),
                 new ReportExporter(),
                 new NeighborDiscovery(),
+                new PasswordVault(AppPaths.credentialsFile(), new DpapiProtector()),
                 hostServices);
     }
 }

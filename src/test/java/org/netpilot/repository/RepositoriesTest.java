@@ -37,7 +37,7 @@ class RepositoriesTest {
                 "http://192.168.88.1/login", 4, dir.resolve("out"),
                 new RouterSettings(new RouterEndpoint("10.0.0.1", 8443, true, "netpilot"), Map.of(
                         "10.0.0.1:8443", "ab".repeat(32),
-                        "[fe80::1]:443", "cd".repeat(32))),
+                        "[fe80::1]:443", "cd".repeat(32)), true),
                 new VoucherTemplate("شبكة الأمل", "صالح لمدة 30 يوماً", VoucherTemplate.Language.ARABIC, "#AA3300",
                         Map.of("2M", "1000 ل.س", "My Profile", "5$"), true, false, true, false, null),
                 new UiPreferences(UiLanguage.ARABIC, Theme.SEMI_DARK, "#1E9E6A"));

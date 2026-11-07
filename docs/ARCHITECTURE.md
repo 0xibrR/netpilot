@@ -133,7 +133,7 @@ Tests cover each of these: `PdfTextTest` and `ExportersTest.arabicVouchersKeepCr
 - **Validate input at the boundary.** `GenerationSettings.validate()` and `QrCodeService.validateLoginUrl()` run before any work starts.
 - **Never log secrets.** Passwords, router credentials and tokens must not reach log files or error messages.
 - **Randomness for credentials uses `SecureRandom`.**
-- **Router password is never stored.** It lives in a `char[]` that `RouterConnector` wipes after building the auth header. Settings keep only the endpoint and trusted fingerprints.
+- **Router password is not stored unless the user asks.** It lives in a `char[]` that `RouterConnector` wipes after building the auth header. Settings keep only the endpoint, trusted fingerprints and the auto-connect choice. With **Remember password** ticked, `PasswordVault` keeps it in `~/.netpilot/credentials`, encrypted by `DpapiProtector` (Windows DPAPI through JNA): only the same Windows account on the same computer can decrypt it, and a copied file is useless elsewhere. Unticking it, or **Forget password**, deletes the entry. On other systems the option is hidden.
 - **No "trust all certificates".** HTTPS trusts only the certificate whose SHA-256 fingerprint the user confirmed (`PinnedTrustManager`, trust on first use). A changed certificate is refused.
 - **Redirects are never followed**, so credentials cannot be sent to another host.
 

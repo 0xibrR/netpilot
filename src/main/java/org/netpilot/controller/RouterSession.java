@@ -20,6 +20,7 @@ import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
+import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.service.router.RouterClient;
@@ -151,6 +152,50 @@ final class RouterSession {
             Dialogs.error(owner.get(), Messages.get("error.openWindow"), e.getMessage());
             return Optional.empty();
         }
+    }
+
+    /**
+     * Connects to the last router in the background when the user turned on automatic connection
+     * and its password is remembered. Problems are only reported, never asked about: a changed
+     * certificate, for example, still needs the Connect dialog.
+     *
+     * @param report receives a short message for the user
+     */
+    void autoConnect(RouterSettings settings, java.util.function.Consumer<String> report) {
+        RouterEndpoint endpoint = settings.lastEndpoint();
+        if (!settings.autoConnect() || client != null) {
+            return;
+        }
+        Optional<char[]> password = context.passwordVault().load(endpoint);
+        if (password.isEmpty()) {
+            return;
+        }
+        String trusted = settings.trustedFingerprint(endpoint).orElse(null);
+        Task<RouterConnector.Connection> task = new Task<>() {
+
+            @Override
+            protected RouterConnector.Connection call() throws RouterException {
+                return context.routerConnector().connect(endpoint, password.get(), trusted); // wipes the password
+            }
+        };
+        task.setOnRunning(e -> statusLabel.setText(Messages.get("connect.connecting")));
+        task.setOnSucceeded(e -> {
+            if (client != null) {
+                task.getValue().client().close(); // the user connected by hand meanwhile
+                return;
+            }
+            useConnection(task.getValue());
+            report.accept(Messages.get("router.autoConnect.done", displayName()));
+        });
+        task.setOnFailed(e -> {
+            showState();
+            LOG.log(System.Logger.Level.WARNING, "Automatic connection to {0} failed: {1}", endpoint.address(),
+                    task.getException().getMessage());
+            report.accept(Messages.get("router.autoConnect.failed", String.valueOf(task.getException().getMessage())));
+        });
+        Thread thread = new Thread(task, "netpilot-auto-connect");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /** Reloads hotspot profiles and servers from the connected router. */
