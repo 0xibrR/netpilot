@@ -71,6 +71,11 @@ public class NetPilotApp extends Application {
         Styling.apply(scene);
 
         stage.setTitle(NAME);
+        // title bar and taskbar; dialogs owned by this window show it too
+        for (int size : new int[]{16, 32, 48, 64, 128, 256}) {
+            stage.getIcons().add(new javafx.scene.image.Image(
+                    resource("icons/netpilot-" + size + ".png").toExternalForm()));
+        }
         stage.setMinWidth(Math.min(980, width));
         stage.setMinHeight(Math.min(560, height));
         stage.setScene(scene);

@@ -29,6 +29,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Windows installer (`NetPilot-<version>.exe`) and portable zip, both with their own Java: built by the
+  new **Windows installer** GitHub workflow on every push to master, or locally with
+  `mvnw clean -Pinstaller package` (see docs/INSTALLER.md)
+- NetPilot icon for the program, its shortcuts and the window title bar
 - Card validity counted from the first login (for example 7 days), set per package in the package editor:
   the router enforces it itself through the package's on-login script, so it works while NetPilot is closed;
   Manage users shows when each card ends, and a warning appears when the router does not take its time from

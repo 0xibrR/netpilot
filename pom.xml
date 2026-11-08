@@ -263,4 +263,173 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          Windows installer: mvnw clean -Pinstaller package
+          Builds target/installer/NetPilot-<version>-windows.zip (portable, runs without installing)
+          and, with -Dinstaller.exe=true and the WiX Toolset installed, NetPilot-<version>.exe.
+          Both bring their own Java, so the computer needs nothing else. See docs/INSTALLER.md.
+        -->
+        <profile>
+            <id>installer</id>
+            <properties>
+                <!-- numbers only: Windows rejects -SNAPSHOT; keep equal to NetPilotApp.VERSION -->
+                <installer.version>1.0.0</installer.version>
+                <installer.exe>false</installer.exe>
+                <installer.dir>${project.build.directory}/installer</installer.dir>
+                <installer.fx.classifier>win</installer.fx.classifier>
+                <!-- what the app uses from the JDK (jdeps), plus Arabic dates and numbers -->
+                <installer.jdk.modules>java.base,java.desktop,java.logging,java.net.http,java.xml,java.naming,jdk.unsupported,jdk.localedata,jdk.charsets,jdk.crypto.cryptoki,jdk.zipfs,javafx.controls,javafx.fxml</installer.jdk.modules>
+                <!-- lets Windows replace an older install with a newer one; never change it -->
+                <installer.upgrade.uuid>71f9b44a-51a1-4124-a32e-15e35cb0b8cf</installer.upgrade.uuid>
+                <installer.vendor>Ibrahim Ramadan</installer.vendor>
+                <installer.description>MikroTik hotspot cards and management</installer.description>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- declared first: in prepare-package it clears the old output before the copy below -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>installer-clean</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${installer.dir}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>installer-package</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target xmlns:if="ant:if">
+                                        <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                              todir="${installer.dir}/mods"/>
+
+                                        <!-- a small Java runtime with JavaFX inside -->
+                                        <exec executable="${java.home}/bin/jlink" failonerror="true">
+                                            <arg value="--module-path"/>
+                                            <arg value="${installer.dir}/fx"/>
+                                            <arg value="--add-modules"/>
+                                            <arg value="${installer.jdk.modules}"/>
+                                            <arg value="--include-locales=en,ar"/>
+                                            <arg value="--strip-debug"/>
+                                            <arg value="--no-header-files"/>
+                                            <arg value="--no-man-pages"/>
+                                            <arg value="--output"/>
+                                            <arg value="${installer.dir}/runtime"/>
+                                        </exec>
+
+                                        <!-- the NetPilot folder: NetPilot.exe, the app and its Java -->
+                                        <exec executable="${java.home}/bin/jpackage" failonerror="true">
+                                            <arg value="--type"/>
+                                            <arg value="app-image"/>
+                                            <arg value="--name"/>
+                                            <arg value="NetPilot"/>
+                                            <arg value="--app-version"/>
+                                            <arg value="${installer.version}"/>
+                                            <arg value="--vendor"/>
+                                            <arg value="${installer.vendor}"/>
+                                            <arg value="--description"/>
+                                            <arg value="${installer.description}"/>
+                                            <arg value="--icon"/>
+                                            <arg value="${project.basedir}/packaging/windows/NetPilot.ico"/>
+                                            <arg value="--runtime-image"/>
+                                            <arg value="${installer.dir}/runtime"/>
+                                            <arg value="--module-path"/>
+                                            <arg value="${installer.dir}/mods"/>
+                                            <arg value="--module"/>
+                                            <arg value="${main.module}/${main.class}"/>
+                                            <arg value="--java-options"/>
+                                            <arg value="--enable-native-access=javafx.graphics,com.sun.jna"/>
+                                            <arg value="--dest"/>
+                                            <arg value="${installer.dir}/image"/>
+                                        </exec>
+                                        <zip destfile="${installer.dir}/NetPilot-${installer.version}-windows.zip"
+                                             basedir="${installer.dir}/image"/>
+
+                                        <!-- Setup.exe; needs the WiX Toolset (the GitHub build has it) -->
+                                        <exec if:true="${installer.exe}" executable="${java.home}/bin/jpackage"
+                                              failonerror="true">
+                                            <arg value="--type"/>
+                                            <arg value="exe"/>
+                                            <arg value="--app-image"/>
+                                            <arg value="${installer.dir}/image/NetPilot"/>
+                                            <arg value="--name"/>
+                                            <arg value="NetPilot"/>
+                                            <arg value="--app-version"/>
+                                            <arg value="${installer.version}"/>
+                                            <arg value="--vendor"/>
+                                            <arg value="${installer.vendor}"/>
+                                            <arg value="--description"/>
+                                            <arg value="${installer.description}"/>
+                                            <arg value="--copyright"/>
+                                            <arg value="${installer.vendor}"/>
+                                            <arg value="--about-url"/>
+                                            <arg value="${project.url}"/>
+                                            <arg value="--win-upgrade-uuid"/>
+                                            <arg value="${installer.upgrade.uuid}"/>
+                                            <arg value="--win-per-user-install"/>
+                                            <arg value="--win-dir-chooser"/>
+                                            <arg value="--win-menu"/>
+                                            <arg value="--win-menu-group"/>
+                                            <arg value="NetPilot"/>
+                                            <arg value="--win-shortcut"/>
+                                            <arg value="--win-shortcut-prompt"/>
+                                            <arg value="--dest"/>
+                                            <arg value="${installer.dir}"/>
+                                        </exec>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <!-- the app's libraries; JavaFX goes into the Java runtime instead -->
+                            <execution>
+                                <id>installer-libraries</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <excludeGroupIds>org.openjfx</excludeGroupIds>
+                                    <outputDirectory>${installer.dir}/mods</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>installer-javafx</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <includeGroupIds>org.openjfx</includeGroupIds>
+                                    <includeClassifiers>${installer.fx.classifier}</includeClassifiers>
+                                    <outputDirectory>${installer.dir}/fx</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

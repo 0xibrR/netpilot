@@ -26,7 +26,17 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 - **Hotspot page** with tabs like WinBox: users grouped by batch, active sessions, user profiles and servers.
 - **English or Arabic interface** (right-to-left, Cairo font), **light, semi-dark, dark or system theme** and a choice of main colour: **Settings** page.
 
-## Requirements
+## Install (Windows)
+
+Download `NetPilot-windows` from the latest run of **Windows installer** on the repository's
+[Actions](https://github.com/0xibrR/netpilot/actions/workflows/installer.yml) page. It holds:
+
+- `NetPilot-1.0.0.exe`: installs NetPilot with a desktop and Start-menu shortcut
+- `NetPilot-1.0.0-windows.zip`: portable; unzip and run `NetPilot.exe`
+
+Both include their own Java, so nothing else is needed. See [docs/INSTALLER.md](docs/INSTALLER.md).
+
+## Requirements (to build from source)
 
 - JDK 25 or newer
 - No Maven installation needed: the Maven Wrapper (`mvnw`) is included
