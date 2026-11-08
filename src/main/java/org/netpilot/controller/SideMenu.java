@@ -41,9 +41,8 @@ final class SideMenu {
             new Entry("nav.DASHBOARD", PageId.DASHBOARD, null),
             new Group("nav.group.cards", Icons.TICKET, List.of(
                     new Entry("nav.GENERATE", PageId.GENERATE, null),
+                    // one page holds the card list, who is online (tab) and the search box
                     new Entry("nav.cards.users", PageId.HOTSPOT, HotspotController.USERS),
-                    new Entry("nav.cards.active", PageId.HOTSPOT, HotspotController.ACTIVE),
-                    new Entry("nav.cards.search", PageId.HOTSPOT, HotspotController.SEARCH),
                     new Entry("nav.cards.sales", PageId.REPORTS, null),
                     new Entry("nav.DESIGN", PageId.DESIGN, null),
                     new Entry("nav.HISTORY", PageId.HISTORY, null))),
@@ -109,7 +108,8 @@ final class SideMenu {
         VBox items = new VBox(1);
         items.getStyleClass().add("nav-group-items");
         for (Entry entry : group.entries()) {
-            ToggleButton button = entryButton(entry, bullet(), "nav-sub", open);
+            // only the group has an icon; its entries are plain, indented text
+            ToggleButton button = entryButton(entry, null, "nav-sub", open);
             groupOf.put(entry.key(), items);
             items.getChildren().add(button);
         }
@@ -139,12 +139,6 @@ final class SideMenu {
 
     private static String keyOf(ToggleButton button) {
         return String.valueOf(button.getUserData());
-    }
-
-    private static javafx.scene.Node bullet() {
-        Label dot = new Label("○");
-        dot.getStyleClass().add("nav-bullet");
-        return dot;
     }
 
     private static javafx.scene.Node iconFor(PageId page) {

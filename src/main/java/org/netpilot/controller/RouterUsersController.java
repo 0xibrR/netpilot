@@ -39,7 +39,6 @@ import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.UserFilter;
-import org.netpilot.service.ReportService;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
 import org.netpilot.service.router.RouterUserActions.BulkResult;
@@ -493,7 +492,8 @@ public class RouterUsersController {
         });
 
         nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(switch (c.getValue().getValue()) {
-            case GroupRow g -> ReportService.batchLabel(g.batch()) + "  ·  " + g.count();
+            case GroupRow g ->
+                (g.batch().isEmpty() ? Messages.get("users.manualGroup") : g.batch()) + "  ·  " + g.count();
             case UserRow u -> u.user().name();
         }));
         onlineColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(

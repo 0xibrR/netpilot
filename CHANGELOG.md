@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Own clearer names in the side menu (Card center: New batch, Manage cards (list, online now and search on one page), Earnings, Card look,
+  Print archive; Network: Speeds and profiles, Hotspot servers) and flat theme-coloured controls, so dark mode has no
+  grey gradients
 - Side menu groups everything about cards under a folding "Cards" group (create, card users, online now, search
   for a card, sales, design, export history) and profiles and servers under "Hotspot"
 - Stronger card numbers: weak patterns are refused (runs like `7777`, counting like `1234`/`9876`, repeats like
