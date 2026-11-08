@@ -29,6 +29,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Automatic clean-up (Settings): NetPilot deletes expired cards once a day at the chosen time while it is
+  connected, or at the next connection after a missed day; their sales are saved first, the same way as
+  "Delete expired", and the last run is shown
 - Receipt printing on 58/80 mm thermal printers through the printer's Windows driver: one receipt per card
   ("Print receipt" on Manage users, "Print receipts" after sending a batch), printer and paper width in Card
   design with a live receipt preview and a test print; A4 PDF printing is unchanged

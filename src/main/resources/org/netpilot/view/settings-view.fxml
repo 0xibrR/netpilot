@@ -34,6 +34,17 @@
         </VBox>
 
         <VBox styleClass="card" spacing="10">
+            <Label text="%cleanup.title" styleClass="card-title"/>
+            <CheckBox fx:id="cleanupCheck" text="%cleanup.enable" wrapText="true"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%cleanup.time"/>
+                <ComboBox fx:id="cleanupTimeBox"/>
+            </HBox>
+            <Label fx:id="cleanupLastLabel" styleClass="muted" wrapText="true"/>
+            <Label text="%cleanup.help" styleClass="muted" wrapText="true"/>
+        </VBox>
+
+        <VBox styleClass="card" spacing="10">
             <Label text="%menu.help.about" styleClass="card-title"/>
             <Label fx:id="aboutLabel" wrapText="true"/>
             <HBox spacing="8">

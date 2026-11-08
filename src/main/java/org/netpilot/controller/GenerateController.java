@@ -444,15 +444,16 @@ public class GenerateController implements Page {
             return;
         }
         GenerationSettings generation = readGenerationSettings();
-        workspace.updateSettings(s -> new AppSettings(generation, loginUrlField.getText(), perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui(), s.receipt()));
+        workspace.updateSettings(
+                s -> s.withForm(generation, loginUrlField.getText(), perRowSpinner.getValue(),
+                        Path.of(outputDirField.getText())));
     }
 
     /** The shared settings with this page's current fields. */
     private AppSettings currentAppSettings() {
-        AppSettings s = workspace.settings();
-        return new AppSettings(readGenerationSettings(), loginUrlField.getText(), perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui(), s.receipt());
+        return workspace.settings().withForm(readGenerationSettings(), loginUrlField.getText(),
+                perRowSpinner.getValue(),
+                Path.of(outputDirField.getText()));
     }
 
     private GenerationSettings readGenerationSettings() {

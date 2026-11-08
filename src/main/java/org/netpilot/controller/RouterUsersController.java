@@ -41,6 +41,7 @@ import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.UserFilter;
+import org.netpilot.service.ExpiredCleanup;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
 import org.netpilot.service.router.RouterUserActions;
@@ -318,12 +319,8 @@ public class RouterUsersController {
             return;
         }
         List<RouterUser> all = users;
-        bulk(Messages.get("users.deleting", expired.size()), () -> {
-            String router = client.endpoint().address();
-            context.usageRepository().saveAll(context.reportService().track(router, all,
-                    context.usageRepository().findAll(), LocalDate.now()));
-            return context.routerUserActions().delete(client, expired);
-        });
+        bulk(Messages.get("users.deleting", expired.size()), () -> new ExpiredCleanup(context.reportService(),
+                context.usageRepository(), context.routerUserActions()).delete(client, all, LocalDate.now()));
     }
 
     @FXML

@@ -17,6 +17,8 @@
             <Package name="org.netpilot.controller"/>
             <Class name="org.netpilot.AppContext"/>
             <Class name="org.netpilot.service.ExportService"/>
+            <!-- holds the shared sales repository and router actions, like ExportService -->
+            <Class name="org.netpilot.service.ExpiredCleanup"/>
             <Class name="org.netpilot.service.PdfVoucherGenerator"/>
             <Class name="org.netpilot.service.UserGenerator"/>
             <!-- holds the shared generator, like the services above -->

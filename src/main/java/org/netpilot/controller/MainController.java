@@ -29,8 +29,10 @@ import org.netpilot.i18n.Messages;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterResource;
 import org.netpilot.model.Theme;
+import org.netpilot.service.ExpiredCleanup;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
+import org.netpilot.service.router.RouterUserActions;
 
 /**
  * Main window: top bar with the router connection, side menu, the page area and a status bar
@@ -55,6 +57,9 @@ public class MainController implements RouterSession.Listener {
     private Workspace workspace;
     private PageId current;
     private boolean polling;
+    private static final java.time.Duration CLEANUP_RETRY = java.time.Duration.ofMinutes(15);
+    private boolean cleaning;
+    private java.time.LocalDateTime nextCleanupAttempt = java.time.LocalDateTime.MIN;
 
     @FXML
     private BorderPane root;
@@ -301,8 +306,60 @@ public class MainController implements RouterSession.Listener {
         pollResources();
     }
 
+    /**
+     * The automatic daily clean-up (Settings): deletes expired cards once a day while connected,
+     * after saving their sales. Checked with the status bar every few seconds; a failed attempt
+     * waits {@link #CLEANUP_RETRY} before the next one.
+     */
+    private void cleanUpIfDue() {
+        Optional<RouterClient> client = router.client();
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (client.isEmpty() || cleaning || now.isBefore(nextCleanupAttempt)
+                || !workspace.settings().cleanup().due(now)) {
+            return;
+        }
+        cleaning = true;
+        RouterClient target = client.get();
+        Task<RouterUserActions.BulkResult> task = new Task<>() {
+
+            @Override
+            protected RouterUserActions.BulkResult call() throws Exception {
+                return new ExpiredCleanup(context.reportService(), context.usageRepository(),
+                        context.routerUserActions()).run(target, java.time.LocalDate.now());
+            }
+        };
+        task.setOnSucceeded(e -> {
+            cleaning = false;
+            RouterUserActions.BulkResult result = task.getValue();
+            workspace.updateSettings(
+                    s -> s.withCleanup(s.cleanup().ran(java.time.LocalDateTime.now(), result.succeeded())));
+            LOG.log(System.Logger.Level.INFO, "Automatic clean-up deleted {0} of {1} expired cards",
+                    result.succeeded(), result.total());
+            if (!result.problems().isEmpty()) {
+                LOG.log(System.Logger.Level.WARNING, "Automatic clean-up problems: {0}", result.problems());
+            }
+            if (result.succeeded() > 0) {
+                workspace.toast("✓ " + Messages.get("cleanup.done", result.succeeded()));
+                LoadedPage page = pages.get(current);
+                if (page != null) {
+                    page.controller().tick(); // lists on screen drop the deleted cards
+                }
+            }
+        });
+        task.setOnFailed(e -> {
+            cleaning = false;
+            nextCleanupAttempt = java.time.LocalDateTime.now().plus(CLEANUP_RETRY);
+            LOG.log(System.Logger.Level.WARNING, "Automatic clean-up failed; trying again later",
+                    task.getException());
+        });
+        Thread thread = new Thread(task, "netpilot-cleanup");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     /** Reads CPU, memory and uptime in the background; skipped while the previous read runs. */
     private void pollResources() {
+        cleanUpIfDue();
         Optional<RouterClient> client = router.client();
         if (client.isEmpty() || polling) {
             return;

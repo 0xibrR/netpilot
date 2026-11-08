@@ -14,6 +14,7 @@ import java.util.Objects;
  * @param voucherTemplate how printed vouchers look
  * @param ui              language, theme and colour
  * @param receipt         receipt printer and paper width
+ * @param cleanup         automatic daily deletion of expired cards
  */
 public record AppSettings(
         GenerationSettings generation,
@@ -23,7 +24,8 @@ public record AppSettings(
         RouterSettings router,
         VoucherTemplate voucherTemplate,
         UiPreferences ui,
-        ReceiptSettings receipt) {
+        ReceiptSettings receipt,
+        CleanupSettings cleanup) {
 
     public static final int MIN_PER_ROW = 2;
     public static final int MAX_PER_ROW = 8;
@@ -37,37 +39,49 @@ public record AppSettings(
         voucherTemplate = voucherTemplate == null ? VoucherTemplate.defaults() : voucherTemplate;
         ui = ui == null ? UiPreferences.defaults() : ui;
         receipt = receipt == null ? ReceiptSettings.defaults() : receipt;
+        cleanup = cleanup == null ? CleanupSettings.defaults() : cleanup;
     }
 
-    /** Settings with the default receipt printer. */
+    /** Settings with the default receipt printer and no automatic clean-up. */
     public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
             RouterSettings router, VoucherTemplate voucherTemplate, UiPreferences ui) {
-        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui, null);
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui, null, null);
     }
 
     /** Settings with the default interface preferences. */
     public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
             RouterSettings router, VoucherTemplate voucherTemplate) {
-        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null, null);
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null, null, null);
+    }
+
+    /** The Create cards form's part; everything else stays as it is. */
+    public AppSettings withForm(GenerationSettings newGeneration, String newLoginUrl, int newPerRow, Path newOutput) {
+        return new AppSettings(newGeneration, newLoginUrl, newPerRow, newOutput, router, voucherTemplate, ui, receipt,
+                cleanup);
     }
 
     public AppSettings withRouter(RouterSettings newRouter) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate, ui,
-                receipt);
+                receipt, cleanup);
     }
 
     public AppSettings withVoucherTemplate(VoucherTemplate newTemplate) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate, ui,
-                receipt);
+                receipt, cleanup);
     }
 
     public AppSettings withUi(UiPreferences newUi) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, newUi,
-                receipt);
+                receipt, cleanup);
     }
 
     public AppSettings withReceipt(ReceiptSettings newReceipt) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
-                newReceipt);
+                newReceipt, cleanup);
+    }
+
+    public AppSettings withCleanup(CleanupSettings newCleanup) {
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
+                receipt, newCleanup);
     }
 }

@@ -39,7 +39,9 @@ class RepositoriesTest {
                 new VoucherTemplate("شبكة الأمل", "صالح لمدة 30 يوماً", VoucherTemplate.Language.ARABIC, "#AA3300",
                         Map.of("2M", "1000 ل.س", "My Profile", "5$"), true, false, true, false, null),
                 new UiPreferences(UiLanguage.ARABIC, Theme.SEMI_DARK, "#1E9E6A"),
-                new org.netpilot.model.ReceiptSettings("XP-58 (copy 1)", 58));
+                new org.netpilot.model.ReceiptSettings("XP-58 (copy 1)", 58),
+                new org.netpilot.model.CleanupSettings(true, java.time.LocalTime.of(4, 30),
+                        java.util.Optional.of(java.time.LocalDateTime.of(2026, 11, 8, 4, 30, 5)), 14));
 
         repo.save(saved);
 

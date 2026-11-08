@@ -15,6 +15,7 @@ import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.CardImage;
 import org.netpilot.model.CardSize;
+import org.netpilot.model.CleanupSettings;
 import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.PasswordStyle;
@@ -140,7 +141,28 @@ public class SettingsRepository {
                         enumValue(p, "ui.theme", Theme.class, d.ui().theme()),
                         p.getProperty("ui.accent", d.ui().accent())),
                 new ReceiptSettings(p.getProperty("receipt.printer", d.receipt().printer()),
-                        intValue(p, "receipt.paperMm", d.receipt().paperMm())));
+                        intValue(p, "receipt.paperMm", d.receipt().paperMm())),
+                loadCleanup(p, d.cleanup()));
+    }
+
+    private static CleanupSettings loadCleanup(Properties p, CleanupSettings d) {
+        java.time.LocalTime at = d.at();
+        java.util.Optional<java.time.LocalDateTime> lastRun = d.lastRun();
+        try {
+            at = java.time.LocalTime.parse(p.getProperty("cleanup.at", d.at().toString()).strip());
+        } catch (java.time.format.DateTimeParseException e) {
+            LOG.log(System.Logger.Level.WARNING, "Invalid clean-up time in settings");
+        }
+        String last = p.getProperty("cleanup.lastRun", "").strip();
+        if (!last.isEmpty()) {
+            try {
+                lastRun = java.util.Optional.of(java.time.LocalDateTime.parse(last));
+            } catch (java.time.format.DateTimeParseException e) {
+                LOG.log(System.Logger.Level.WARNING, "Invalid last clean-up time in settings");
+            }
+        }
+        return new CleanupSettings(booleanValue(p, "cleanup.enabled", d.enabled()), at, lastRun,
+                intValue(p, "cleanup.lastDeleted", d.lastDeleted()));
     }
 
     private static VoucherTemplate loadTemplate(Properties p, VoucherTemplate d) {
@@ -313,6 +335,11 @@ public class SettingsRepository {
         p.setProperty("ui.accent", settings.ui().accent());
         p.setProperty("receipt.printer", settings.receipt().printer());
         p.setProperty("receipt.paperMm", String.valueOf(settings.receipt().paperMm()));
+        CleanupSettings cleanup = settings.cleanup();
+        p.setProperty("cleanup.enabled", String.valueOf(cleanup.enabled()));
+        p.setProperty("cleanup.at", cleanup.at().toString());
+        p.setProperty("cleanup.lastRun", cleanup.lastRun().map(java.time.LocalDateTime::toString).orElse(""));
+        p.setProperty("cleanup.lastDeleted", String.valueOf(cleanup.lastDeleted()));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");
