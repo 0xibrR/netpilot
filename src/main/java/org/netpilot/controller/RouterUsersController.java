@@ -35,6 +35,7 @@ import javafx.stage.Window;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
+import org.netpilot.model.DataSize;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterUser;
@@ -106,7 +107,9 @@ public class RouterUsersController {
     @FXML
     private TreeTableColumn<Row, String> limitColumn;
     @FXML
-    private TreeTableColumn<Row, Long> dataColumn;
+    private TreeTableColumn<Row, Long> uploadColumn;
+    @FXML
+    private TreeTableColumn<Row, Long> downloadColumn;
     @FXML
     private TreeTableColumn<Row, String> stateColumn;
     @FXML
@@ -518,14 +521,17 @@ public class RouterUsersController {
         serverColumn.setCellValueFactory(c -> text(c, RouterUser::server));
 
         usedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::uptime).orElse(null)));
-        usedColumn.setCellFactory(column -> new FormattedCell<>(RouterDuration::format));
+        usedColumn.setCellFactory(column -> new FormattedCell<>(RouterDuration::clock));
 
         limitColumn.setCellValueFactory(c -> text(c, u -> u.limit().map(RouterDuration::format).orElse("∞")));
 
-        dataColumn.setCellValueFactory(
-                c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::totalBytes).orElse(null)));
-        dataColumn.setCellFactory(column -> new FormattedCell<>(RouterUsersController::formatBytes));
-
+        // like WinBox: Bytes In is what the customer sent (upload), Bytes Out what they received
+        uploadColumn.setCellValueFactory(
+                c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::bytesIn).orElse(null)));
+        uploadColumn.setCellFactory(column -> new FormattedCell<>(DataSize::format));
+        downloadColumn.setCellValueFactory(
+                c -> new ReadOnlyObjectWrapper<>(user(c).map(RouterUser::bytesOut).orElse(null)));
+        downloadColumn.setCellFactory(column -> new FormattedCell<>(DataSize::format));
         stateColumn.setCellValueFactory(c -> text(c, RouterUsersController::state));
         commentColumn.setCellValueFactory(c -> text(c, RouterUser::comment));
     }
@@ -556,17 +562,7 @@ public class RouterUsersController {
 
     /** {@code 0 B}, {@code 512 KB}, {@code 1.2 GB}. */
     static String formatBytes(long bytes) {
-        if (bytes < 1024) {
-            return bytes + " B";
-        }
-        String[] units = {"KB", "MB", "GB", "TB"};
-        double value = bytes;
-        int unit = -1;
-        while (value >= 1024 && unit < units.length - 1) {
-            value /= 1024;
-            unit++;
-        }
-        return (value < 10 ? String.format("%.1f", value) : String.format("%.0f", value)) + " " + units[unit];
+        return DataSize.format(bytes);
     }
 
     /** Shows a sortable value (duration, bytes) as formatted text. */

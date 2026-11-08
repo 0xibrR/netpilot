@@ -124,7 +124,7 @@ public class HotspotController implements Page {
             @Override
             protected void updateItem(java.time.Duration item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : RouterDuration.format(item));
+                setText(empty || item == null ? null : RouterDuration.clock(item));
             }
         });
         kickButton.disableProperty().bind(Bindings.isEmpty(activeTable.getSelectionModel().getSelectedItems()));

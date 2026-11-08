@@ -48,6 +48,15 @@ public final class RouterDuration {
         return Optional.empty();
     }
 
+    /** As WinBox shows uptimes: {@code 2d 09:56:36}, {@code 17:33:03}, {@code 00:00:00}. */
+    public static String clock(Duration duration) {
+        long seconds = Math.max(0, duration.toSeconds());
+        long days = seconds / 86_400;
+        String time = String.format(java.util.Locale.ROOT, "%02d:%02d:%02d", seconds % 86_400 / 3_600,
+                seconds % 3_600 / 60, seconds % 60);
+        return days > 0 ? days + "d " + time : time;
+    }
+
     /** Short human form, e.g. {@code 2d 3h}, {@code 1h 20m}, {@code 45s}, {@code 0}. */
     public static String format(Duration duration) {
         long seconds = duration.toSeconds();

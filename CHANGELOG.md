@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Manage users shows data and times like WinBox: separate Upload (Bytes In) and Download (Bytes Out) in MiB/GiB,
+  and full uptimes such as 2d 09:56:36
 - Manage cards: the connection column is titled and shows "Online" in green or "Offline" in red (online first when sorted)
 - Own clearer names in the side menu (Card center: New batch, Manage cards (list, online now and search on one page), Earnings, Card look,
   Print history) and flat theme-coloured controls, so dark mode has no

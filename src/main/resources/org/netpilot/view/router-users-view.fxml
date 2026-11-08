@@ -44,13 +44,14 @@
                 <TreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
             </columnResizePolicy>
             <columns>
-                <TreeTableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="200"/>
+                <TreeTableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="270"/>
                 <TreeTableColumn fx:id="onlineColumn" text="%users.column.connection" prefWidth="115" minWidth="105"/>
                 <TreeTableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
                 <TreeTableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
-                <TreeTableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="90"/>
+                <TreeTableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="105"/>
                 <TreeTableColumn fx:id="limitColumn" text="%users.column.limit" prefWidth="70"/>
-                <TreeTableColumn fx:id="dataColumn" text="%users.column.data" prefWidth="85"/>
+                <TreeTableColumn fx:id="uploadColumn" text="%users.column.upload" prefWidth="95"/>
+                <TreeTableColumn fx:id="downloadColumn" text="%users.column.download" prefWidth="95"/>
                 <TreeTableColumn fx:id="stateColumn" text="%users.column.state" prefWidth="100"/>
                 <TreeTableColumn fx:id="commentColumn" text="%users.column.comment" prefWidth="240"/>
             </columns>
