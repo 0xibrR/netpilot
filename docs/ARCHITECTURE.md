@@ -98,7 +98,7 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 ## Interface language and theme
 
 - Every user-visible text lives in `resources/org/netpilot/i18n/messages_en.properties` and `messages_ar.properties`. Views use `%key` (FXMLLoader gets `Messages.bundle()`); code uses `Messages.get("key", args...)`, which formats with `MessageFormat` (numbers are not grouped, so `1000` never becomes `1,000`).
-- The language is chosen once at start-up (`NetPilotApp.start`), before any window is built; changing it in Preferences applies on the next start. Logs stay in English.
+- The language is set before the first window is built (`NetPilotApp.start`). Changing it in Settings rebuilds the main window in the new language at once (`NetPilotApp.reloadUi`): the router connection and the open page carry over through `UiSession`, so no restart is needed. Logs stay in English.
 - `Styling.apply` is called on every scene and dialog: it adds `styles.css` (plus `dark.css` for the dark theme), sets right-to-left orientation for Arabic and the `arabic` style class (Cairo font). `Styling.setTheme` restyles all open windows; the system theme follows `Platform.getPreferences()`.
 - `dark.css` only overrides colour tokens (`-np-*`, `-fx-base`, ...). The voucher preview card keeps white paper colours in both themes.
 - Semi-dark adds the `chrome-dark` style class, which only changes the `-np-chrome-*` tokens of the side menu, top bar and status bar. The accent colour is set as `-np-accent` on each root; hover shades are derived from it in CSS.

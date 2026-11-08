@@ -36,10 +36,6 @@ public class HotspotController implements Page {
 
     /** Parts of the page the side menu can open. */
     static final String USERS = "users";
-    static final String ACTIVE = "active";
-    static final String SEARCH = "search";
-    static final String PROFILES = "profiles";
-    static final String SERVERS = "servers";
 
     private final AppContext context;
 
@@ -53,10 +49,7 @@ public class HotspotController implements Page {
     private Tab activeTab;
     @FXML
     private Tab usersTab;
-    @FXML
-    private Tab profilesTab;
-    @FXML
-    private Tab serversTab;
+
     @FXML
     private RouterUsersController usersController;
 
@@ -178,15 +171,8 @@ public class HotspotController implements Page {
 
     @Override
     public void open(String section) {
-        Tab tab = switch (section) {
-            case ACTIVE -> activeTab;
-            case PROFILES -> profilesTab;
-            case SERVERS -> serversTab;
-            default -> usersTab;
-        };
-        tabs.getSelectionModel().select(tab);
-        if (SEARCH.equals(section)) {
-            usersController.focusSearch();
+        if (USERS.equals(section)) {
+            tabs.getSelectionModel().select(usersTab);
         }
     }
 

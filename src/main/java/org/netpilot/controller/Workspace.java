@@ -32,6 +32,8 @@ final class Workspace {
     };
     private Runnable connector = () -> {
     };
+    private Runnable languageReloader = () -> {
+    };
 
     Workspace(AppContext context, RouterSession router, Supplier<Window> window, AppSettings settings) {
         this.context = context;
@@ -108,5 +110,14 @@ final class Workspace {
 
     void setConnector(Runnable connector) {
         this.connector = connector;
+    }
+
+    /** Rebuilds the main window in the language saved in the settings, keeping the connection. */
+    void reloadLanguage() {
+        languageReloader.run();
+    }
+
+    void setLanguageReloader(Runnable reloader) {
+        this.languageReloader = reloader;
     }
 }

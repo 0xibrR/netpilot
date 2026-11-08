@@ -98,19 +98,27 @@ public class MainController implements RouterSession.Listener {
     private record LoadedPage(Node view, Page controller) {
     }
 
-    public MainController(AppContext context) {
+    private final UiSession session;
+
+    public MainController(AppContext context, UiSession session) {
         this.context = context;
+        this.session = session;
     }
 
     @FXML
     private void initialize() {
-        router = new RouterSession(context, routerChip, this::window);
+        // after a language switch the same connection carries on in the rebuilt window
+        router = session.router() == null
+                ? new RouterSession(context, routerChip, this::window)
+                : session.router().rebind(routerChip, this::window);
+        session.keep(router);
         router.addListener(this);
         workspace = new Workspace(context, router, this::window, context.settingsRepository().load());
         workspace.setNavigator(this::show);
         Toast toast = new Toast(pageHost);
         workspace.setToaster(toast::show);
         workspace.setConnector(this::onConnectRouter);
+        workspace.setLanguageReloader(() -> session.reload(current));
 
         reloadItem.disableProperty().bind(router.connectedProperty().not());
         disconnectItem.disableProperty().bind(router.connectedProperty().not());
@@ -127,8 +135,12 @@ public class MainController implements RouterSession.Listener {
 
         buildSideMenu();
         load(PageId.GENERATE); // always loaded: other pages print vouchers through it
-        show(PageId.DASHBOARD); // the app opens on the dashboard
-        router.autoConnect(workspace.settings().router(), workspace::toast);
+        show(session.startPage()); // the dashboard at start, the same page after a language switch
+        if (session.firstAutoConnect()) {
+            router.autoConnect(workspace.settings().router(), workspace::toast);
+        } else if (router.client().isPresent()) {
+            startLiveTimers();
+        }
         root.sceneProperty().addListener((obs, old, scene) -> {
             if (scene != null) {
                 addShortcuts();
@@ -138,6 +150,12 @@ public class MainController implements RouterSession.Listener {
 
     /** Saves page state and ends the router session; called when the app closes. */
     public void close() {
+        detach();
+        router.close();
+    }
+
+    /** Stops timers and saves page state, but keeps the router connected (language switch). */
+    public void detach() {
         resourcePoller.stop();
         liveUpdates.stop();
         clock.stop();
@@ -146,7 +164,6 @@ public class MainController implements RouterSession.Listener {
                 generate.saveSettings();
             }
         });
-        router.close();
     }
 
     // ------------------------------------------------------------------ navigation
@@ -236,12 +253,7 @@ public class MainController implements RouterSession.Listener {
     @Override
     public void routerConnected(RouterClient client, String name) {
         pages.values().forEach(p -> p.controller().routerConnected(client, name));
-        router.info().ifPresent(info -> routerInfoLabel.setText(info.summary()));
-        resourcePoller.play();
-        liveUpdates.play();
-        liveLabel.setVisible(true);
-        liveLabel.setManaged(true);
-        pollResources();
+        startLiveTimers();
         if (current != null && current.needsRouter()) {
             show(current);
         }
@@ -277,6 +289,16 @@ public class MainController implements RouterSession.Listener {
         if (page != null && page.view().isVisible()) {
             page.controller().tick();
         }
+    }
+
+    /** Status bar figures and live page updates while a router is connected. */
+    private void startLiveTimers() {
+        router.info().ifPresent(info -> routerInfoLabel.setText(info.summary()));
+        resourcePoller.play();
+        liveUpdates.play();
+        liveLabel.setVisible(true);
+        liveLabel.setManaged(true);
+        pollResources();
     }
 
     /** Reads CPU, memory and uptime in the background; skipped while the previous read runs. */

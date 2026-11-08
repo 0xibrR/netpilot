@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- The interface language changes at once, without restarting: the window is rebuilt in the new language, the router
+  stays connected and the same page stays open
+- Arabic texts say "card" (بطاقة) everywhere, matching the menu; unused styles and code removed
 - NetPilot opens on the Dashboard; its quick actions use the menu names and icons, and its wording matches the menu
 - Manage users shows data and times like WinBox: separate Upload (Bytes In) and Download (Bytes Out) in MiB/GiB,
   and full uptimes such as 2d 09:56:36

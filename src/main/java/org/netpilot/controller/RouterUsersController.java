@@ -55,8 +55,9 @@ import org.netpilot.service.router.RouterUserActions.BulkResult;
 public class RouterUsersController {
 
     private static final System.Logger LOG = System.getLogger(RouterUsersController.class.getName());
-    private static final String ALL_BATCHES = Messages.get("users.allBatches");
-    private static final String ALL_PROFILES = Messages.get("users.allProfiles");
+    // read when the page is built, so a language switch (which rebuilds pages) shows the new language
+    private final String allBatches = Messages.get("users.allBatches");
+    private final String allProfiles = Messages.get("users.allProfiles");
     private static final String BATCH_PREFIX = "NetPilot ";
 
     /** One line of the tree: a batch header or a user. */
@@ -138,10 +139,10 @@ public class RouterUsersController {
         setUpTable();
         statusBox.getItems().setAll(UserFilter.Status.values());
         statusBox.setValue(UserFilter.Status.ALL);
-        batchBox.getItems().setAll(ALL_BATCHES);
-        batchBox.setValue(ALL_BATCHES);
-        profileBox.getItems().setAll(ALL_PROFILES);
-        profileBox.setValue(ALL_PROFILES);
+        batchBox.getItems().setAll(allBatches);
+        batchBox.setValue(allBatches);
+        profileBox.getItems().setAll(allProfiles);
+        profileBox.setValue(allProfiles);
 
         searchField.textProperty().addListener((obs, old, value) -> applyFilter());
         batchBox.valueProperty().addListener((obs, old, value) -> applyFilter());
@@ -206,14 +207,6 @@ public class RouterUsersController {
         thread.start();
     }
 
-    /** Puts the cursor in the search box (side menu "Search for a card"). */
-    void focusSearch() {
-        javafx.application.Platform.runLater(() -> {
-            searchField.requestFocus();
-            searchField.selectAll();
-        });
-    }
-
     /** Forgets the router's users after a disconnect. */
     void stop() {
         client = null;
@@ -237,8 +230,8 @@ public class RouterUsersController {
     @FXML
     private void onClearFilters() {
         searchField.clear();
-        batchBox.setValue(ALL_BATCHES);
-        profileBox.setValue(ALL_PROFILES);
+        batchBox.setValue(allBatches);
+        profileBox.setValue(allProfiles);
         statusBox.setValue(UserFilter.Status.ALL);
     }
 
@@ -311,13 +304,13 @@ public class RouterUsersController {
     private void show(Snapshot snapshot) {
         sessionsByUser = snapshot.sessions().stream().collect(Collectors.groupingBy(ActiveSession::user));
         users = List.copyOf(snapshot.users());
-        keepChoices(batchBox, ALL_BATCHES, users.stream()
+        keepChoices(batchBox, allBatches, users.stream()
                 .map(RouterUser::comment)
                 .filter(c -> c.startsWith(BATCH_PREFIX))
                 .distinct()
                 .sorted(Comparator.reverseOrder()) // newest batch first
                 .toList());
-        keepChoices(profileBox, ALL_PROFILES, users.stream().map(RouterUser::profile).distinct().sorted().toList());
+        keepChoices(profileBox, allProfiles, users.stream().map(RouterUser::profile).distinct().sorted().toList());
         placeholderLabel.setText(Messages.get("users.noMatch"));
         applyFilter();
     }
@@ -337,8 +330,8 @@ public class RouterUsersController {
     }
 
     private void applyFilter() {
-        String batch = ALL_BATCHES.equals(batchBox.getValue()) ? "" : batchBox.getValue();
-        String profile = ALL_PROFILES.equals(profileBox.getValue()) ? "" : profileBox.getValue();
+        String batch = allBatches.equals(batchBox.getValue()) ? "" : batchBox.getValue();
+        String profile = allProfiles.equals(profileBox.getValue()) ? "" : profileBox.getValue();
         UserFilter filter = new UserFilter(searchField.getText(), batch, profile, statusBox.getValue());
         Set<String> online = sessionsByUser.keySet();
         visible = users.stream().filter(user -> filter.matches(user, online)).toList();

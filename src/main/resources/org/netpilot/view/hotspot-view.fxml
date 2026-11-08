@@ -45,7 +45,7 @@
         </BorderPane>
     </Tab>
 
-    <Tab fx:id="profilesTab" text="%hotspot.tab.profiles">
+    <Tab text="%hotspot.tab.profiles">
         <BorderPane>
             <top>
                 <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="4">
@@ -76,7 +76,7 @@
         </BorderPane>
     </Tab>
 
-    <Tab fx:id="serversTab" text="%hotspot.tab.servers">
+    <Tab text="%hotspot.tab.servers">
         <TableView fx:id="serversTable">
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>

@@ -17,8 +17,8 @@ import org.netpilot.model.UiPreferences;
 /**
  * "Settings" page: interface language, theme and accent colour, plus About.
  *
- * <p>Theme and colour are saved and applied at once. A new language is saved and used from the
- * next start, because every page is built in one language.
+ * <p>Everything applies at once: theme and colour restyle the open windows, and a new language
+ * rebuilds the main window while the router stays connected.
  */
 public class SettingsController implements Page {
 
@@ -34,8 +34,7 @@ public class SettingsController implements Page {
     private ComboBox<Theme> themeBox;
     @FXML
     private HBox accentBox;
-    @FXML
-    private Label restartNote;
+
     @FXML
     private Label aboutLabel;
 
@@ -80,7 +79,7 @@ public class SettingsController implements Page {
                     .filter(t -> ui.accent().equals(t.getUserData()))
                     .findFirst()
                     .ifPresent(t -> t.setSelected(true));
-            showRestartNote(ui.language());
+
         } finally {
             loading = false;
         }
@@ -101,13 +100,10 @@ public class SettingsController implements Page {
         UiPreferences ui = new UiPreferences(languageBox.getValue(), themeBox.getValue(), accent);
         workspace.updateSettings(s -> s.withUi(ui));
         Styling.setAppearance(ui.theme(), ui.accent());
-        showRestartNote(ui.language());
+        if (!ui.language().locale().getLanguage().equals(Messages.locale().getLanguage())) {
+            // rebuilt after this event: the whole window switches language, the router stays connected
+            javafx.application.Platform.runLater(workspace::reloadLanguage);
+        }
     }
 
-    /** Shown while the chosen language differs from the one this run uses. */
-    private void showRestartNote(UiLanguage language) {
-        boolean differs = language != null && !language.locale().getLanguage().equals(Messages.locale().getLanguage());
-        restartNote.setVisible(differs);
-        restartNote.setManaged(differs);
-    }
 }

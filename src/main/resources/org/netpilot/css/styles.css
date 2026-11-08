@@ -115,22 +115,6 @@
     -fx-background-color: -np-bg;
 }
 
-/* Header */
-.header {
-    -fx-background-color: linear-gradient(to right, #173f6e, -np-accent);
-    -fx-padding: 14 18 14 18;
-}
-
-.header-title {
-    -fx-text-fill: white;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-}
-
-.header-subtitle {
-    -fx-text-fill: rgba(255, 255, 255, 0.8);
-}
-
 /* Settings form */
 .form-scroll, .form-scroll > .viewport {
     -fx-background-color: transparent;
@@ -216,20 +200,6 @@
     -fx-opacity: 0.5;
 }
 
-/* Router connection indicator in the status bar */
-.router-status {
-    -fx-cursor: hand;
-    -fx-font-weight: bold;
-}
-
-.router-status.router-connected {
-    -fx-text-fill: #1e7e34;
-}
-
-.router-status.router-disconnected {
-    -fx-text-fill: -np-muted;
-}
-
 /* Upload summary */
 .summary-ok {
     -fx-text-fill: #1e7e34;
@@ -247,11 +217,6 @@
 /* Router Users window */
 .button.danger {
     -fx-text-fill: #b3261e;
-}
-
-.table-cell.online-dot {
-    -fx-text-fill: #1e7e34;
-    -fx-alignment: center;
 }
 
 /* Voucher Design preview card (mirrors the PDF layout) */
@@ -580,6 +545,11 @@
 
 .top-bar .button .icon {
     -fx-stroke: white;
+}
+
+/* Side menu icons follow the menu colours, not the page (semi-dark: dark menu, light page) */
+.side-menu .button .icon {
+    -fx-stroke: -np-chrome-text;
 }
 
 .table-view .column-header-background, .tree-table-view .column-header-background {

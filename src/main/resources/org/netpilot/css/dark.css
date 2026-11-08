@@ -15,15 +15,11 @@
     -fx-selection-bar-non-focused: #3a414c;
 }
 
-.header {
-    -fx-background-color: linear-gradient(to right, #0f2a4a, #1f5fa8);
-}
-
 .status-error, .summary-error, .button.danger {
     -fx-text-fill: #ff7b72;
 }
 
-.summary-ok, .stat-money, .router-status.router-connected, .table-cell.online-dot {
+.summary-ok, .stat-money {
     -fx-text-fill: #56d364;
 }
 

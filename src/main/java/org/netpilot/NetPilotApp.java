@@ -10,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.netpilot.controller.DashboardController;
 import org.netpilot.controller.GenerateController;
 import org.netpilot.controller.HistoryController;
@@ -20,6 +21,7 @@ import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
 import org.netpilot.controller.SettingsController;
 import org.netpilot.controller.Styling;
+import org.netpilot.controller.UiSession;
 import org.netpilot.controller.UploadController;
 import org.netpilot.controller.VoucherDesignController;
 import org.netpilot.i18n.Messages;
@@ -38,6 +40,8 @@ public class NetPilotApp extends Application {
     private static final System.Logger LOG = System.getLogger(NetPilotApp.class.getName());
 
     private MainController mainController;
+    private final UiSession uiSession = new UiSession();
+    private AppContext context;
 
     @Override
     public void init() {
@@ -55,9 +59,9 @@ public class NetPilotApp extends Application {
         Messages.use(ui.language().locale());
         Styling.init(ui);
 
-        FXMLLoader loader = loader("view/main-view.fxml", context);
-        Parent root = loader.load();
-        mainController = loader.getController();
+        this.context = context;
+        uiSession.setReloader(() -> reloadUi(stage));
+        Parent root = loadMainView();
 
         // fit small/laptop screens: never open taller or wider than the usable desktop area
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
@@ -74,6 +78,33 @@ public class NetPilotApp extends Application {
         stage.show();
     }
 
+    /** The main window's view; its controller shares the run's {@link UiSession}. */
+    private Parent loadMainView() throws IOException {
+        FXMLLoader loader = loader("view/main-view.fxml", context);
+        Callback<Class<?>, Object> pages = loader.getControllerFactory();
+        loader.setControllerFactory(
+                type -> type == MainController.class ? new MainController(context, uiSession) : pages.call(type));
+        Parent root = loader.load();
+        mainController = loader.getController();
+        return root;
+    }
+
+    /**
+     * Rebuilds the main window in the language now saved in the settings. The router stays
+     * connected and the same page reopens, so switching language needs no restart.
+     */
+    private void reloadUi(Stage stage) {
+        try {
+            mainController.detach();
+            Messages.use(context.settingsRepository().load().ui().language().locale());
+            Parent root = loadMainView();
+            stage.getScene().setRoot(root);
+            Styling.apply(stage.getScene());
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot rebuild the window in the new language", e);
+        }
+    }
+
     @Override
     public void stop() {
         if (mainController != null) {
@@ -86,9 +117,7 @@ public class NetPilotApp extends Application {
     public static FXMLLoader loader(String view, AppContext context) {
         FXMLLoader loader = new FXMLLoader(resource(view), Messages.bundle());
         loader.setControllerFactory(type -> {
-            if (type == MainController.class) {
-                return new MainController(context);
-            }
+            // MainController is created by loadMainView, which gives it the run's UiSession
             if (type == HistoryController.class) {
                 return new HistoryController(context);
             }

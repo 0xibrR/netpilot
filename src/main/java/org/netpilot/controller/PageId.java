@@ -39,8 +39,4 @@ enum PageId {
         return needsRouter;
     }
 
-    /** Message key of the menu label, e.g. {@code nav.HOTSPOT}. */
-    String labelKey() {
-        return "nav." + name();
-    }
 }

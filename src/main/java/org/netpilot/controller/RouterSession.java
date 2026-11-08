@@ -56,8 +56,8 @@ final class RouterSession {
     }
 
     private final AppContext context;
-    private final Label statusLabel;
-    private final Supplier<Window> owner;
+    private Label statusLabel;
+    private Supplier<Window> owner;
     private final List<Listener> listeners = new ArrayList<>();
     private final ReadOnlyBooleanWrapper connected = new ReadOnlyBooleanWrapper(false);
 
@@ -70,6 +70,18 @@ final class RouterSession {
         this.statusLabel = statusLabel;
         this.owner = owner;
         showState();
+    }
+
+    /**
+     * Moves the session into a rebuilt main window (language switch): new status label and
+     * owner, and the old window's listeners are dropped.
+     */
+    RouterSession rebind(Label label, Supplier<Window> window) {
+        this.statusLabel = label;
+        this.owner = window;
+        listeners.clear();
+        showState();
+        return this;
     }
 
     void addListener(Listener listener) {
