@@ -23,12 +23,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.netpilot.model.PasswordMode;
 import org.netpilot.model.ReportPeriod;
 import org.netpilot.model.Theme;
 import org.netpilot.model.UiLanguage;
 import org.netpilot.model.UserFilter;
-import org.netpilot.model.UsernameMode;
 
 /**
  * Keeps the two languages complete: every text used by the code or the views exists in English
@@ -103,7 +101,7 @@ class MessagesTest {
 
     @Test
     void enumLabelsExistForEveryConstant() {
-        List<Enum<?>[]> enums = List.of(UsernameMode.values(), PasswordMode.values(), ReportPeriod.values(),
+        List<Enum<?>[]> enums = List.of(org.netpilot.model.CodeFormat.values(), ReportPeriod.values(),
                 UserFilter.Status.values(), Theme.values(), UiLanguage.values());
         for (Enum<?>[] values : enums) {
             for (Enum<?> value : values) {

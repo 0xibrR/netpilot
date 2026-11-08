@@ -23,40 +23,43 @@
             <VBox spacing="14" styleClass="form">
 
                 <VBox styleClass="card" spacing="10">
-                    <Label text="%main.users" styleClass="card-title"/>
-                    <GridPane hgap="10" vgap="8">
+                    <Label text="%main.card" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="10">
                         <columnConstraints>
-                            <ColumnConstraints minWidth="120"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
                         </columnConstraints>
-                        <Label text="%main.count" GridPane.rowIndex="0"/>
-                        <Spinner fx:id="countSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="%main.usernameMode" GridPane.rowIndex="1"/>
-                        <ComboBox fx:id="usernameModeBox" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="%main.usernameLength" GridPane.rowIndex="2"/>
-                        <Spinner fx:id="usernameLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                        <Label text="%main.startNumber" GridPane.rowIndex="3"/>
-                        <Spinner fx:id="usernameStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                            <Label text="%main.count" styleClass="field-label"/>
+                            <Spinner fx:id="countSpinner" editable="true" maxWidth="Infinity"/>
+                        </VBox>
+                        <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                            <Label text="%main.codeFormat" styleClass="field-label"/>
+                            <ComboBox fx:id="formatBox" maxWidth="Infinity"/>
+                        </VBox>
+                        <VBox spacing="4" GridPane.rowIndex="1" GridPane.columnIndex="0">
+                            <Label text="%main.startsWith" styleClass="field-label"/>
+                            <TextField fx:id="prefixField" promptText="%main.affix.prompt"/>
+                        </VBox>
+                        <VBox spacing="4" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                            <Label text="%main.endsWith" styleClass="field-label"/>
+                            <TextField fx:id="suffixField" promptText="%main.affix.prompt"/>
+                        </VBox>
+                        <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                            <Label text="%main.codeLength" styleClass="field-label"/>
+                            <ComboBox fx:id="codeLengthBox" visibleRowCount="8" maxWidth="Infinity"/>
+                        </VBox>
+                        <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                            <Label text="%main.passwordLength" styleClass="field-label"/>
+                            <ComboBox fx:id="passwordBox" visibleRowCount="10" maxWidth="Infinity"/>
+                        </VBox>
+                        <VBox fx:id="sharedPasswordBox" spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="0"
+                              GridPane.columnSpan="2">
+                            <Label text="%main.sharedPassword" styleClass="field-label"/>
+                            <TextField fx:id="sharedPasswordField" promptText="%main.sharedPassword.prompt"/>
+                        </VBox>
                     </GridPane>
-                </VBox>
-
-                <VBox styleClass="card" spacing="10">
-                    <Label text="%main.passwords" styleClass="card-title"/>
-                    <GridPane hgap="10" vgap="8">
-                        <columnConstraints>
-                            <ColumnConstraints minWidth="120"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                        </columnConstraints>
-                        <Label text="%main.passwordMode" GridPane.rowIndex="0"/>
-                        <ComboBox fx:id="passwordModeBox" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="%main.passwordLength" GridPane.rowIndex="1"/>
-                        <Spinner fx:id="passwordLengthSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="%main.startNumber" GridPane.rowIndex="2"/>
-                        <Spinner fx:id="passwordStartSpinner" editable="true" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                        <Label text="%main.prefix" GridPane.rowIndex="3"/>
-                        <TextField fx:id="prefixField" promptText="%main.prefix.prompt" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                    </GridPane>
-                    <Label fx:id="weakPasswordWarning" styleClass="warning" wrapText="true" text="%main.weakPassword"/>
+                    <Label fx:id="exampleLabel" styleClass="code-example" wrapText="true" maxWidth="Infinity"/>
                 </VBox>
 
                 <VBox styleClass="card" spacing="10">

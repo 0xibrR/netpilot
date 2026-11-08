@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Changed
+- Stronger card numbers: weak patterns are refused (runs like `7777`, counting like `1234`/`9876`, repeats like
+  `1212`), digit-only numbers do not start with 0, and any two cards differ in at least two characters, in the
+  batch and against numbers already on the router; separate passwords avoid weak patterns too
+- Create cards: one simple "Card" section replaces the username and password mode lists: quantity, number format,
+  starts with, ends with, card number length and password (none, any length, same as the card number, or one shared password); sequential and
+  profile-based names were removed; saved settings are carried over automatically
+
 ### Added
 - Ready for development on macOS: CI also builds on macOS, and `.idea/misc.xml` (local JDK name) is no longer tracked
 - Your own speeds: no built-in speed list any more; **Hotspot → User profiles** adds, edits and deletes profiles
@@ -88,6 +96,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 - Login URL validation no longer relies on catching `NullPointerException`
 
 ## [1.0.0] - 2026-11-06
+
+### Changed
+- Stronger card numbers: weak patterns are refused (runs like `7777`, counting like `1234`/`9876`, repeats like
+  `1212`), digit-only numbers do not start with 0, and any two cards differ in at least two characters, in the
+  batch and against numbers already on the router; separate passwords avoid weak patterns too
+- Create cards: one simple "Card" section replaces the username and password mode lists: quantity, number format,
+  starts with, ends with, card number length and password (none, any length, same as the card number, or one shared password); sequential and
+  profile-based names were removed; saved settings are carried over automatically
 
 ### Added
 - JavaFX + MVC rewrite of MikroTik Hotspot Manager as NetPilot

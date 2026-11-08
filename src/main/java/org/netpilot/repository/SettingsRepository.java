@@ -15,14 +15,14 @@ import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.CardImage;
 import org.netpilot.model.CardSize;
+import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
-import org.netpilot.model.PasswordMode;
+import org.netpilot.model.PasswordStyle;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.model.Theme;
 import org.netpilot.model.UiLanguage;
 import org.netpilot.model.UiPreferences;
-import org.netpilot.model.UsernameMode;
 import org.netpilot.model.VoucherStyle;
 import org.netpilot.model.VoucherTemplate;
 
@@ -107,13 +107,13 @@ public class SettingsRepository {
         GenerationSettings g = d.generation();
         GenerationSettings generation = new GenerationSettings(
                 intValue(p, "count", g.count()),
-                enumValue(p, "usernameMode", UsernameMode.class, g.usernameMode()),
-                intValue(p, "usernameLength", g.usernameLength()),
-                intValue(p, "usernameStart", g.usernameStart()),
-                enumValue(p, "passwordMode", PasswordMode.class, g.passwordMode()),
-                intValue(p, "passwordLength", g.passwordLength()),
-                intValue(p, "passwordStart", g.passwordStart()),
-                p.getProperty("passwordPrefix", g.passwordPrefix()),
+                enumValue(p, "codeFormat", CodeFormat.class, oldFormat(p, g.format())),
+                p.getProperty("codePrefix", g.prefix()),
+                p.getProperty("codeSuffix", g.suffix()),
+                intValue(p, "codeLength", intValue(p, "usernameLength", g.codeLength())),
+                enumValue(p, "passwordStyle", PasswordStyle.class, oldPasswordStyle(p, g.passwordStyle())),
+                intValue(p, "cardPasswordLength", oldPasswordLength(p, g.passwordLength())),
+                p.getProperty("cardSharedCode", g.sharedPassword()),
                 p.getProperty("profile", g.profile()),
                 p.getProperty("server", g.server()),
                 p.getProperty("limitUptime", g.limitUptime()));
@@ -173,6 +173,37 @@ public class SettingsRepository {
                 image);
     }
 
+    /** Settings saved before card formats: random digit names became DIGITS, everything else letters and digits. */
+    private static CodeFormat oldFormat(Properties p, CodeFormat fallback) {
+        String old = p.getProperty("usernameMode");
+        if (old == null) {
+            return fallback;
+        }
+        return old.equals("RANDOM_NUMERIC") ? CodeFormat.DIGITS : CodeFormat.LETTERS_AND_DIGITS;
+    }
+
+    /**
+     * Settings saved before password styles: a card password length of 0 meant no password, and
+     * the older "same as username" mode keeps its meaning.
+     */
+    private static PasswordStyle oldPasswordStyle(Properties p, PasswordStyle fallback) {
+        String oldMode = p.getProperty("passwordMode");
+        String length = p.getProperty("cardPasswordLength");
+        if (length != null) {
+            return "0".equals(length.strip()) ? PasswordStyle.NONE : PasswordStyle.RANDOM;
+        }
+        if (oldMode != null) {
+            return oldMode.equals("SAME_AS_USERNAME") ? PasswordStyle.SAME_AS_CODE : PasswordStyle.RANDOM;
+        }
+        return fallback;
+    }
+
+    /** Random password length; settings from before card formats kept it in "passwordLength". */
+    private static int oldPasswordLength(Properties p, int fallback) {
+        int value = intValue(p, "passwordLength", fallback);
+        return value <= 0 ? fallback : value;
+    }
+
     /** A picture that was deleted or moved is simply dropped. */
     private static Path existingFile(String value) {
         if (value == null || value.isBlank()) {
@@ -229,13 +260,13 @@ public class SettingsRepository {
         GenerationSettings g = settings.generation();
         Properties p = new Properties();
         p.setProperty("count", String.valueOf(g.count()));
-        p.setProperty("usernameMode", g.usernameMode().name());
-        p.setProperty("usernameLength", String.valueOf(g.usernameLength()));
-        p.setProperty("usernameStart", String.valueOf(g.usernameStart()));
-        p.setProperty("passwordMode", g.passwordMode().name());
-        p.setProperty("passwordLength", String.valueOf(g.passwordLength()));
-        p.setProperty("passwordStart", String.valueOf(g.passwordStart()));
-        p.setProperty("passwordPrefix", g.passwordPrefix());
+        p.setProperty("codeFormat", g.format().name());
+        p.setProperty("codePrefix", g.prefix());
+        p.setProperty("codeSuffix", g.suffix());
+        p.setProperty("codeLength", String.valueOf(g.codeLength()));
+        p.setProperty("passwordStyle", g.passwordStyle().name());
+        p.setProperty("cardPasswordLength", String.valueOf(g.passwordLength()));
+        p.setProperty("cardSharedCode", g.sharedPassword()); // printed on the cards; not a router secret
         p.setProperty("profile", g.profile());
         p.setProperty("server", g.server());
         p.setProperty("limitUptime", g.limitUptime());

@@ -1,28 +1,29 @@
 package org.netpilot.service;
+
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.random.RandomGenerator;
 import org.netpilot.i18n.Messages;
+import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
-import org.netpilot.model.PasswordMode;
-import org.netpilot.model.UsernameMode;
 
 /**
- * Generates batches of hotspot users with guaranteed-unique usernames.
+ * Generates batches of hotspot cards: prefix, random part, suffix.
+ *
+ * <p>Every character comes from {@link SecureRandom} (the operating system's cryptographic
+ * generator), so numbers cannot be predicted from earlier ones. On top of that, {@link CodeRules}
+ * refuses weak patterns ({@code 1111}, {@code 1234}, {@code 1212}) and any number that is equal to
+ * or only one character different from another card in the batch, so a typo or a changed digit
+ * never opens someone else's card.
  */
 public final class UserGenerator {
 
-    private static final String DIGITS = "0123456789";
-    /** Letters and digits without look-alikes (0/O/o, 1/l/I) so printed vouchers are easy to type. */
-    static final String ALPHANUMERIC = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int MIN_SEQUENCE_DIGITS = 4;
-    private static final int MAX_ATTEMPTS_PER_USER = 1_000;
+    private static final int MAX_ATTEMPTS_PER_USER = 5_000;
 
     private final RandomGenerator random;
 
@@ -43,79 +44,68 @@ public final class UserGenerator {
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException(String.join("\n", errors));
         }
-
-        int count = settings.count();
-        List<HotspotUser> users = new ArrayList<>(count);
-        Set<String> usedNames = HashSet.newHashSet(count);
-
-        for (int i = 0; i < count; i++) {
-            String username = nextUniqueUsername(settings, i, usedNames);
-            String password = password(settings, i, username);
-            users.add(new HotspotUser(
-                    username, password,
-                    settings.profile(), settings.server(), settings.limitUptime()));
+        CodeRules.Batch batch = new CodeRules.Batch();
+        List<HotspotUser> users = new ArrayList<>(settings.count());
+        for (int i = 0; i < settings.count(); i++) {
+            users.add(user(settings, next(settings, batch)
+                    .orElseThrow(() -> new IllegalStateException(Messages.get("generator.noUniqueName")))));
         }
         return users;
     }
 
     /**
-     * Creates a user to replace one whose name already exists on the router. Only random
-     * username modes can do this; sequential names would no longer be in sequence.
+     * Creates a card to replace one whose number already exists on the router, following the
+     * same rules against every number in {@code taken}.
      *
-     * @param index position for sequence-based passwords; pass {@code count + n} to continue after the batch
-     * @param taken names that must not be used (on the router and already in the batch)
-     * @return empty if the settings use a sequential username mode or no free name was found
+     * @param taken numbers that must not be used or resembled (on the router and in the batch)
+     * @return empty if no free number was found
      */
-    public Optional<HotspotUser> replacement(GenerationSettings settings, int index, Set<String> taken) {
-        if (!settings.usernameMode().isRandom()) {
-            return Optional.empty();
-        }
+    public Optional<HotspotUser> replacement(GenerationSettings settings, Set<String> taken) {
+        return next(settings, new CodeRules.Batch(taken)).map(code -> user(settings, code));
+    }
+
+    /** One example card number for the given settings (shown live in the form). */
+    public String example(GenerationSettings settings) {
+        return next(settings, new CodeRules.Batch()).orElseGet(() -> code(settings));
+    }
+
+    private Optional<String> next(GenerationSettings settings, CodeRules.Batch batch) {
+        boolean digits = settings.format() == CodeFormat.DIGITS;
+        boolean leadingFree = settings.prefix().isEmpty();
         for (int attempt = 0; attempt < MAX_ATTEMPTS_PER_USER; attempt++) {
-            String candidate = username(settings, index);
-            if (!taken.contains(candidate)) {
-                return Optional.of(new HotspotUser(candidate, password(settings, index, candidate),
-                        settings.profile(), settings.server(), settings.limitUptime()));
+            String randomPart = randomString(settings.format().alphabet(), Math.max(0, settings.randomLength()));
+            if (!CodeRules.strong(randomPart, digits, leadingFree)) {
+                continue;
+            }
+            String candidate = settings.prefix() + randomPart + settings.suffix();
+            if (batch.tryAdd(candidate)) {
+                return Optional.of(candidate);
             }
         }
         return Optional.empty();
     }
 
-    private String nextUniqueUsername(GenerationSettings settings, int index, Set<String> usedNames) {
-        for (int attempt = 0; attempt < MAX_ATTEMPTS_PER_USER; attempt++) {
-            String candidate = username(settings, index);
-            if (usedNames.add(candidate)) {
-                return candidate;
-            }
+    private HotspotUser user(GenerationSettings s, String code) {
+        String password = switch (s.passwordStyle()) {
+            case NONE -> ""; // the number alone logs in
+            case RANDOM -> strongPassword(s);
+            case SAME_AS_CODE -> code;
+            case SHARED -> s.sharedPassword();
+        };
+        return new HotspotUser(code, password, s.profile(), s.server(), s.limitUptime());
+    }
+
+    /** Separate passwords follow the same pattern rules (no {@code 1111} or {@code 1234}). */
+    private String strongPassword(GenerationSettings s) {
+        String password = randomString(s.format().alphabet(), s.passwordLength());
+        for (int attempt = 0; attempt < 100 && !CodeRules.strong(password, false, false); attempt++) {
+            password = randomString(s.format().alphabet(), s.passwordLength());
         }
-        throw new IllegalStateException(Messages.get("generator.noUniqueName"));
+        return password;
     }
 
-    private String username(GenerationSettings s, int index) {
-        UsernameMode mode = s.usernameMode();
-        return switch (mode) {
-            case RANDOM_ALPHANUMERIC -> randomString(ALPHANUMERIC, s.usernameLength());
-            case RANDOM_NUMERIC -> randomString(DIGITS, s.usernameLength());
-            case SEQUENTIAL -> "user" + sequence(s.usernameStart(), index, s.count());
-            case PROFILE_BASED -> s.profile().replaceAll("\\s+", "") + sequence(s.usernameStart(), index, s.count());
-        };
-    }
-
-    private String password(GenerationSettings s, int index, String username) {
-        PasswordMode mode = s.passwordMode();
-        return switch (mode) {
-            case RANDOM_NUMERIC -> randomString(DIGITS, s.passwordLength());
-            case RANDOM_ALPHANUMERIC -> randomString(ALPHANUMERIC, s.passwordLength());
-            case SAME_AS_USERNAME -> username;
-            case PREFIX_USERNAME -> s.passwordPrefix() + username;
-            case SEQUENTIAL -> String.valueOf((long) s.passwordStart() + index);
-        };
-    }
-
-    /** Zero-padded so every name in the batch has the same width. */
-    private static String sequence(int start, int index, int count) {
-        long last = (long) start + count - 1;
-        int width = Math.max(MIN_SEQUENCE_DIGITS, String.valueOf(last).length());
-        return String.format("%0" + width + "d", (long) start + index);
+    private String code(GenerationSettings s) {
+        return s.prefix() + randomString(s.format().alphabet(), Math.max(0, s.randomLength())) + s.suffix();
     }
 
     private String randomString(String alphabet, int length) {

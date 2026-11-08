@@ -12,15 +12,14 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.netpilot.model.AppSettings;
+import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HistoryRecord;
-import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.model.Theme;
 import org.netpilot.model.UiLanguage;
 import org.netpilot.model.UiPreferences;
-import org.netpilot.model.UsernameMode;
 import org.netpilot.model.VoucherTemplate;
 
 class RepositoriesTest {
@@ -32,8 +31,7 @@ class RepositoriesTest {
     void settingsRoundTrip() throws Exception {
         SettingsRepository repo = new SettingsRepository(dir.resolve("sub/settings.properties"));
         AppSettings saved = new AppSettings(
-                new GenerationSettings(50, UsernameMode.PROFILE_BASED, 7, 100,
-                        PasswordMode.PREFIX_USERNAME, 8, 9000, "vip", "10M", "hotspot1", "1d"),
+                new GenerationSettings(50, CodeFormat.LETTERS_AND_DIGITS, "V", "9", 10, 8, "10M", "hotspot1", "1d"),
                 "http://192.168.88.1/login", 4, dir.resolve("out"),
                 new RouterSettings(new RouterEndpoint("10.0.0.1", 8443, true, "netpilot"), Map.of(
                         "10.0.0.1:8443", "ab".repeat(32),
@@ -97,13 +95,33 @@ class RepositoriesTest {
     @Test
     void brokenValuesFallBackIndividually() throws Exception {
         Path file = dir.resolve("settings.properties");
-        Files.writeString(file, "count=abc\nusernameMode=NOPE\nprofile=5M\n", StandardCharsets.UTF_8);
+        Files.writeString(file, "count=abc\ncodeFormat=NOPE\nprofile=5M\n", StandardCharsets.UTF_8);
 
         AppSettings loaded = new SettingsRepository(file).load();
 
         assertEquals(GenerationSettings.defaults().count(), loaded.generation().count());
-        assertEquals(GenerationSettings.defaults().usernameMode(), loaded.generation().usernameMode());
+        assertEquals(GenerationSettings.defaults().format(), loaded.generation().format());
         assertEquals("5M", loaded.generation().profile());
+    }
+
+    @Test
+    void settingsFromBeforeCardFormatsAreCarriedOver() throws Exception {
+        Path file = dir.resolve("old.properties");
+        Files.writeString(file, "usernameMode=RANDOM_NUMERIC\nusernameLength=7\npasswordMode=SAME_AS_USERNAME\n"
+                + "passwordLength=6\n", StandardCharsets.UTF_8);
+        Path other = dir.resolve("old2.properties");
+        Files.writeString(other, "usernameMode=RANDOM_ALPHANUMERIC\nusernameLength=9\npasswordMode=RANDOM_NUMERIC\n"
+                + "passwordLength=5\n", StandardCharsets.UTF_8);
+
+        GenerationSettings pin = new SettingsRepository(file).load().generation();
+        GenerationSettings withPassword = new SettingsRepository(other).load().generation();
+
+        assertEquals(org.netpilot.model.CodeFormat.DIGITS, pin.format());
+        assertEquals(7, pin.codeLength());
+        assertEquals(org.netpilot.model.PasswordStyle.SAME_AS_CODE, pin.passwordStyle(), "same as username is kept");
+        assertEquals(org.netpilot.model.CodeFormat.LETTERS_AND_DIGITS, withPassword.format());
+        assertEquals(9, withPassword.codeLength());
+        assertEquals(5, withPassword.passwordLength());
     }
 
     @Test

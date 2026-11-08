@@ -316,7 +316,9 @@ public final class PdfVoucherGenerator {
                 cell.addElement(line(text.phrase(user.profile(), small), small));
             }
             cell.addElement(labeled(template.language().username(), user.username()));
-            cell.addElement(labeled(template.language().password(), user.password()));
+            if (!user.password().isEmpty()) {
+                cell.addElement(labeled(template.language().password(), user.password()));
+            }
             if (template.showUptime() && !user.limitUptime().isBlank()) {
                 cell.addElement(labeled(template.language().time(), user.limitUptime()));
             }

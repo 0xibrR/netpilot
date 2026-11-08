@@ -23,8 +23,8 @@ import org.netpilot.service.router.RouterException.Kind;
  *
  * <p>Rules:
  * <ul>
- * <li>Names that already exist on the router are replaced by new random names when the
- * username mode is random; sequential names are skipped (they would break the sequence).</li>
+ * <li>Card numbers that already exist on the router are replaced by new random numbers with the
+ * same prefix, suffix and length; a card is skipped only if no free number can be found.</li>
  * <li>Every created user gets the same comment, so the batch can be undone or found later.</li>
  * <li>Connection-level problems stop the upload; a problem with one user does not, unless the
  * same thing keeps failing (then it is clearly not about that user).</li>
@@ -153,7 +153,6 @@ public final class RouterUploadService {
         private final List<UploadReport.Failure> failed = new ArrayList<>();
         private final List<HotspotUser> notSent = new ArrayList<>();
         private int replaced;
-        private int nextReplacementIndex;
         private String lastFailure;
         private int consecutiveFailures;
         private String stopReason;
@@ -166,7 +165,6 @@ public final class RouterUploadService {
             this.onRouter = onRouter;
             this.reserved = new HashSet<>(onRouter);
             users.forEach(u -> reserved.add(u.username()));
-            this.nextReplacementIndex = Math.max(settings.count(), users.size());
         }
 
         /**
@@ -176,8 +174,7 @@ public final class RouterUploadService {
             HotspotUser candidate = original;
             for (int attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt++) {
                 if (onRouter.contains(candidate.username())) {
-                    Optional<HotspotUser> replacement = generator.replacement(settings, nextReplacementIndex++,
-                            reserved);
+                    Optional<HotspotUser> replacement = generator.replacement(settings, reserved);
                     if (replacement.isEmpty()) {
                         skipped.add(original);
                         return true;

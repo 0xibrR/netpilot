@@ -104,6 +104,10 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 - Semi-dark adds the `chrome-dark` style class, which only changes the `-np-chrome-*` tokens of the side menu, top bar and status bar. The accent colour is set as `-np-accent` on each root; hover shades are derived from it in CSS.
 - `MessagesTest` fails when a key is missing in one language, placeholders differ, a used key does not exist, or a view has text that is not a `%key`.
 
+## Card numbers
+
+`UserGenerator` builds each number as prefix + random part + suffix, drawing every character from `SecureRandom`. `CodeRules` then refuses weak random parts (runs of one character, counting up or down, a short unit repeated, a leading 0 for digit-only numbers without prefix) and keeps every pair of cards at least two substitutions apart. That check stores, for each accepted number, every variant with one position blanked out; two numbers one substitution apart share a variant, so each candidate costs one set lookup per position. Replacement numbers during an upload are checked the same way against everything already on the router. `GenerationSettings.validate()` refuses settings whose spaced capacity (possible numbers divided by the numbers each card blocks) is under four times the requested count, so generation never runs out of room.
+
 ## Compact voucher cards
 
 - `VoucherStyle` (Classic, Modern, QR on the side, Minimal, My own picture) and `CardSize` (a fixed grid on A4) are part of `VoucherTemplate`; `CardImage` holds the user's picture and where each detail sits on it (fractions of the card, changed by dragging in the preview).

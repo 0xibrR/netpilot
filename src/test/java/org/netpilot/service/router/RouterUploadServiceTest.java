@@ -17,12 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotUser;
-import org.netpilot.model.PasswordMode;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.UploadReport;
-import org.netpilot.model.UsernameMode;
 import org.netpilot.service.UserGenerator;
 
 class RouterUploadServiceTest {
@@ -51,8 +50,27 @@ class RouterUploadServiceTest {
         router.close();
     }
 
-    private static GenerationSettings settings(UsernameMode mode, int count) {
-        return new GenerationSettings(count, mode, 6, 1, PasswordMode.RANDOM_NUMERIC, 6, 0, "", "2M", "all", "1h");
+    private static GenerationSettings settings(CodeFormat format, int count) {
+        return new GenerationSettings(count, format, "", "", 6, 6, "2M", "all", "1h");
+    }
+
+    /** A generator that always produces the same number, so a taken number cannot be replaced. */
+    private static UserGenerator stuckGenerator() {
+        int[] digits = {5, 8, 2, 9, 1, 7}; // always "582917": strong, but never a different number
+        return new UserGenerator(new java.util.random.RandomGenerator() {
+
+            private int next;
+
+            @Override
+            public long nextLong() {
+                return 0;
+            }
+
+            @Override
+            public int nextInt(int bound) {
+                return digits[next++ % digits.length] % bound;
+            }
+        });
     }
 
     private UploadReport upload(List<HotspotUser> users, GenerationSettings settings) throws RouterException {
@@ -62,7 +80,7 @@ class RouterUploadServiceTest {
 
     @Test
     void createsEveryUserWithTheBatchComment() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 5);
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 5);
         List<HotspotUser> users = generator.generate(settings);
         List<String> progress = new ArrayList<>();
 
@@ -87,7 +105,7 @@ class RouterUploadServiceTest {
 
     @Test
     void existingRandomNamesAreReplacedSoTheCountStaysTheSame() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 4);
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 4);
         List<HotspotUser> users = generator.generate(settings);
         router.addExistingUser(users.get(1).username());
 
@@ -101,36 +119,42 @@ class RouterUploadServiceTest {
     }
 
     @Test
-    void existingSequentialNamesAreSkipped() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.SEQUENTIAL, 3);
-        List<HotspotUser> users = generator.generate(settings);
-        router.addExistingUser("user0002");
+    void takenNumberIsSkippedWhenNoFreeNumberIsFound() throws Exception {
+        UserGenerator stuck = stuckGenerator();
+        RouterUploadService stuckService = new RouterUploadService(stuck,
+                Clock.fixed(Instant.parse("2026-11-06T21:40:00Z"), ZoneOffset.UTC), new Random(1));
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 1);
+        List<HotspotUser> users = stuck.generate(settings);
+        router.addExistingUser(users.getFirst().username());
 
-        UploadReport report = upload(users, settings);
+        UploadReport report = stuckService.upload(client, users, settings, (done, total, name) -> {
+        }, () -> false);
 
-        assertEquals(List.of("user0001", "user0003"),
-                report.createdUsers().stream().map(HotspotUser::username).toList());
-        assertEquals(List.of(users.get(1)), report.skipped());
+        assertEquals(users, report.skipped());
         assertFalse(report.completeSuccess());
     }
 
     @Test
-    void nameTakenDuringTheUploadIsHandledLikeAnExistingName() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.SEQUENTIAL, 2);
-        List<HotspotUser> users = generator.generate(settings);
-        // the router reports the name as taken only when we try to create it
+    void numberTakenDuringTheUploadIsHandledLikeAnExistingNumber() throws Exception {
+        UserGenerator stuck = stuckGenerator();
+        RouterUploadService stuckService = new RouterUploadService(stuck,
+                Clock.fixed(Instant.parse("2026-11-06T21:40:00Z"), ZoneOffset.UTC), new Random(1));
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 1);
+        List<HotspotUser> users = stuck.generate(settings);
+        // the router reports the number as taken only when we try to create it
         router.route("/rest/ip/hotspot/user", 200, "[]");
+        router.addExistingUser(users.getFirst().username());
 
-        router.addExistingUser("user0001");
-        UploadReport report = upload(users, settings);
+        UploadReport report = stuckService.upload(client, users, settings, (done, total, name) -> {
+        }, () -> false);
 
-        assertEquals(List.of(users.get(0)), report.skipped());
-        assertEquals(1, report.created().size());
+        assertEquals(users, report.skipped());
+        assertEquals(0, report.created().size());
     }
 
     @Test
     void connectionProblemStopsAndReportsTheRest() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_NUMERIC, 6);
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 6);
         List<HotspotUser> users = generator.generate(settings);
         router.failCreatesAfter(2, 403, "{\"error\":403,\"message\":\"Forbidden\"}");
 
@@ -145,7 +169,7 @@ class RouterUploadServiceTest {
 
     @Test
     void repeatedSameFailureStopsTheUpload() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_NUMERIC, 10);
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 10);
         List<HotspotUser> users = generator.generate(settings);
         router.failCreatesAfter(0, 400,
                 "{\"detail\":\"input does not match any value of profile\",\"error\":400,\"message\":\"Bad Request\"}");
@@ -159,7 +183,7 @@ class RouterUploadServiceTest {
 
     @Test
     void cancellingStopsBeforeTheNextUser() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_NUMERIC, 5);
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 5);
         List<HotspotUser> users = generator.generate(settings);
         AtomicInteger checks = new AtomicInteger();
 
@@ -174,7 +198,7 @@ class RouterUploadServiceTest {
     @Test
     void undoDeletesOnlyTheUsersOfTheBatch() throws Exception {
         router.addExistingUser("keep-me");
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 3);
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 3);
         UploadReport report = upload(generator.generate(settings), settings);
 
         RouterUploadService.UndoResult undo = service.undo(client, report);
@@ -187,7 +211,7 @@ class RouterUploadServiceTest {
     /** Regression: undo used to stop at a user that had been removed in WinBox meanwhile. */
     @Test
     void undoTreatsUsersRemovedMeanwhileAsDone() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 3);
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 3);
         UploadReport report = upload(generator.generate(settings), settings);
         client.deleteHotspotUser(report.created().getFirst().routerId());
 
@@ -200,7 +224,7 @@ class RouterUploadServiceTest {
 
     @Test
     void undoStopsOnConnectionProblems() throws Exception {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 3);
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 3);
         UploadReport report = upload(generator.generate(settings), settings);
         router.route("/rest/ip/hotspot/user/" + report.created().getFirst().routerId(), 401, "");
 
@@ -213,7 +237,7 @@ class RouterUploadServiceTest {
     @Test
     void nothingIsCreatedWhenExistingUsersCannotBeRead() {
         router.route("/rest/ip/hotspot/user", 403, "{\"error\":403,\"message\":\"Forbidden\"}");
-        GenerationSettings settings = settings(UsernameMode.RANDOM_NUMERIC, 2);
+        GenerationSettings settings = settings(CodeFormat.DIGITS, 2);
 
         assertThrows(RouterException.class, () -> upload(generator.generate(settings), settings));
         assertTrue(router.users().isEmpty());
@@ -225,12 +249,13 @@ class RouterUploadServiceTest {
     }
 
     @Test
-    void replacementUsersGetNewNamesAndKeepSettings() {
-        GenerationSettings settings = settings(UsernameMode.RANDOM_ALPHANUMERIC, 1);
-        HotspotUser replacement = generator.replacement(settings, 1, java.util.Set.of()).orElseThrow();
+    void replacementUsersGetNewNumbersAndKeepSettings() {
+        GenerationSettings settings = settings(CodeFormat.LETTERS_AND_DIGITS, 1);
+        HotspotUser replacement = generator.replacement(settings, java.util.Set.of()).orElseThrow();
 
         assertEquals("2M", replacement.profile());
         assertNotEquals("", replacement.username());
-        assertTrue(generator.replacement(settings(UsernameMode.SEQUENTIAL, 1), 1, java.util.Set.of()).isEmpty());
+        String only = stuckGenerator().example(settings);
+        assertTrue(stuckGenerator().replacement(settings, java.util.Set.of(only)).isEmpty());
     }
 }

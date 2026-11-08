@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -34,6 +35,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -42,13 +44,13 @@ import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
+import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
-import org.netpilot.model.PasswordMode;
+import org.netpilot.model.PasswordStyle;
 import org.netpilot.model.TimeLimit;
-import org.netpilot.model.UsernameMode;
 import org.netpilot.service.ExportService.ExportResult;
 import org.netpilot.service.QrCodeService;
 import org.netpilot.service.router.RouterClient;
@@ -70,22 +72,35 @@ public class GenerateController implements Page {
     @FXML
     private Spinner<Integer> countSpinner;
     @FXML
-    private ComboBox<UsernameMode> usernameModeBox;
-    @FXML
-    private Spinner<Integer> usernameLengthSpinner;
-    @FXML
-    private Spinner<Integer> usernameStartSpinner;
-
-    @FXML
-    private ComboBox<PasswordMode> passwordModeBox;
-    @FXML
-    private Spinner<Integer> passwordLengthSpinner;
-    @FXML
-    private Spinner<Integer> passwordStartSpinner;
+    private ComboBox<CodeFormat> formatBox;
     @FXML
     private TextField prefixField;
     @FXML
-    private Label weakPasswordWarning;
+    private TextField suffixField;
+    @FXML
+    private ComboBox<Integer> codeLengthBox;
+    @FXML
+    private ComboBox<PasswordChoice> passwordBox;
+    @FXML
+    private VBox sharedPasswordBox;
+    @FXML
+    private TextField sharedPasswordField;
+
+    /** One line of the password list: no password, a length, the card number, or one shared password. */
+    record PasswordChoice(PasswordStyle style, int length) {
+
+        @Override
+        public String toString() {
+            return switch (style) {
+                case NONE -> Messages.get("password.choice.NONE");
+                case RANDOM -> String.valueOf(length);
+                case SAME_AS_CODE -> Messages.get("password.choice.SAME_AS_CODE");
+                case SHARED -> Messages.get("password.choice.SHARED");
+            };
+        }
+    }
+    @FXML
+    private Label exampleLabel;
 
     @FXML
     private ComboBox<String> profileBox;
@@ -149,14 +164,14 @@ public class GenerateController implements Page {
     @FXML
     private void initialize() {
         setUpSpinner(countSpinner, 1, GenerationSettings.MAX_COUNT);
-        setUpSpinner(usernameLengthSpinner, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
-        setUpSpinner(usernameStartSpinner, 0, Integer.MAX_VALUE);
-        setUpSpinner(passwordLengthSpinner, GenerationSettings.MIN_LENGTH, GenerationSettings.MAX_LENGTH);
-        setUpSpinner(passwordStartSpinner, 0, Integer.MAX_VALUE);
+        setUpLengthAndPasswordLists();
+        for (TextField affix : List.of(prefixField, suffixField)) {
+            affix.setTextFormatter(new TextFormatter<>(change -> change.getControlNewText()
+                    .matches("[A-Za-z0-9]{0," + GenerationSettings.MAX_AFFIX + "}") ? change : null));
+        }
         setUpSpinner(perRowSpinner, AppSettings.MIN_PER_ROW, AppSettings.MAX_PER_ROW);
 
-        usernameModeBox.getItems().setAll(UsernameMode.values());
-        passwordModeBox.getItems().setAll(PasswordMode.values());
+        formatBox.getItems().setAll(CodeFormat.values());
         serverBox.getItems().setAll("all");
         uptimeUnitBox.getItems().setAll(TimeLimit.Unit.values());
         uptimeUnitBox.setValue(TimeLimit.Unit.HOURS);
@@ -441,13 +456,13 @@ public class GenerateController implements Page {
         commitSpinners();
         return new GenerationSettings(
                 countSpinner.getValue(),
-                usernameModeBox.getValue(),
-                usernameLengthSpinner.getValue(),
-                usernameStartSpinner.getValue(),
-                passwordModeBox.getValue(),
-                passwordLengthSpinner.getValue(),
-                passwordStartSpinner.getValue(),
+                formatBox.getValue(),
                 prefixField.getText(),
+                suffixField.getText(),
+                codeLength(),
+                passwordBox.getValue().style(),
+                passwordBox.getValue().length(),
+                sharedPasswordField.getText(),
                 comboText(profileBox),
                 comboText(serverBox),
                 uptimeText());
@@ -458,13 +473,16 @@ public class GenerateController implements Page {
         try {
             GenerationSettings g = s.generation();
             countSpinner.getValueFactory().setValue(Math.clamp(g.count(), 1, GenerationSettings.MAX_COUNT));
-            usernameModeBox.setValue(g.usernameMode());
-            usernameLengthSpinner.getValueFactory().setValue(clampLength(g.usernameLength()));
-            usernameStartSpinner.getValueFactory().setValue(Math.max(0, g.usernameStart()));
-            passwordModeBox.setValue(g.passwordMode());
-            passwordLengthSpinner.getValueFactory().setValue(clampLength(g.passwordLength()));
-            passwordStartSpinner.getValueFactory().setValue(Math.max(0, g.passwordStart()));
-            prefixField.setText(g.passwordPrefix());
+            formatBox.setValue(g.format());
+            prefixField.setText(g.prefix());
+            suffixField.setText(g.suffix());
+            codeLengthBox.setValue(clampLength(g.codeLength()));
+            passwordBox.setValue(passwordBox.getItems().stream()
+                    .filter(c -> c.style() == g.passwordStyle()
+                            && (c.style() != PasswordStyle.RANDOM || c.length() == g.passwordLength()))
+                    .findFirst().orElse(passwordBox.getItems().getFirst()));
+            sharedPasswordField.setText(g.sharedPassword());
+            Platform.runLater(this::showExample);
             profileBox.setValue(g.profile());
             serverBox.setValue(g.server());
             Optional<TimeLimit> limit = TimeLimit.parse(g.limitUptime());
@@ -504,30 +522,90 @@ public class GenerateController implements Page {
         passwordColumn.getStyleClass().add("monospace");
     }
 
-    /** Only enable inputs that the selected modes actually use. */
+    /** Says what the chosen password means, and shows the shared password field when needed. */
     private void bindFieldStates() {
-        usernameModeBox.valueProperty().addListener((obs, old, mode) -> {
-            usernameLengthSpinner.setDisable(mode == null || !mode.usesLength());
-            usernameStartSpinner.setDisable(mode == null || !mode.usesSequence());
-        });
-        passwordModeBox.valueProperty().addListener((obs, old, mode) -> {
-            passwordLengthSpinner.setDisable(mode == null || !mode.usesLength());
-            passwordStartSpinner.setDisable(mode == null || !mode.usesSequence());
-            prefixField.setDisable(mode == null || !mode.usesPrefix());
-            boolean weak = mode != null && mode.isWeak();
-            weakPasswordWarning.setVisible(weak);
-            weakPasswordWarning.setManaged(weak);
-        });
+        passwordBox.valueProperty().addListener((obs, old, choice) -> showSharedPasswordField());
+        showSharedPasswordField();
+        // typing in Starts with / Ends with makes room for them instead of failing later
+        for (TextField affix : List.of(prefixField, suffixField)) {
+            affix.textProperty().addListener((obs, old, text) -> makeRoomForAffixes());
+        }
+        for (ObservableValue<?> input : List.of(formatBox.valueProperty(), prefixField.textProperty(),
+                suffixField.textProperty(), codeLengthBox.valueProperty(), passwordBox.valueProperty(),
+                sharedPasswordField.textProperty(), countSpinner.valueProperty())) {
+            input.addListener((obs, old, value) -> showExample());
+        }
+    }
+
+    /**
+     * Card length: chosen from the list only (5 to 32), never typed. Password: no password, any
+     * length, the card number again, or one shared password for the whole batch.
+     */
+    private void setUpLengthAndPasswordLists() {
+        for (int length = GenerationSettings.MIN_LENGTH; length <= GenerationSettings.MAX_LENGTH; length++) {
+            codeLengthBox.getItems().add(length);
+        }
+
+        List<PasswordChoice> choices = new ArrayList<>();
+        choices.add(new PasswordChoice(PasswordStyle.NONE, 0));
+        for (int length = 1; length <= GenerationSettings.MAX_LENGTH; length++) {
+            choices.add(new PasswordChoice(PasswordStyle.RANDOM, length));
+        }
+        choices.add(new PasswordChoice(PasswordStyle.SAME_AS_CODE, 0));
+        choices.add(new PasswordChoice(PasswordStyle.SHARED, 0));
+        passwordBox.getItems().setAll(choices);
+        passwordBox.setValue(choices.getFirst());
+    }
+
+    /** The card length chosen in the list. */
+    private int codeLength() {
+        Integer value = codeLengthBox.getValue();
+        return value == null ? GenerationSettings.defaults().codeLength() : value;
+    }
+
+    private void makeRoomForAffixes() {
+        if (loadingForm) {
+            return;
+        }
+        int needed = Math.max(GenerationSettings.MIN_LENGTH,
+                prefixField.getText().length() + suffixField.getText().length() + GenerationSettings.MIN_RANDOM);
+        if (codeLengthBox.getValue() != null && codeLengthBox.getValue() < needed) {
+            codeLengthBox.setValue(Math.min(needed, GenerationSettings.MAX_LENGTH));
+        }
+    }
+
+    /** A real example number for the current fields, or the first problem in plain words. */
+    private void showExample() {
+        if (formatBox.getValue() == null || codeLengthBox.getValue() == null || passwordBox.getValue() == null) {
+            return;
+        }
+        GenerationSettings s = new GenerationSettings(countSpinner.getValue(), formatBox.getValue(),
+                prefixField.getText(), suffixField.getText(), codeLengthBox.getValue(),
+                passwordBox.getValue().style(), passwordBox.getValue().length(), sharedPasswordField.getText(), "x",
+                "all", "");
+        List<String> problems = s.validate();
+        exampleLabel.getStyleClass().remove("status-error");
+        if (!problems.isEmpty()) {
+            exampleLabel.setText("⚠ " + problems.getFirst());
+            exampleLabel.getStyleClass().add("status-error");
+            return;
+        }
+        exampleLabel.setText(Messages.get("main.example", context.userGenerator().example(s)));
+    }
+
+    /** The shared password field is shown only for "one password for all cards". */
+    private void showSharedPasswordField() {
+        boolean shared = passwordBox.getValue() != null && passwordBox.getValue().style() == PasswordStyle.SHARED;
+        sharedPasswordBox.setVisible(shared);
+        sharedPasswordBox.setManaged(shared);
     }
 
     /** A preview must always match what gets exported, so any change invalidates it. */
     private void clearPreviewWhenSettingsChange() {
         List<ObservableValue<?>> inputs = List.of(
-                countSpinner.valueProperty(), usernameModeBox.valueProperty(),
-                usernameLengthSpinner.valueProperty(), usernameStartSpinner.valueProperty(),
-                passwordModeBox.valueProperty(), passwordLengthSpinner.valueProperty(),
-                passwordStartSpinner.valueProperty(), prefixField.textProperty(),
-                profileBox.valueProperty(), profileBox.getEditor().textProperty(),
+                countSpinner.valueProperty(), formatBox.valueProperty(), prefixField.textProperty(),
+                suffixField.textProperty(), codeLengthBox.valueProperty(), passwordBox.valueProperty(),
+                sharedPasswordField.textProperty(), profileBox.valueProperty(), profileBox.getEditor().textProperty(),
                 serverBox.valueProperty(), serverBox.getEditor().textProperty(),
                 uptimeAmountField.textProperty(), uptimeUnitBox.valueProperty());
         for (ObservableValue<?> input : inputs) {
@@ -604,8 +682,7 @@ public class GenerateController implements Page {
     }
 
     private void commitSpinners() {
-        for (Spinner<Integer> s : List.of(countSpinner, usernameLengthSpinner, usernameStartSpinner,
-                passwordLengthSpinner, passwordStartSpinner, perRowSpinner)) {
+        for (Spinner<Integer> s : List.of(countSpinner, perRowSpinner)) {
             commit(s);
         }
     }

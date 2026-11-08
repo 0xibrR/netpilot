@@ -8,9 +8,8 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 
 ## Features
 
-- Generates hotspot users with **guaranteed-unique** usernames
-- Username modes: random (letters + digits), random digits, sequential (`user0001`), profile based (`2M0001`)
-- Password modes: random digits, random letters + digits, same as username, prefix + username, sequential, with a warning for weak modes
+- Generates hotspot cards with **guaranteed-unique** card numbers from a cryptographic random source; weak patterns (`1111`, `1234`, `1212`) are refused and **any two cards differ in at least two characters**, so a typo or a changed digit never opens another card
+- Simple card settings: quantity, number format (digits only, or letters and digits without look-alikes), starts with, ends with, card number length, and password (none, any length from 1, the card number again, or one shared password for the batch)
 - The preview table shows **exactly** the users that will be exported
 - Export to a new timestamped folder:
   - **PDF** A4 voucher sheets, with an optional **QR auto-login** code on each voucher
