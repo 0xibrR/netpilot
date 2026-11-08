@@ -39,16 +39,13 @@ final class SideMenu {
     /** The menu, top to bottom: entries are single lines, groups fold. */
     static final List<Object> LAYOUT = List.of(
             new Entry("nav.DASHBOARD", PageId.DASHBOARD, null),
-            new Group("nav.group.cards", Icons.TICKET, List.of(
+            new Group("nav.group.cards", Icons.WIFI, List.of(
                     new Entry("nav.GENERATE", PageId.GENERATE, null),
                     // one page holds the card list, who is online (tab) and the search box
                     new Entry("nav.cards.users", PageId.HOTSPOT, HotspotController.USERS),
                     new Entry("nav.cards.sales", PageId.REPORTS, null),
                     new Entry("nav.DESIGN", PageId.DESIGN, null),
                     new Entry("nav.HISTORY", PageId.HISTORY, null))),
-            new Group("nav.group.hotspot", Icons.WIFI, List.of(
-                    new Entry("nav.hotspot.profiles", PageId.HOTSPOT, HotspotController.PROFILES),
-                    new Entry("nav.hotspot.servers", PageId.HOTSPOT, HotspotController.SERVERS))),
             new Entry("nav.SETTINGS", PageId.SETTINGS, null));
 
     private final ToggleGroup toggles = new ToggleGroup();
