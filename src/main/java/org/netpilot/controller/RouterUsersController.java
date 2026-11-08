@@ -82,6 +82,9 @@ public class RouterUsersController {
     private List<RouterUser> visible = List.of();
     private RouterClient client;
     private Consumer<List<HotspotUser>> printer;
+    /** Told about every user list read, for the low-stock notice. */
+    private Consumer<List<RouterUser>> usersSeen = list -> {
+    };
     private Consumer<List<HotspotUser>> receipts = cards -> {
     };
     private Map<String, List<ActiveSession>> sessionsByUser = Map.of();
@@ -184,12 +187,14 @@ public class RouterUsersController {
     /**
      * @param voucherPrinter prints A4 vouchers for the given users (the Create cards page export)
      * @param receiptPrinter prints one receipt per user on the thermal printer
+     * @param seen           told about each user list read (low-stock notice)
      */
     public void start(RouterClient routerClient, String routerName, Consumer<List<HotspotUser>> voucherPrinter,
-            Consumer<List<HotspotUser>> receiptPrinter) {
+            Consumer<List<HotspotUser>> receiptPrinter, Consumer<List<RouterUser>> seen) {
         this.client = routerClient;
         this.printer = voucherPrinter;
         this.receipts = receiptPrinter;
+        this.usersSeen = seen;
         onRefresh();
     }
 
@@ -368,6 +373,7 @@ public class RouterUsersController {
     private void show(Snapshot snapshot) {
         sessionsByUser = snapshot.sessions().stream().collect(Collectors.groupingBy(ActiveSession::user));
         expiries = snapshot.expiries();
+        usersSeen.accept(snapshot.users());
         users = List.copyOf(snapshot.users());
         keepChoices(batchBox, allBatches, users.stream()
                 .map(RouterUser::comment)

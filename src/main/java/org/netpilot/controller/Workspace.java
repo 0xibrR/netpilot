@@ -17,10 +17,12 @@ import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.RouterUser;
 import org.netpilot.model.TimeLimit;
 import org.netpilot.repository.AppPaths;
 import org.netpilot.service.QrCodeService;
 import org.netpilot.service.ReceiptContent;
+import org.netpilot.service.StockAlerts;
 
 /**
  * What every page shares: services, the router session, the saved settings and a few actions
@@ -36,8 +38,10 @@ final class Workspace {
     private AppSettings settings;
     private Consumer<List<HotspotUser>> printer = users -> {
     };
-    private Consumer<PageId> navigator = page -> {
+    private java.util.function.BiConsumer<PageId, String> navigator = (page, section) -> {
     };
+    /** Packages already reported as low in this session; a package leaves it once restocked. */
+    private final java.util.Set<String> reportedLow = new java.util.HashSet<>();
     private Consumer<String> toaster = message -> {
     };
     private Runnable connector = () -> {
@@ -145,15 +149,42 @@ final class Workspace {
     }
 
     void show(PageId page) {
-        navigator.accept(page);
+        navigator.accept(page, null);
+    }
+
+    /** Opens a page at one part of it, see {@link Page#open(String)}. */
+    void show(PageId page, String section) {
+        navigator.accept(page, section);
     }
 
     void setPrinter(Consumer<List<HotspotUser>> printer) {
         this.printer = printer;
     }
 
-    void setNavigator(Consumer<PageId> navigator) {
+    void setNavigator(java.util.function.BiConsumer<PageId, String> navigator) {
         this.navigator = navigator;
+    }
+
+    /**
+     * Packages running out of unused cards, from a user list a page just read. A package that
+     * newly drops below the limit gets one short notice per session; it is reported again only
+     * after it was restocked and ran low once more.
+     *
+     * @return the low packages, for the dashboard's alert
+     */
+    List<StockAlerts.Low> checkStock(List<RouterUser> users) {
+        List<StockAlerts.Low> low = StockAlerts.low(users, settings.lowStockBelow());
+        java.util.Set<String> lowNow = low.stream().map(StockAlerts.Low::profile)
+                .collect(Collectors.toSet());
+        reportedLow.retainAll(lowNow);
+        for (StockAlerts.Low item : low) {
+            if (reportedLow.add(item.profile())) {
+                toast("⚠ " + (item.unused() == 0
+                        ? Messages.get("stock.soldOut", item.profile())
+                        : Messages.get("stock.few", item.profile(), item.unused())));
+            }
+        }
+        return low;
     }
 
     /** Shows a short message that fades out by itself. */

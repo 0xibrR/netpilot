@@ -41,7 +41,8 @@ class RepositoriesTest {
                 new UiPreferences(UiLanguage.ARABIC, Theme.SEMI_DARK, "#1E9E6A"),
                 new org.netpilot.model.ReceiptSettings("XP-58 (copy 1)", 58),
                 new org.netpilot.model.CleanupSettings(true, java.time.LocalTime.of(4, 30),
-                        java.util.Optional.of(java.time.LocalDateTime.of(2026, 11, 8, 4, 30, 5)), 14));
+                        java.util.Optional.of(java.time.LocalDateTime.of(2026, 11, 8, 4, 30, 5)), 14),
+                3);
 
         repo.save(saved);
 

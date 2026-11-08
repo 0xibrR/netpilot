@@ -17,6 +17,7 @@ import org.netpilot.model.ReportPeriod;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.SalesReport;
 import org.netpilot.model.UsageRecord;
+import org.netpilot.service.StockAlerts;
 import org.netpilot.service.router.RouterClient;
 
 /**
@@ -68,6 +69,10 @@ public class DashboardController implements Page {
     private Button reportsQuick;
     @FXML
     private Button designQuick;
+    @FXML
+    private VBox stockCard;
+    @FXML
+    private VBox stockRows;
 
     public DashboardController(AppContext context) {
         this.context = context;
@@ -175,6 +180,29 @@ public class DashboardController implements Page {
         expiredValue.setText(String.valueOf(cards.stream().filter(RouterUser::expired).count()));
         revenueValue.setText(figures.report().revenue().format());
         potentialValue.setText(figures.report().potential().format());
+        showStock(workspace.checkStock(figures.users()));
+    }
+
+    /** One line per package running low, each with a button to create a batch of it. */
+    private void showStock(List<StockAlerts.Low> low) {
+        stockRows.getChildren().clear();
+        for (StockAlerts.Low item : low) {
+            Label text = new Label("⚠ " + (item.unused() == 0
+                    ? Messages.get("stock.soldOut", item.profile())
+                    : Messages.get("stock.few", item.profile(), item.unused())));
+            text.setWrapText(true);
+            text.getStyleClass().add("stock-text");
+            javafx.scene.layout.Region gap = new javafx.scene.layout.Region();
+            javafx.scene.layout.HBox.setHgrow(gap, javafx.scene.layout.Priority.ALWAYS);
+            Button create = new Button(Messages.get("nav.GENERATE"), Icons.of(Icons.TICKET));
+            create.setOnAction(
+                    e -> workspace.show(PageId.GENERATE, GenerateController.PROFILE_SECTION + item.profile()));
+            javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, text, gap, create);
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            stockRows.getChildren().add(row);
+        }
+        stockCard.setVisible(!low.isEmpty());
+        stockCard.setManaged(!low.isEmpty());
     }
 
     private void showOffline() {
@@ -185,6 +213,7 @@ public class DashboardController implements Page {
         refreshButton.setDisable(true);
         routerName.setText(Messages.get("router.notConnected"));
         routerDetails.setText("");
+        showStock(List.of());
         for (Label value : List.of(usersValue, onlineValue, unusedValue, expiredValue, revenueValue, potentialValue)) {
             value.setText("—");
         }

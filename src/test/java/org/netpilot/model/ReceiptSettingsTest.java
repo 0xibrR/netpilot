@@ -25,6 +25,9 @@ class ReceiptSettingsTest {
                 null, null);
 
         assertEquals(ReceiptSettings.defaults(), old.receipt());
+        assertEquals(AppSettings.DEFAULT_LOW_STOCK, old.lowStockBelow(), "low-stock alert at 10 by default");
+        assertEquals(0, old.withLowStockBelow(-5).lowStockBelow(), "never below 0 (off)");
+        assertEquals(CleanupSettings.defaults(), old.cleanup());
         assertEquals(new ReceiptSettings("P", 58), old.withReceipt(new ReceiptSettings("P", 58)).receipt());
         assertEquals(old.receipt(), old.withUi(UiPreferences.defaults()).receipt(), "other changes keep it");
     }

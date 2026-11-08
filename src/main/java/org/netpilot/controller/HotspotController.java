@@ -229,7 +229,8 @@ public class HotspotController implements Page {
         this.client = routerClient;
         activeLoaded = false;
         activeTable.getItems().clear();
-        usersController.start(routerClient, name, workspace::printVouchers, workspace::printReceipts);
+        usersController.start(routerClient, name, workspace::printVouchers, workspace::printReceipts,
+                workspace::checkStock);
         if (tabs.getSelectionModel().getSelectedItem() == activeTab) {
             onRefreshActive();
         }

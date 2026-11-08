@@ -15,6 +15,7 @@ import java.util.Objects;
  * @param ui              language, theme and colour
  * @param receipt         receipt printer and paper width
  * @param cleanup         automatic daily deletion of expired cards
+ * @param lowStockBelow   warn when a package has fewer unused NetPilot cards than this; 0 = never
  */
 public record AppSettings(
         GenerationSettings generation,
@@ -25,10 +26,13 @@ public record AppSettings(
         VoucherTemplate voucherTemplate,
         UiPreferences ui,
         ReceiptSettings receipt,
-        CleanupSettings cleanup) {
+        CleanupSettings cleanup,
+        int lowStockBelow) {
 
     public static final int MIN_PER_ROW = 2;
     public static final int MAX_PER_ROW = 8;
+    public static final int DEFAULT_LOW_STOCK = 10;
+    public static final int MAX_LOW_STOCK = 9_999;
 
     public AppSettings {
         Objects.requireNonNull(generation, "generation");
@@ -40,48 +44,56 @@ public record AppSettings(
         ui = ui == null ? UiPreferences.defaults() : ui;
         receipt = receipt == null ? ReceiptSettings.defaults() : receipt;
         cleanup = cleanup == null ? CleanupSettings.defaults() : cleanup;
+        lowStockBelow = Math.clamp(lowStockBelow, 0, MAX_LOW_STOCK);
     }
 
     /** Settings with the default receipt printer and no automatic clean-up. */
     public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
             RouterSettings router, VoucherTemplate voucherTemplate, UiPreferences ui) {
-        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui, null, null);
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui, null, null,
+                DEFAULT_LOW_STOCK);
     }
 
     /** Settings with the default interface preferences. */
     public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
             RouterSettings router, VoucherTemplate voucherTemplate) {
-        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null, null, null);
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null, null, null,
+                DEFAULT_LOW_STOCK);
     }
 
     /** The Create cards form's part; everything else stays as it is. */
     public AppSettings withForm(GenerationSettings newGeneration, String newLoginUrl, int newPerRow, Path newOutput) {
         return new AppSettings(newGeneration, newLoginUrl, newPerRow, newOutput, router, voucherTemplate, ui, receipt,
-                cleanup);
+                cleanup, lowStockBelow);
     }
 
     public AppSettings withRouter(RouterSettings newRouter) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate, ui,
-                receipt, cleanup);
+                receipt, cleanup, lowStockBelow);
     }
 
     public AppSettings withVoucherTemplate(VoucherTemplate newTemplate) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate, ui,
-                receipt, cleanup);
+                receipt, cleanup, lowStockBelow);
     }
 
     public AppSettings withUi(UiPreferences newUi) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, newUi,
-                receipt, cleanup);
+                receipt, cleanup, lowStockBelow);
     }
 
     public AppSettings withReceipt(ReceiptSettings newReceipt) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
-                newReceipt, cleanup);
+                newReceipt, cleanup, lowStockBelow);
+    }
+
+    public AppSettings withLowStockBelow(int below) {
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
+                receipt, cleanup, below);
     }
 
     public AppSettings withCleanup(CleanupSettings newCleanup) {
         return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
-                receipt, newCleanup);
+                receipt, newCleanup, lowStockBelow);
     }
 }

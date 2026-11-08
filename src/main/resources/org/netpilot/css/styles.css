@@ -694,3 +694,13 @@
     -fx-padding: 2;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 6, 0, 0, 2);
 }
+
+/* Low-stock alert on the dashboard: the same soft orange as report warnings */
+.stock-card {
+    -fx-background-color: rgba(240, 140, 0, 0.12);
+    -fx-border-color: rgba(240, 140, 0, 0.45);
+}
+
+.stock-card .card-title, .stock-text {
+    -fx-text-fill: -np-warning;
+}

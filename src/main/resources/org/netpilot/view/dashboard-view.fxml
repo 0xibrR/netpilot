@@ -77,6 +77,12 @@
             </VBox>
         </FlowPane>
 
+        <!-- packages running out of unused cards (limit in Settings); hidden when none -->
+        <VBox fx:id="stockCard" styleClass="card, stock-card" spacing="8" visible="false" managed="false">
+            <Label text="%stock.title" styleClass="card-title"/>
+            <VBox fx:id="stockRows" spacing="6"/>
+        </VBox>
+
         <VBox styleClass="card" spacing="10">
             <Label text="%dashboard.quick" styleClass="card-title"/>
             <FlowPane hgap="8" vgap="8">

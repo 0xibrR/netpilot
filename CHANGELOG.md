@@ -29,6 +29,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Low-stock alert: the dashboard lists packages with fewer unused NetPilot cards than the limit set in
+  Settings (default 10, 0 = off), each with a button that opens Create cards on that package; a short notice
+  appears once when a package runs low
 - Automatic clean-up (Settings): NetPilot deletes expired cards once a day at the chosen time while it is
   connected, or at the next connection after a missed day; their sales are saved first, the same way as
   "Delete expired", and the last run is shown

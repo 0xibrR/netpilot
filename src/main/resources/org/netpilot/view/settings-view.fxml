@@ -45,6 +45,15 @@
         </VBox>
 
         <VBox styleClass="card" spacing="10">
+            <Label text="%stock.settings.title" styleClass="card-title"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%stock.settings.below" wrapText="true"/>
+                <Spinner fx:id="lowStockSpinner" editable="true" prefWidth="100"/>
+            </HBox>
+            <Label text="%stock.settings.help" styleClass="muted" wrapText="true"/>
+        </VBox>
+
+        <VBox styleClass="card" spacing="10">
             <Label text="%menu.help.about" styleClass="card-title"/>
             <Label fx:id="aboutLabel" wrapText="true"/>
             <HBox spacing="8">

@@ -142,7 +142,8 @@ public class SettingsRepository {
                         p.getProperty("ui.accent", d.ui().accent())),
                 new ReceiptSettings(p.getProperty("receipt.printer", d.receipt().printer()),
                         intValue(p, "receipt.paperMm", d.receipt().paperMm())),
-                loadCleanup(p, d.cleanup()));
+                loadCleanup(p, d.cleanup()),
+                intValue(p, "alert.lowStockBelow", d.lowStockBelow()));
     }
 
     private static CleanupSettings loadCleanup(Properties p, CleanupSettings d) {
@@ -340,6 +341,7 @@ public class SettingsRepository {
         p.setProperty("cleanup.at", cleanup.at().toString());
         p.setProperty("cleanup.lastRun", cleanup.lastRun().map(java.time.LocalDateTime::toString).orElse(""));
         p.setProperty("cleanup.lastDeleted", String.valueOf(cleanup.lastDeleted()));
+        p.setProperty("alert.lowStockBelow", String.valueOf(settings.lowStockBelow()));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

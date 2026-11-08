@@ -51,6 +51,8 @@ public class SettingsController implements Page {
     private ComboBox<LocalTime> cleanupTimeBox;
     @FXML
     private Label cleanupLastLabel;
+    @FXML
+    private javafx.scene.control.Spinner<Integer> lowStockSpinner;
 
     public SettingsController(AppContext context) {
         this.context = context;
@@ -87,6 +89,19 @@ public class SettingsController implements Page {
             @Override
             public LocalTime fromString(String text) {
                 return LocalTime.parse(text, HOUR);
+            }
+        });
+        lowStockSpinner.setValueFactory(new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(0,
+                org.netpilot.model.AppSettings.MAX_LOW_STOCK, org.netpilot.model.AppSettings.DEFAULT_LOW_STOCK));
+        // typed numbers count without pressing Enter
+        lowStockSpinner.focusedProperty().addListener((obs, was, focused) -> {
+            if (!focused) {
+                lowStockSpinner.increment(0);
+            }
+        });
+        lowStockSpinner.valueProperty().addListener((obs, old, below) -> {
+            if (!loading && workspace != null && below != null) {
+                workspace.updateSettings(s -> s.withLowStockBelow(below));
             }
         });
         cleanupCheck.selectedProperty().addListener((obs, old, on) -> saveCleanup());
@@ -136,6 +151,7 @@ public class SettingsController implements Page {
                     .findFirst()
                     .ifPresent(t -> t.setSelected(true));
             showCleanup(workspace.settings().cleanup());
+            lowStockSpinner.getValueFactory().setValue(workspace.settings().lowStockBelow());
         } finally {
             loading = false;
         }

@@ -208,6 +208,16 @@ public class GenerateController implements Page {
         sendButton.disableProperty().bind(noUsers.or(busy).or(sent).or(router.connectedProperty().not()));
     }
 
+    /** {@link #open} section that picks a package, e.g. {@code profile:1M} from the low-stock alert. */
+    static final String PROFILE_SECTION = "profile:";
+
+    @Override
+    public void open(String section) {
+        if (section.startsWith(PROFILE_SECTION)) {
+            profileBox.setValue(section.substring(PROFILE_SECTION.length()));
+        }
+    }
+
     // ------------------------------------------------------------------ router
 
     /** Offers the router's real profiles and servers; typing other values stays possible. */
