@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.netpilot.model.CardImage;
+import org.netpilot.model.DataLimit;
 import org.netpilot.model.HotspotUser;
 import org.netpilot.model.VoucherStyle;
 import org.netpilot.model.VoucherTemplate;
@@ -82,7 +83,10 @@ public final class CardLayout {
         /** @param withQr whether a QR code is printed (needs a login URL and the QR option) */
         public static Card of(HotspotUser user, VoucherTemplate template, boolean withQr) {
             return new Card(user.username(), user.password(), template.showProfile() ? user.profile() : "",
-                    template.showUptime() ? user.limitUptime() : "",
+                    // time and data limits share the "time" line, e.g. "8h · 1 GB"
+                    template.showUptime()
+                            ? joined(user.limitUptime(), user.dataLimit().map(DataLimit::label).orElse(""))
+                            : "",
                     template.showPrice() ? template.priceFor(user.profile()) : Optional.empty(),
                     withQr && template.style() != VoucherStyle.MINIMAL);
         }

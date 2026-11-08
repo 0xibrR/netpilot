@@ -53,6 +53,7 @@
                 <TreeTableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
                 <TreeTableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="105"/>
                 <TreeTableColumn fx:id="limitColumn" text="%users.column.limit" prefWidth="70"/>
+                <TreeTableColumn fx:id="dataLimitColumn" text="%users.column.dataLimit" prefWidth="90"/>
                 <TreeTableColumn fx:id="expiresColumn" text="%users.column.expires" prefWidth="140"/>
                 <TreeTableColumn fx:id="uploadColumn" text="%users.column.upload" prefWidth="95"/>
                 <TreeTableColumn fx:id="downloadColumn" text="%users.column.download" prefWidth="95"/>

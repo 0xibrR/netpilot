@@ -23,6 +23,7 @@ import org.netpilot.i18n.Messages;
  * @param profile        hotspot user profile
  * @param server         hotspot server, or {@code all}
  * @param limitUptime    RouterOS duration such as {@code 8h}; empty for no limit
+ * @param limitBytes     data limit in bytes (upload and download together); 0 for no limit
  */
 public record GenerationSettings(
         int count,
@@ -35,7 +36,8 @@ public record GenerationSettings(
         String sharedPassword,
         String profile,
         String server,
-        String limitUptime) {
+        String limitUptime,
+        long limitBytes) {
 
     public static final int MAX_COUNT = 10_000;
     public static final int MIN_LENGTH = 5;
@@ -65,6 +67,14 @@ public record GenerationSettings(
                 passwordLength == 0 ? 4 : passwordLength, "", profile, server, limitUptime);
     }
 
+    /** Settings without a data limit. */
+    public GenerationSettings(int count, CodeFormat format, String prefix, String suffix, int codeLength,
+            PasswordStyle passwordStyle, int passwordLength, String sharedPassword, String profile, String server,
+            String limitUptime) {
+        this(count, format, prefix, suffix, codeLength, passwordStyle, passwordLength, sharedPassword, profile, server,
+                limitUptime, 0);
+    }
+
     public GenerationSettings {
         format = format == null ? CodeFormat.DIGITS : format;
         passwordStyle = passwordStyle == null ? PasswordStyle.NONE : passwordStyle;
@@ -74,6 +84,7 @@ public record GenerationSettings(
         profile = profile == null ? "" : profile.strip();
         server = server == null ? "" : server.strip();
         limitUptime = limitUptime == null ? "" : limitUptime.strip();
+        limitBytes = Math.max(0, limitBytes);
     }
 
     /** No password: the customer types the card number only. */

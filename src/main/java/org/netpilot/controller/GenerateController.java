@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -45,6 +46,7 @@ import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.CodeFormat;
+import org.netpilot.model.DataLimit;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
@@ -105,11 +107,19 @@ public class GenerateController implements Page {
     @FXML
     private ComboBox<String> profileBox;
     @FXML
+    private Label profileInfoLabel;
+    /** The router's packages by name, for the speed line under the package; empty when offline. */
+    private Map<String, HotspotProfile> packages = Map.of();
+    @FXML
     private ComboBox<String> serverBox;
     @FXML
     private TextField uptimeAmountField;
     @FXML
     private ComboBox<TimeLimit.Unit> uptimeUnitBox;
+    @FXML
+    private TextField dataAmountField;
+    @FXML
+    private ComboBox<DataLimit.Unit> dataUnitBox;
 
     @FXML
     private TextField loginUrlField;
@@ -177,6 +187,12 @@ public class GenerateController implements Page {
         uptimeUnitBox.setValue(TimeLimit.Unit.HOURS);
         uptimeAmountField.setTextFormatter(new TextFormatter<>(
                 change -> change.getControlNewText().matches("\\d{0,5}") ? change : null));
+        dataUnitBox.getItems().setAll(DataLimit.Unit.values());
+        dataUnitBox.setValue(DataLimit.Unit.GB);
+        dataAmountField.setTextFormatter(new TextFormatter<>(
+                change -> change.getControlNewText().matches("\\d{0,5}") ? change : null));
+        profileBox.valueProperty().addListener((obs, old, value) -> showPackageInfo());
+        profileBox.getEditor().textProperty().addListener((obs, old, value) -> showPackageInfo());
 
         setUpTable();
         bindFieldStates();
@@ -231,10 +247,13 @@ public class GenerateController implements Page {
         servers.add("all");
         lists.servers().stream().filter(s -> !s.disabled()).map(HotspotServer::name).forEach(servers::add);
 
+        packages = lists.profiles().stream()
+                .collect(java.util.stream.Collectors.toMap(HotspotProfile::name, p -> p, (a, b) -> a));
         profileBox.getItems().setAll(profiles);
         serverBox.getItems().setAll(servers);
         profileBox.setValue(profile);
         serverBox.setValue(server);
+        showPackageInfo();
 
         if (!profiles.contains(profile)) {
             setStatus(Messages.get("main.status.profileMissing", profile), true);
@@ -245,14 +264,38 @@ public class GenerateController implements Page {
         }
     }
 
+    /**
+     * Speed and devices come from the package, time and data from this form: the line under the
+     * package shows what the chosen package gives, so the two together are clear. Hidden when the
+     * package is not on the connected router (or there is no router).
+     */
+    private void showPackageInfo() {
+        HotspotProfile chosen = packages.get(comboText(profileBox));
+        boolean known = chosen != null;
+        profileInfoLabel.setVisible(known);
+        profileInfoLabel.setManaged(known);
+        if (!known) {
+            return;
+        }
+        String unlimited = Messages.get("common.unlimited");
+        String down = chosen.speed().download().isEmpty() ? unlimited : chosen.speed().download();
+        String up = chosen.speed().upload().isEmpty() ? unlimited : chosen.speed().upload();
+        String text = Messages.get("generate.packageInfo", down, up, chosen.sharedUsers());
+        profileInfoLabel.setText(chosen.validity()
+                .map(v -> text + " · " + Messages.get("generate.packageValidity", v.amount() + " " + v.unit()))
+                .orElse(text));
+    }
+
     @Override
     public void routerDisconnected() {
         String profile = comboText(profileBox);
         String server = comboText(serverBox);
+        packages = Map.of();
         profileBox.getItems().setAll(offlineProfiles());
         serverBox.getItems().setAll("all");
         profileBox.setValue(profile);
         serverBox.setValue(server);
+        showPackageInfo();
         setStatus(Messages.get("main.status.disconnected"), false);
     }
 
@@ -289,7 +332,9 @@ public class GenerateController implements Page {
         String httpWarning = client.get().endpoint().https()
                 ? ""
                 : "\n\n" + Messages.get("send.httpWarning");
-        String uptime = first.limitUptime().isBlank() ? Messages.get("common.unlimited") : first.limitUptime();
+        String time = first.limitUptime().isBlank() ? Messages.get("common.unlimited") : first.limitUptime();
+        // the data limit is part of what the router will enforce, so it is confirmed too
+        String uptime = first.dataLimit().map(d -> time + " · " + d.label()).orElse(time);
         if (!Dialogs.confirm(window(), Messages.get("send.confirm.title", batch.size(), router.displayName()),
                 Messages.get("send.confirm.body", first.profile(), first.server(), uptime) + httpWarning)) {
             return;
@@ -479,7 +524,8 @@ public class GenerateController implements Page {
                 sharedPasswordField.getText(),
                 comboText(profileBox),
                 comboText(serverBox),
-                uptimeText());
+                uptimeText(),
+                dataBytes());
     }
 
     private void showSettings(AppSettings s) {
@@ -502,6 +548,9 @@ public class GenerateController implements Page {
             Optional<TimeLimit> limit = TimeLimit.parse(g.limitUptime());
             uptimeAmountField.setText(limit.map(l -> String.valueOf(l.amount())).orElse(""));
             uptimeUnitBox.setValue(limit.map(TimeLimit::unit).orElse(TimeLimit.Unit.HOURS));
+            Optional<DataLimit> data = DataLimit.ofBytes(g.limitBytes());
+            dataAmountField.setText(data.map(d -> String.valueOf(d.amount())).orElse(""));
+            dataUnitBox.setValue(data.map(DataLimit::unit).orElse(DataLimit.Unit.GB));
             loginUrlField.setText(s.loginUrl());
             perRowSpinner.getValueFactory().setValue(s.vouchersPerRow());
             outputDirField.setText(s.outputDirectory().toString());
@@ -621,7 +670,8 @@ public class GenerateController implements Page {
                 suffixField.textProperty(), codeLengthBox.valueProperty(), passwordBox.valueProperty(),
                 sharedPasswordField.textProperty(), profileBox.valueProperty(), profileBox.getEditor().textProperty(),
                 serverBox.valueProperty(), serverBox.getEditor().textProperty(),
-                uptimeAmountField.textProperty(), uptimeUnitBox.valueProperty());
+                uptimeAmountField.textProperty(), uptimeUnitBox.valueProperty(),
+                dataAmountField.textProperty(), dataUnitBox.valueProperty());
         for (ObservableValue<?> input : inputs) {
             input.addListener((obs, old, value) -> {
                 if (!loadingForm && !users.isEmpty()) {
@@ -728,6 +778,15 @@ public class GenerateController implements Page {
             return "";
         }
         return new TimeLimit(Long.parseLong(amount), uptimeUnitBox.getValue()).routerText();
+    }
+
+    /** RouterOS {@code limit-bytes-total} from the amount and unit; empty amount means no data limit. */
+    private long dataBytes() {
+        String amount = dataAmountField.getText().strip();
+        if (amount.isEmpty() || Long.parseLong(amount) == 0) {
+            return 0;
+        }
+        return new DataLimit(Long.parseLong(amount), dataUnitBox.getValue()).bytes();
     }
 
     private static int clampLength(int length) {

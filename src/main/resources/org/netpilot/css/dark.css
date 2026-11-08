@@ -56,3 +56,8 @@
 .tree-table-cell.state-offline {
     -fx-text-fill: #ff7b72;
 }
+
+/* Empty-field hints ("empty = no limit"): brighter than secondary text, so they read on dark fields */
+.text-field, .password-field, .text-area, .combo-box-base .text-field, .spinner .text-field {
+    -fx-prompt-text-fill: #b8c1cd;
+}

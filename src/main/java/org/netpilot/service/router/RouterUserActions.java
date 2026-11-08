@@ -75,7 +75,8 @@ public final class RouterUserActions {
         for (RouterUser user : users) {
             String password = passwords.get(user.routerId());
             if (password != null) {
-                vouchers.add(new HotspotUser(user.name(), password, user.profile(), user.server(), user.limitUptime()));
+                vouchers.add(new HotspotUser(user.name(), password, user.profile(), user.server(), user.limitUptime(),
+                        user.limitBytes()));
             }
         }
         return vouchers;

@@ -179,6 +179,25 @@ class RouterUserActionsTest {
         assertEquals(List.of(used, over), RouterUserActions.expired(List.of(used, over, left, unlimited, trial)));
     }
 
+    @Test
+    void dataLimitGoesToTheRouterAndComesBack() throws Exception {
+        long gib = 1L << 30;
+        client.createHotspotUser(new HotspotUser("48291736", "5821", "1M", "all", "8h", gib), "c");
+        String used = router.addUser("used-up", "p", "1M", "", "c", "10m", gib / 2, gib / 2, false);
+        router.setByteLimit(used, gib);
+
+        List<RouterUser> users = client.hotspotUsers();
+
+        assertEquals(gib, router.byteLimitOf("48291736"), "sent as limit-bytes-total");
+        assertEquals(gib, users.stream().filter(u -> u.name().equals("48291736")).findFirst().orElseThrow()
+                .limitBytes());
+        RouterUser usedUp = users.stream().filter(u -> u.name().equals("used-up")).findFirst().orElseThrow();
+        assertTrue(usedUp.expired(), "its data ran out, though it has no time limit");
+        assertEquals(List.of(usedUp), RouterUserActions.expired(users));
+        assertEquals(gib, actions.voucherUsers(client, List.of(usedUp)).getFirst().limitBytes(),
+                "reprinted cards keep their data limit");
+    }
+
     private static RouterUser card(String name, String limit, Duration uptime) {
         return new RouterUser("*1", name, "1M", "all", uptime, limit, 10, 10, false, "");
     }

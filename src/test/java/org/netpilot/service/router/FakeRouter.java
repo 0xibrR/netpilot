@@ -108,6 +108,20 @@ final class FakeRouter implements AutoCloseable {
         return lastProfileWrite.get(request);
     }
 
+    /** Data limits ({@code limit-bytes-total}) per user id; users without one are not listed. */
+    private final Map<String, Long> byteLimits = new ConcurrentHashMap<>();
+
+    /** Gives an existing user a data limit, as WinBox would. */
+    void setByteLimit(String id, long bytes) {
+        byteLimits.put(id, bytes);
+    }
+
+    /** The data limit the router stored for this user name, or 0. */
+    synchronized long byteLimitOf(String name) {
+        return users.values().stream().filter(u -> u.name().equals(name)).findFirst()
+                .map(u -> byteLimits.getOrDefault(u.id(), 0L)).orElse(0L);
+    }
+
     /** A user that exists on the "router" before the test starts. */
     void addExistingUser(String name) {
         addUser(name, "x", "default", "", "", "0s", 0, 0, false);
@@ -221,6 +235,10 @@ final class FakeRouter implements AutoCloseable {
                         .put("bytes-in", String.valueOf(u.bytesIn()))
                         .put("bytes-out", String.valueOf(u.bytesOut()))
                         .put("disabled", String.valueOf(u.disabled()));
+                if (byteLimits.containsKey(u.id())) {
+                    ((ObjectNode) list.get(list.size() - 1)).put("limit-bytes-total",
+                            String.valueOf(byteLimits.get(u.id())));
+                }
             }
             return ok(list.toString());
         }
@@ -238,6 +256,9 @@ final class FakeRouter implements AutoCloseable {
             users.put(id, new StoredUser(id, name, in.path("password").asString(""), in.path("profile").asString(""),
                     in.path("server").asString(""), in.path("limit-uptime").asString(""),
                     in.path("comment").asString(""), "0s", 0, 0, false));
+            if (in.has("limit-bytes-total")) {
+                byteLimits.put(id, Long.parseLong(in.path("limit-bytes-total").asString("0")));
+            }
             ObjectNode out = JSON.createObjectNode().put(".id", id).put("name", name);
             return ok(out.toString());
         }

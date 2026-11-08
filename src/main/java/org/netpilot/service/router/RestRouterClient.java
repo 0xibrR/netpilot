@@ -181,6 +181,9 @@ final class RestRouterClient implements RouterClient {
         if (!user.limitUptime().isBlank()) {
             body.put("limit-uptime", user.limitUptime());
         }
+        if (user.limitBytes() > 0) {
+            body.put("limit-bytes-total", String.valueOf(user.limitBytes()));
+        }
         // RouterOS REST: PUT on a menu adds a new item and returns it, including its ".id"
         JsonNode created = send(USERS,
                 HttpRequest.newBuilder(URI.create(baseUri + USERS))
@@ -202,7 +205,8 @@ final class RestRouterClient implements RouterClient {
     @Override
     public List<RouterUser> hotspotUsers() throws RouterException {
         List<RouterUser> users = new ArrayList<>();
-        JsonNode list = get(USERS, ".id,name,profile,server,uptime,limit-uptime,bytes-in,bytes-out,disabled,comment");
+        JsonNode list = get(USERS,
+                ".id,name,profile,server,uptime,limit-uptime,bytes-in,bytes-out,disabled,comment,limit-bytes-total");
         for (JsonNode item : array(list, "hotspot users")) {
             String id = text(item, ".id");
             String name = text(item, "name");
@@ -210,7 +214,8 @@ final class RestRouterClient implements RouterClient {
                 users.add(new RouterUser(id, name, text(item, "profile"), text(item, "server"),
                         RouterDuration.parse(text(item, "uptime")).orElse(Duration.ZERO),
                         text(item, "limit-uptime"), number(item, "bytes-in"), number(item, "bytes-out"),
-                        "true".equals(text(item, "disabled")), text(item, "comment")));
+                        "true".equals(text(item, "disabled")), text(item, "comment"),
+                        number(item, "limit-bytes-total")));
             }
         }
         return List.copyOf(users);

@@ -322,6 +322,9 @@ public final class PdfVoucherGenerator {
             if (template.showUptime() && !user.limitUptime().isBlank()) {
                 cell.addElement(labeled(template.language().time(), user.limitUptime()));
             }
+            if (template.showUptime() && user.dataLimit().isPresent()) {
+                cell.addElement(labeled(template.language().data(), user.dataLimit().get().label()));
+            }
             Optional<String> price = template.priceFor(user.profile());
             if (template.showPrice() && price.isPresent()) {
                 cell.addElement(labeled(template.language().price(), price.get()));

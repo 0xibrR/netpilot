@@ -29,6 +29,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Data-limit cards: an optional data limit (MB/GB, upload and download together) on Create cards, sent as
+  RouterOS `limit-bytes-total` and in `.rsc` scripts; a card ends when its time or its data runs out first,
+  Manage users shows the limit, cards and receipts print it, and "Delete expired" and the automatic clean-up
+  include cards whose data ran out
 - Low-stock alert: the dashboard lists packages with fewer unused NetPilot cards than the limit set in
   Settings (default 10, 0 = off), each with a button that opens Create cards on that package; a short notice
   appears once when a package runs low

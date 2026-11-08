@@ -75,6 +75,9 @@ public record ReceiptContent(List<Line> lines, boolean rtl) {
         if (template.showUptime() && !card.limitUptime().isBlank()) {
             lines.add(new Field(words.time(), card.limitUptime()));
         }
+        if (template.showUptime()) {
+            card.dataLimit().ifPresent(d -> lines.add(new Field(words.data(), d.label())));
+        }
         validity.ifPresent(v -> lines.add(new Field(words.validity(), v.routerText())));
         String price = template.prices().getOrDefault(card.profile(), "");
         if (template.showPrice() && !price.isBlank()) {

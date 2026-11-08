@@ -58,6 +58,13 @@ class ExportersTest {
     void rscOmitsUptimeWhenUnlimited() {
         String command = new RscExporter("t").command(new HotspotUser("u", "p", "2M", "all", ""));
         assertFalse(command.contains("limit-uptime"));
+        assertFalse(command.contains("limit-bytes-total"));
+    }
+
+    @Test
+    void rscCarriesTheDataLimitInBytes() {
+        String command = new RscExporter("t").command(new HotspotUser("u", "p", "2M", "all", "", 1L << 30));
+        assertTrue(command.contains(" limit-bytes-total=1073741824 "), command);
     }
 
     @Test

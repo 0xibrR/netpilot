@@ -120,6 +120,8 @@ public class RouterUsersController {
     @FXML
     private TreeTableColumn<Row, String> expiresColumn;
     @FXML
+    private TreeTableColumn<Row, String> dataLimitColumn;
+    @FXML
     private TreeTableColumn<Row, Long> uploadColumn;
     @FXML
     private TreeTableColumn<Row, Long> downloadColumn;
@@ -589,6 +591,8 @@ public class RouterUsersController {
 
         limitColumn.setCellValueFactory(c -> text(c, u -> u.limit().map(RouterDuration::format).orElse("∞")));
         expiresColumn.setCellValueFactory(c -> text(c, u -> expiries.getOrDefault(u.name(), "")));
+        dataLimitColumn.setCellValueFactory(
+                c -> text(c, u -> u.limitBytes() > 0 ? DataSize.format(u.limitBytes()) : "∞"));
 
         // like WinBox: Bytes In is what the customer sent (upload), Bytes Out what they received
         uploadColumn.setCellValueFactory(

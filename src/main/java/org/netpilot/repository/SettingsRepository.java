@@ -118,7 +118,8 @@ public class SettingsRepository {
                 p.getProperty("cardSharedCode", g.sharedPassword()),
                 p.getProperty("profile", g.profile()),
                 p.getProperty("server", g.server()),
-                p.getProperty("limitUptime", g.limitUptime()));
+                p.getProperty("limitUptime", g.limitUptime()),
+                longValue(p, "limitBytes", g.limitBytes()));
 
         Path output = d.outputDirectory();
         String outputValue = p.getProperty("outputDirectory");
@@ -296,6 +297,7 @@ public class SettingsRepository {
         p.setProperty("profile", g.profile());
         p.setProperty("server", g.server());
         p.setProperty("limitUptime", g.limitUptime());
+        p.setProperty("limitBytes", String.valueOf(g.limitBytes()));
         p.setProperty("loginUrl", settings.loginUrl());
         p.setProperty("vouchersPerRow", String.valueOf(settings.vouchersPerRow()));
         p.setProperty("outputDirectory", settings.outputDirectory().toString());
@@ -354,6 +356,14 @@ public class SettingsRepository {
     private static int intValue(Properties p, String key, int fallback) {
         try {
             return Integer.parseInt(p.getProperty(key, "").strip());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private static long longValue(Properties p, String key, long fallback) {
+        try {
+            return Long.parseLong(p.getProperty(key, "").strip());
         } catch (NumberFormatException e) {
             return fallback;
         }

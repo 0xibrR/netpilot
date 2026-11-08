@@ -70,13 +70,23 @@
                             <ColumnConstraints hgrow="ALWAYS"/>
                         </columnConstraints>
                         <Label text="%main.profile" GridPane.rowIndex="0"/>
-                        <ComboBox fx:id="profileBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <VBox spacing="3" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                            <ComboBox fx:id="profileBox" editable="true" maxWidth="Infinity"/>
+                            <!-- the chosen package's speed and devices, from the router -->
+                            <Label fx:id="profileInfoLabel" styleClass="muted" wrapText="true" visible="false"
+                                   managed="false"/>
+                        </VBox>
                         <Label text="%main.server" GridPane.rowIndex="1"/>
                         <ComboBox fx:id="serverBox" editable="true" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
                         <Label text="%main.uptimeLimit" GridPane.rowIndex="2"/>
                         <HBox spacing="6" alignment="CENTER_LEFT" GridPane.rowIndex="2" GridPane.columnIndex="1">
-                            <TextField fx:id="uptimeAmountField" promptText="%main.uptimeLimit.prompt" HBox.hgrow="ALWAYS"/>
-                            <ComboBox fx:id="uptimeUnitBox" prefWidth="140"/>
+                            <TextField fx:id="uptimeAmountField" promptText="%main.uptimeLimit.prompt" minWidth="68" HBox.hgrow="ALWAYS"/>
+                            <ComboBox fx:id="uptimeUnitBox" prefWidth="110" minWidth="92"/>
+                        </HBox>
+                        <Label text="%main.dataLimit" GridPane.rowIndex="3"/>
+                        <HBox spacing="6" alignment="CENTER_LEFT" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                            <TextField fx:id="dataAmountField" promptText="%main.dataLimit.prompt" minWidth="68" HBox.hgrow="ALWAYS"/>
+                            <ComboBox fx:id="dataUnitBox" prefWidth="110" minWidth="92"/>
                         </HBox>
                     </GridPane>
                 </VBox>

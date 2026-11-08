@@ -18,6 +18,7 @@ import java.util.Optional;
  * @param bytesOut    bytes the user downloaded
  * @param disabled    whether the user is disabled
  * @param comment     comment, e.g. a NetPilot batch tag
+ * @param limitBytes  data limit in bytes ({@code limit-bytes-total}), 0 when unlimited
  */
 public record RouterUser(
         String routerId,
@@ -29,7 +30,8 @@ public record RouterUser(
         long bytesIn,
         long bytesOut,
         boolean disabled,
-        String comment) {
+        String comment,
+        long limitBytes) {
 
     public RouterUser {
         Objects.requireNonNull(routerId, "routerId");
@@ -39,15 +41,26 @@ public record RouterUser(
         uptime = uptime == null ? Duration.ZERO : uptime;
         limitUptime = limitUptime == null ? "" : limitUptime;
         comment = comment == null ? "" : comment;
+        limitBytes = Math.max(0, limitBytes);
+    }
+
+    /** A user without a data limit. */
+    public RouterUser(String routerId, String name, String profile, String server, Duration uptime,
+            String limitUptime, long bytesIn, long bytesOut, boolean disabled, String comment) {
+        this(routerId, name, profile, server, uptime, limitUptime, bytesIn, bytesOut, disabled, comment, 0);
     }
 
     public Optional<Duration> limit() {
         return RouterDuration.parse(limitUptime).filter(d -> !d.isZero());
     }
 
-    /** Used up all of its time limit. Users without a limit never expire. */
+    /**
+     * Used up all of its time limit or all of its data. Users without either limit never expire;
+     * with both, whichever runs out first ends the card.
+     */
     public boolean expired() {
-        return limit().map(limit -> uptime.compareTo(limit) >= 0).orElse(false);
+        boolean timeUsed = limit().map(limit -> uptime.compareTo(limit) >= 0).orElse(false);
+        return timeUsed || (limitBytes > 0 && totalBytes() >= limitBytes);
     }
 
     /** Never logged in. */

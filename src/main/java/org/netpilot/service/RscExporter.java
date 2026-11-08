@@ -52,6 +52,9 @@ public class RscExporter {
         if (!user.limitUptime().isBlank()) {
             add.append(" limit-uptime=").append(quote(user.limitUptime()));
         }
+        if (user.limitBytes() > 0) {
+            add.append(" limit-bytes-total=").append(user.limitBytes());
+        }
         add.append(" comment=").append(quote(comment));
 
         return ":do { " + add + " } on-error={ :log warning "

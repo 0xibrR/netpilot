@@ -92,7 +92,7 @@ public final class UserGenerator {
             case SAME_AS_CODE -> code;
             case SHARED -> s.sharedPassword();
         };
-        return new HotspotUser(code, password, s.profile(), s.server(), s.limitUptime());
+        return new HotspotUser(code, password, s.profile(), s.server(), s.limitUptime(), s.limitBytes());
     }
 
     /** Separate passwords follow the same pattern rules (no {@code 1111} or {@code 1234}). */
