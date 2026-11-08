@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Side menu groups everything about cards under a folding "Cards" group (create, card users, online now, search
+  for a card, sales, design, export history) and profiles and servers under "Hotspot"
 - Stronger card numbers: weak patterns are refused (runs like `7777`, counting like `1234`/`9876`, repeats like
   `1212`), digit-only numbers do not start with 0, and any two cards differ in at least two characters, in the
   batch and against numbers already on the router; separate passwords avoid weak patterns too

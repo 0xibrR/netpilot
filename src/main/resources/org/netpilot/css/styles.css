@@ -571,3 +571,51 @@
     -fx-padding: 6 10 6 10;
     -fx-font-size: 14px;
 }
+
+/* Folding groups in the side menu (e.g. Cards) */
+.nav-group {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 8 14 8 14;
+}
+
+.nav-group:hover {
+    -fx-background-color: -np-chrome-bg-2;
+}
+
+.nav-group-title, .nav-chevron {
+    -fx-text-fill: -np-chrome-text;
+    -fx-graphic-text-gap: 10;
+}
+
+.nav-chevron {
+    -fx-font-size: 15px;
+}
+
+.nav-sub {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-text-fill: -np-chrome-text;
+    -fx-alignment: center-left;
+    -fx-padding: 6 14 6 34;
+    -fx-graphic-text-gap: 10;
+}
+
+.nav-sub:hover {
+    -fx-background-color: -np-chrome-bg-2;
+}
+
+.nav-sub:selected {
+    -fx-background-color: -np-chrome-bg-2;
+    -fx-text-fill: -np-accent;
+    -fx-font-weight: bold;
+}
+
+.nav-bullet {
+    -fx-text-fill: -np-chrome-muted;
+    -fx-font-size: 10px;
+}
+
+.nav-sub:selected .nav-bullet {
+    -fx-text-fill: -np-accent;
+}

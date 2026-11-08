@@ -15,8 +15,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -48,8 +46,7 @@ public class MainController implements RouterSession.Listener {
 
     private final AppContext context;
     private final Map<PageId, LoadedPage> pages = new EnumMap<>(PageId.class);
-    private final Map<PageId, ToggleButton> menuButtons = new EnumMap<>(PageId.class);
-    private final ToggleGroup menuGroup = new ToggleGroup();
+    private SideMenu menu;
     private final Timeline resourcePoller = new Timeline(new KeyFrame(RESOURCE_INTERVAL, e -> pollResources()));
     /** Live updates of the visible page, like WinBox lists that change by themselves. */
     private final Timeline liveUpdates = new Timeline(new KeyFrame(RESOURCE_INTERVAL, e -> tickVisiblePage()));
@@ -155,21 +152,7 @@ public class MainController implements RouterSession.Listener {
     // ------------------------------------------------------------------ navigation
 
     private void buildSideMenu() {
-        for (PageId page : PageId.values()) {
-            ToggleButton button = new ToggleButton(Messages.get(page.labelKey()), Icons.of(page.icon()));
-            button.getStyleClass().add("nav-button");
-            button.setToggleGroup(menuGroup);
-            button.setMaxWidth(Double.MAX_VALUE);
-            button.setOnAction(e -> show(page));
-            menuButtons.put(page, button);
-            sideMenu.getChildren().add(button);
-        }
-        // a selected menu entry stays selected when clicked again
-        menuGroup.selectedToggleProperty().addListener((obs, old, now) -> {
-            if (now == null && old != null) {
-                old.setSelected(true);
-            }
-        });
+        menu = new SideMenu(sideMenu, this::show);
     }
 
     private void addShortcuts() {
@@ -183,8 +166,13 @@ public class MainController implements RouterSession.Listener {
     }
 
     private void show(PageId page) {
+        show(page, null);
+    }
+
+    /** Opens a page, and optionally one part of it (e.g. a tab of the Hotspot page). */
+    private void show(PageId page, String section) {
         current = page;
-        menuButtons.get(page).setSelected(true);
+        menu.select(page, section);
         boolean blocked = page.needsRouter() && router.client().isEmpty();
         notConnectedPane.setVisible(blocked);
         pages.values().forEach(p -> p.view().setVisible(false));
@@ -195,6 +183,9 @@ public class MainController implements RouterSession.Listener {
         loaded.ifPresent(p -> {
             p.view().setVisible(true);
             p.controller().shown();
+            if (section != null) {
+                p.controller().open(section);
+            }
         });
     }
 

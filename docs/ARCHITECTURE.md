@@ -88,7 +88,7 @@ RouterOS does not record when a hotspot user first logged in, so NetPilot keeps 
 
 ## Main window and pages
 
-- `MainController` builds the WinBox-like frame: top bar (router connection, theme switch), side menu (one entry per `PageId`), a `StackPane` for pages, and a status bar.
+- `MainController` builds the WinBox-like frame: top bar (router connection, theme switch), side menu (`SideMenu`: single entries and folding groups; an entry opens a page and optionally a part of it through `Page.open(section)`, e.g. a Hotspot tab), a `StackPane` for pages, and a status bar.
 - A page is an FXML view whose controller implements `Page`. Pages are loaded the first time they are opened and then kept, so filters and previews survive switching. `Create cards` is loaded at start-up because other pages print vouchers through it (`Workspace.printVouchers`).
 - `Workspace` holds what pages share: services, the `RouterSession`, the saved `AppSettings` (`updateSettings` saves at once) and navigation.
 - `RouterSession` notifies listeners (`routerConnected`, `routerListsLoaded`, `routerDisconnected`); `MainController` forwards the events to loaded pages and replays them to pages loaded later. Pages marked `needsRouter` show a Connect button while no router is connected.

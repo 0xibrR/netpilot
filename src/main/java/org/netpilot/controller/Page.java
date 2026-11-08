@@ -13,6 +13,10 @@ interface Page extends RouterSession.Listener {
     default void shown() {
     }
 
+    /** Shows one part of the page chosen in the side menu, e.g. a tab. */
+    default void open(String section) {
+    }
+
     /**
      * Called every few seconds while the page is visible and a router is connected, so changes
      * made elsewhere (WinBox, another NetPilot) show up without pressing Refresh. Must stay quiet:

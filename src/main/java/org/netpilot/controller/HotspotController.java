@@ -34,6 +34,13 @@ public class HotspotController implements Page {
 
     private static final System.Logger LOG = System.getLogger(HotspotController.class.getName());
 
+    /** Parts of the page the side menu can open. */
+    static final String USERS = "users";
+    static final String ACTIVE = "active";
+    static final String SEARCH = "search";
+    static final String PROFILES = "profiles";
+    static final String SERVERS = "servers";
+
     private final AppContext context;
 
     private Workspace workspace;
@@ -44,6 +51,12 @@ public class HotspotController implements Page {
     private TabPane tabs;
     @FXML
     private Tab activeTab;
+    @FXML
+    private Tab usersTab;
+    @FXML
+    private Tab profilesTab;
+    @FXML
+    private Tab serversTab;
     @FXML
     private RouterUsersController usersController;
 
@@ -161,6 +174,20 @@ public class HotspotController implements Page {
     @Override
     public void attach(Workspace shared) {
         this.workspace = shared;
+    }
+
+    @Override
+    public void open(String section) {
+        Tab tab = switch (section) {
+            case ACTIVE -> activeTab;
+            case PROFILES -> profilesTab;
+            case SERVERS -> serversTab;
+            default -> usersTab;
+        };
+        tabs.getSelectionModel().select(tab);
+        if (SEARCH.equals(section)) {
+            usersController.focusSearch();
+        }
     }
 
     /** Prices may have changed in Voucher Design. */

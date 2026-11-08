@@ -204,6 +204,14 @@ public class RouterUsersController {
         thread.start();
     }
 
+    /** Puts the cursor in the search box (side menu "Search for a card"). */
+    void focusSearch() {
+        javafx.application.Platform.runLater(() -> {
+            searchField.requestFocus();
+            searchField.selectAll();
+        });
+    }
+
     /** Forgets the router's users after a disconnect. */
     void stop() {
         client = null;
