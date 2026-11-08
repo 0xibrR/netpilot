@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- NetPilot opens on the Dashboard; its quick actions use the menu names and icons, and its wording matches the menu
 - Manage users shows data and times like WinBox: separate Upload (Bytes In) and Download (Bytes Out) in MiB/GiB,
   and full uptimes such as 2d 09:56:36
 - Manage cards: the connection column is titled and shows "Online" in green or "Offline" in red (online first when sorted)

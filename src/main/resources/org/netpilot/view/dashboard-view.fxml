@@ -80,10 +80,10 @@
         <VBox styleClass="card" spacing="10">
             <Label text="%dashboard.quick" styleClass="card-title"/>
             <FlowPane hgap="8" vgap="8">
-                <Button text="%nav.GENERATE" onAction="#onGenerate" styleClass="primary"/>
-                <Button text="%nav.HOTSPOT" onAction="#onHotspot"/>
-                <Button text="%nav.REPORTS" onAction="#onReports"/>
-                <Button text="%nav.DESIGN" onAction="#onDesign"/>
+                <Button fx:id="generateQuick" text="%nav.GENERATE" onAction="#onGenerate" styleClass="primary"/>
+                <Button fx:id="hotspotQuick" text="%nav.cards.users" onAction="#onHotspot"/>
+                <Button fx:id="reportsQuick" text="%nav.REPORTS" onAction="#onReports"/>
+                <Button fx:id="designQuick" text="%nav.DESIGN" onAction="#onDesign"/>
             </FlowPane>
         </VBox>
     </VBox>

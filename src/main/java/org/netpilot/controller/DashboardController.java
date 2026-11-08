@@ -60,6 +60,14 @@ public class DashboardController implements Page {
     private ProgressIndicator progressIndicator;
     @FXML
     private Button refreshButton;
+    @FXML
+    private Button generateQuick;
+    @FXML
+    private Button hotspotQuick;
+    @FXML
+    private Button reportsQuick;
+    @FXML
+    private Button designQuick;
 
     public DashboardController(AppContext context) {
         this.context = context;
@@ -68,6 +76,12 @@ public class DashboardController implements Page {
     @Override
     public void attach(Workspace shared) {
         this.workspace = shared;
+        // same names and icons as the side menu
+        generateQuick.setGraphic(Icons.of(Icons.TICKET));
+        hotspotQuick.setGraphic(Icons.of(Icons.WIFI));
+        reportsQuick.setGraphic(Icons.of(Icons.CHART));
+        designQuick.setGraphic(Icons.of(Icons.PALETTE));
+        refreshButton.setGraphic(Icons.of(Icons.REFRESH));
         showOffline();
     }
 

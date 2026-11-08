@@ -127,7 +127,7 @@ public class MainController implements RouterSession.Listener {
 
         buildSideMenu();
         load(PageId.GENERATE); // always loaded: other pages print vouchers through it
-        show(PageId.GENERATE);
+        show(PageId.DASHBOARD); // the app opens on the dashboard
         router.autoConnect(workspace.settings().router(), workspace::toast);
         root.sceneProperty().addListener((obs, old, scene) -> {
             if (scene != null) {
