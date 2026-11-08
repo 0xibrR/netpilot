@@ -383,6 +383,13 @@ public class GenerateController implements Page {
             if (upload.receiptsRequested()) {
                 workspace.printReceipts(report.createdUsers());
             }
+            if (upload.handoverRequested()) {
+                router.client().ifPresent(c -> HandoverFlow.start(workspace, window(), report.createdUsers().stream()
+                        .map(u -> new org.netpilot.service.ResellerAccounts.Card(c.endpoint().address(), u.username(),
+                                u.profile()))
+                        .toList(), null, () -> {
+                        }));
+            }
         });
     }
 

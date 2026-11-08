@@ -6,6 +6,7 @@ import org.netpilot.repository.AppPaths;
 import org.netpilot.repository.DpapiProtector;
 import org.netpilot.repository.HistoryRepository;
 import org.netpilot.repository.PasswordVault;
+import org.netpilot.repository.ResellerRepository;
 import org.netpilot.repository.SettingsRepository;
 import org.netpilot.repository.UsageRepository;
 import org.netpilot.service.CsvExporter;
@@ -14,7 +15,9 @@ import org.netpilot.service.PdfVoucherGenerator;
 import org.netpilot.service.QrCodeService;
 import org.netpilot.service.ReportExporter;
 import org.netpilot.service.ReportService;
+import org.netpilot.service.ResellerAccounts;
 import org.netpilot.service.RscExporter;
+import org.netpilot.service.UsageTracker;
 import org.netpilot.service.UserGenerator;
 import org.netpilot.service.router.NeighborDiscovery;
 import org.netpilot.service.router.RouterConnector;
@@ -37,6 +40,8 @@ public record AppContext(
         ReportExporter reportExporter,
         NeighborDiscovery neighborDiscovery,
         PasswordVault passwordVault,
+        ResellerAccounts resellerAccounts,
+        UsageTracker usageTracker,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -48,6 +53,11 @@ public record AppContext(
                 new PdfVoucherGenerator(new QrCodeService()),
                 history,
                 Clock.systemDefaultZone());
+        ReportService reports = new ReportService();
+        UsageRepository usage = new UsageRepository(AppPaths.usageFile());
+        ResellerAccounts resellers = new ResellerAccounts(
+                new ResellerRepository(AppPaths.resellersFile(), AppPaths.resellerLedgerFile()),
+                Clock.systemDefaultZone());
         return new AppContext(
                 generator,
                 export,
@@ -56,11 +66,13 @@ public record AppContext(
                 new RouterConnector(),
                 new RouterUploadService(generator),
                 new RouterUserActions(),
-                new ReportService(),
-                new UsageRepository(AppPaths.usageFile()),
+                reports,
+                usage,
                 new ReportExporter(),
                 new NeighborDiscovery(),
                 new PasswordVault(AppPaths.credentialsFile(), new DpapiProtector()),
+                resellers,
+                new UsageTracker(reports, usage, resellers),
                 hostServices);
     }
 }

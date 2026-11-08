@@ -36,15 +36,21 @@ final class SideMenu {
     record Group(String labelKey, String icon, List<Entry> entries) {
     }
 
-    /** The menu, top to bottom: entries are single lines, groups fold. */
+    /**
+     * The menu, top to bottom: entries are single lines, groups fold. A new page joins the group
+     * of its kind (or a new group): the hotspot and its cards, or reports and money.
+     */
     static final List<Object> LAYOUT = List.of(
             new Entry("nav.DASHBOARD", PageId.DASHBOARD, null),
             new Group("nav.group.cards", Icons.WIFI, List.of(
                     new Entry("nav.GENERATE", PageId.GENERATE, null),
                     // one page holds the card list, who is online (tab) and the search box
                     new Entry("nav.cards.users", PageId.HOTSPOT, HotspotController.USERS),
+                    new Entry("nav.DESIGN", PageId.DESIGN, null))),
+            // money and records: kept on this computer, so they work without the router too
+            new Group("nav.group.finance", Icons.FINANCE, List.of(
+                    new Entry("nav.RESELLERS", PageId.RESELLERS, null),
                     new Entry("nav.cards.sales", PageId.REPORTS, null),
-                    new Entry("nav.DESIGN", PageId.DESIGN, null),
                     new Entry("nav.HISTORY", PageId.HISTORY, null))),
             new Entry("nav.SETTINGS", PageId.SETTINGS, null));
 
@@ -105,8 +111,8 @@ final class SideMenu {
         VBox items = new VBox(1);
         items.getStyleClass().add("nav-group-items");
         for (Entry entry : group.entries()) {
-            // only the group has an icon; its entries are plain, indented text
-            ToggleButton button = entryButton(entry, null, "nav-sub", open);
+            // indented under the group, each with its page's own small icon
+            ToggleButton button = entryButton(entry, iconFor(entry.page()), "nav-sub", open);
             groupOf.put(entry.key(), items);
             items.getChildren().add(button);
         }

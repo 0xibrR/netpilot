@@ -38,6 +38,16 @@ public final class AppPaths {
         return dataDirectory().resolve("usage.csv");
     }
 
+    /** Points of sale (names, commission settings). */
+    public static Path resellersFile() {
+        return dataDirectory().resolve("resellers.csv");
+    }
+
+    /** The points of sale ledger: handovers, sales and payments, only ever appended to. */
+    public static Path resellerLedgerFile() {
+        return dataDirectory().resolve("reseller-ledger.csv");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         Path documents = userHome().resolve("Documents");

@@ -22,6 +22,8 @@ import org.netpilot.model.ActiveSession;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.RouterDuration;
+import org.netpilot.model.RouterUser;
+import org.netpilot.service.ResellerAccounts;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
 import org.netpilot.service.router.RouterUserActions.BulkResult;
@@ -231,6 +233,8 @@ public class HotspotController implements Page {
         activeTable.getItems().clear();
         usersController.start(routerClient, name, workspace::printVouchers, workspace::printReceipts,
                 workspace::checkStock);
+        String routerKey = routerClient.endpoint().address();
+        usersController.setHandover(selected -> handOver(routerKey, selected));
         if (tabs.getSelectionModel().getSelectedItem() == activeTab) {
             onRefreshActive();
         }
@@ -257,6 +261,23 @@ public class HotspotController implements Page {
     }
 
     // ------------------------------------------------------------------ profiles (speeds are the user's)
+
+    /**
+     * Hands unused selected cards to a point of sale. Used cards are left out: a card that was
+     * already used cannot be sold again, so it never goes into a point of sale's stock.
+     */
+    private void handOver(String routerKey, List<RouterUser> selected) {
+        List<ResellerAccounts.Card> unused = selected.stream()
+                .filter(u -> !u.builtIn() && u.neverUsed())
+                .map(u -> new ResellerAccounts.Card(routerKey, u.name(), u.profile()))
+                .toList();
+        if (unused.size() < selected.size()) {
+            Dialogs.info(workspace.window(), Messages.get("handover.title"),
+                    Messages.get("handover.usedLeftOut", selected.size() - unused.size()));
+        }
+        HandoverFlow.start(workspace, workspace.window(), unused, null, () -> {
+        });
+    }
 
     /** {@code 1000M} → {@code 1000 Mbps}; empty → unlimited. */
     private static String speed(String rate) {

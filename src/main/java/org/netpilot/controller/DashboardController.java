@@ -83,7 +83,7 @@ public class DashboardController implements Page {
         this.workspace = shared;
         // same names and icons as the side menu
         generateQuick.setGraphic(Icons.of(Icons.TICKET));
-        hotspotQuick.setGraphic(Icons.of(Icons.WIFI));
+        hotspotQuick.setGraphic(Icons.of(Icons.USERS));
         reportsQuick.setGraphic(Icons.of(Icons.CHART));
         designQuick.setGraphic(Icons.of(Icons.PALETTE));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
@@ -147,9 +147,7 @@ public class DashboardController implements Page {
                 List<RouterUser> users = target.hotspotUsers();
                 Set<String> online = target.activeSessions().stream().map(ActiveSession::user)
                         .collect(Collectors.toSet());
-                List<UsageRecord> history = context.reportService().track(router, users,
-                        context.usageRepository().findAll(), LocalDate.now());
-                context.usageRepository().saveAll(history);
+                List<UsageRecord> history = context.usageTracker().track(router, users, LocalDate.now());
                 SalesReport report = context.reportService().build(router, users, history,
                         workspace.settings().voucherTemplate(), ReportPeriod.THIS_MONTH, LocalDate.now());
                 return new Figures(users, online, report);

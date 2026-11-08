@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Points of sale page. Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.ResellersController"
+            styleClass="page">
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="16" right="20" bottom="8" left="20"/>
+            </padding>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="%nav.RESELLERS" styleClass="page-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+            </HBox>
+            <FlowPane hgap="8" vgap="8">
+                <Button fx:id="addButton" text="%reseller.add" onAction="#onAdd" styleClass="primary"/>
+                <Button fx:id="editButton" text="%reseller.edit" onAction="#onEdit"/>
+                <Button fx:id="handoverButton" text="%reseller.handover" onAction="#onHandover"/>
+                <Button fx:id="returnButton" text="%reseller.return" onAction="#onReturn"/>
+                <Button fx:id="paymentButton" text="%reseller.payment" onAction="#onPayment"/>
+                <Button fx:id="voidButton" text="%reseller.void" onAction="#onVoid"/>
+                <Button fx:id="exportButton" text="%reseller.export" onAction="#onExport"/>
+            </FlowPane>
+        </VBox>
+    </top>
+    <center>
+        <SplitPane orientation="VERTICAL" dividerPositions="0.45">
+            <TableView fx:id="resellersTable">
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                </columnResizePolicy>
+                <columns>
+                    <TableColumn fx:id="nameColumn" text="%reseller.column.name" prefWidth="170"/>
+                    <TableColumn fx:id="givenColumn" text="%reseller.column.given" prefWidth="80"/>
+                    <TableColumn fx:id="soldColumn" text="%reseller.column.sold" prefWidth="80"/>
+                    <TableColumn fx:id="leftColumn" text="%reseller.column.left" prefWidth="80"/>
+                    <TableColumn fx:id="valueColumn" text="%reseller.column.charged" prefWidth="110"/>
+                    <TableColumn fx:id="commissionColumn" text="%reseller.column.commission" prefWidth="100"/>
+                    <TableColumn fx:id="paidColumn" text="%reseller.column.paid" prefWidth="100"/>
+                    <TableColumn fx:id="owesColumn" text="%reseller.column.owes" prefWidth="110"/>
+                    <TableColumn fx:id="creditColumn" text="%reseller.column.credit" prefWidth="110"/>
+                </columns>
+                <placeholder>
+                    <Label text="%reseller.empty" styleClass="muted" wrapText="true"/>
+                </placeholder>
+            </TableView>
+            <VBox spacing="6">
+                <padding>
+                    <Insets top="8" right="0" bottom="0" left="0"/>
+                </padding>
+                <Label fx:id="historyTitle" text="%reseller.history" styleClass="section-title"/>
+                <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                    </columnResizePolicy>
+                    <columns>
+                        <TableColumn fx:id="whenColumn" text="%reseller.column.when" prefWidth="140"/>
+                        <TableColumn fx:id="kindColumn" text="%reseller.column.kind" prefWidth="120"/>
+                        <TableColumn fx:id="cardColumn" text="%reseller.column.card" prefWidth="130"/>
+                        <TableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
+                        <TableColumn fx:id="amountColumn" text="%reseller.column.amount" prefWidth="110"/>
+                        <TableColumn fx:id="noteColumn" text="%reseller.column.note" prefWidth="200"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="%reseller.noHistory" styleClass="muted"/>
+                    </placeholder>
+                </TableView>
+            </VBox>
+            <padding>
+                <Insets top="0" right="20" bottom="16" left="20"/>
+            </padding>
+        </SplitPane>
+    </center>
+</BorderPane>

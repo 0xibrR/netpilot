@@ -146,6 +146,11 @@ public class RouterUsersController {
     @FXML
     private Button receiptButton;
     @FXML
+    private Button handoverButton;
+    /** Hands the selected cards to a point of sale (set by the Hotspot page). */
+    private Consumer<List<RouterUser>> handover = cards -> {
+    };
+    @FXML
     private Button deleteExpiredButton;
 
     public RouterUsersController(AppContext context) {
@@ -169,7 +174,7 @@ public class RouterUsersController {
 
         var noSelection = Bindings.isEmpty(usersTable.getSelectionModel().getSelectedItems());
         for (Button action : List.of(enableButton, disableButton, disconnectButton, deleteButton, printButton,
-                receiptButton)) {
+                receiptButton, handoverButton)) {
             action.disableProperty().bind(noSelection.or(busy));
         }
         refreshButton.disableProperty().bind(busy);
@@ -183,6 +188,7 @@ public class RouterUsersController {
         deleteExpiredButton.setGraphic(Icons.of(Icons.CROSS));
         printButton.setGraphic(Icons.of(Icons.PRINTER));
         receiptButton.setGraphic(Icons.of(Icons.PRINTER));
+        handoverButton.setGraphic(Icons.of(Icons.STORE));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
     }
 
@@ -326,13 +332,24 @@ public class RouterUsersController {
             return;
         }
         List<RouterUser> all = users;
-        bulk(Messages.get("users.deleting", expired.size()), () -> new ExpiredCleanup(context.reportService(),
-                context.usageRepository(), context.routerUserActions()).delete(client, all, LocalDate.now()));
+        bulk(Messages.get("users.deleting", expired.size()),
+                () -> new ExpiredCleanup(context.usageTracker(), context.routerUserActions()).delete(client, all,
+                        LocalDate.now()));
     }
 
     @FXML
     private void onPrint() {
         printSelected(printer);
+    }
+
+    /** Sets what "Hand over to a point of sale" does with the selected cards. */
+    void setHandover(Consumer<List<RouterUser>> action) {
+        this.handover = action;
+    }
+
+    @FXML
+    private void onHandover() {
+        handover.accept(selected());
     }
 
     @FXML

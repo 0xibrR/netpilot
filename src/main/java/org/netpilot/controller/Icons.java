@@ -13,6 +13,12 @@ final class Icons {
             + "a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2";
     static final String WIFI = "M12 18h.01 M9.2 15.2a4 4 0 0 1 5.6 0 M6.3 12.3a8 8 0 0 1 11.4 0"
             + " M3.5 9.5a12 12 0 0 1 17 0";
+    /** Two people, for Manage users. */
+    static final String USERS = "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 12 0v1 M16 3.1a4 4 0 0 1 0 7.8 M22 21v-1a6 6 0 0 0-4-5.6";
+    /** A rising line, for the reports and money group. */
+    static final String FINANCE = "M3 20h18 M5 16l4-5 4 3 6-8 M15 6h4v4";
+    /** A shop front, for points of sale. */
+    static final String STORE = "M3 9l1.5-5h15L21 9 M3 9h18v1.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z M5 13v7h14v-7 M10 20v-4h4v4";
     static final String CHART = "M4 13h4v7H4z M10 9h4v11h-4z M16 5h4v15h-4z";
     static final String PALETTE = "M12 21a9 9 0 0 1 0-18c5 0 9 3.6 9 8 0 2.2-1.9 4-4.5 4H14a2 2 0 0 0-1 3.7"
             + "A1.3 1.3 0 0 1 12 21 M7.5 10.5h.01 M12 7.5h.01 M16.5 10.5h.01";

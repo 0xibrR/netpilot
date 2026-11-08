@@ -31,6 +31,20 @@ final class Dialogs {
                 .orElse(false);
     }
 
+    /**
+     * A question with the given answers plus Cancel.
+     *
+     * @return the answer chosen, or empty for Cancel or closing the window
+     */
+    static java.util.Optional<ButtonType> choose(Window owner, String header, String message,
+            ButtonType... answers) {
+        Alert alert = alert(Alert.AlertType.CONFIRMATION, owner, header, message);
+        java.util.List<ButtonType> buttons = new java.util.ArrayList<>(java.util.List.of(answers));
+        buttons.add(new ButtonType(Messages.get("button.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE));
+        alert.getButtonTypes().setAll(buttons);
+        return alert.showAndWait().filter(answer -> answer.getButtonData() != ButtonBar.ButtonData.CANCEL_CLOSE);
+    }
+
     static Alert alert(Alert.AlertType type, Window owner, String header, String message) {
         Alert alert = new Alert(type, message);
         alert.initOwner(owner);

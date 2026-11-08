@@ -160,9 +160,7 @@ public class ReportsController implements Page {
             @Override
             protected Snapshot call() throws Exception {
                 List<RouterUser> current = client.hotspotUsers();
-                List<UsageRecord> updated = context.reportService().track(router, current,
-                        context.usageRepository().findAll(), LocalDate.now());
-                context.usageRepository().saveAll(updated);
+                List<UsageRecord> updated = context.usageTracker().track(router, current, LocalDate.now());
                 return new Snapshot(current, updated);
             }
         };

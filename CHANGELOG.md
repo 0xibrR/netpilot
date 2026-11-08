@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Side menu in groups that new pages can join: Home; Hotspot management (Create cards, Manage users, Card
+  design); Reports and money (Points of sale, Earnings and sales, Print history); Settings. Entries inside a
+  group have their own small icon, and `Ctrl+1`…`Ctrl+8` follow the menu order
 - Earnings & sales counts only cards created by NetPilot: users made by hand on the router (admins, own
   devices, monthly users) are not sales, so they no longer add to sold cards or revenue or raise the
   "used before recording" warning; under All time they still show as the "Other" row
@@ -29,6 +32,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Points of sale: hand cards to resellers (from the new page, Manage users or after sending a batch), see
+  what each received, sold, paid and still owes, record partial payments and cancel mistaken ones, take back
+  unsold cards and export a statement. Everything comes from an append-only ledger
+  (`reseller-ledger.csv`): each handover freezes the card's price and commission, a sale (first use) is
+  recorded once and takes its figures from its handover, and nothing is ever edited or removed, so the
+  accounts stay right after price or commission changes and after cards are deleted from the router
 - Data-limit cards: an optional data limit (MB/GB, upload and download together) on Create cards, sent as
   RouterOS `limit-bytes-total` and in `.rsc` scripts; a card ends when its time or its data runs out first,
   Manage users shows the limit, cards and receipts print it, and "Delete expired" and the automatic clean-up

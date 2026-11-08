@@ -651,7 +651,8 @@
     -fx-background-radius: 0;
     -fx-text-fill: -np-chrome-text;
     -fx-alignment: center-left;
-    -fx-padding: 7 14 7 42;
+    -fx-padding: 7 14 7 30;
+    -fx-graphic-text-gap: 9;
 }
 
 .nav-sub:hover {
@@ -661,8 +662,8 @@
 .nav-sub:selected {
     -fx-background-color: -np-chrome-bg-2;
     -fx-border-color: transparent transparent transparent -np-accent;
-    -fx-border-width: 0 0 0 3;
-    -fx-text-fill: -np-accent;
+    -fx-border-width: 0 0 0 4;
+    -fx-text-fill: -np-chrome-text; /* readable whatever the main colour (grey, yellow...) */
     -fx-font-weight: bold;
 }
 
@@ -703,4 +704,14 @@
 
 .stock-card .card-title, .stock-text {
     -fx-text-fill: -np-warning;
+}
+
+/* Small icons of the entries inside a menu group; the selected one takes the accent colour */
+.nav-sub .icon {
+    -fx-scale-x: 0.85;
+    -fx-scale-y: 0.85;
+}
+
+.nav-sub:selected .icon {
+    -fx-stroke: -np-chrome-text;
 }

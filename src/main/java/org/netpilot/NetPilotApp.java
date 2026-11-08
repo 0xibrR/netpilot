@@ -17,6 +17,7 @@ import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.HotspotController;
 import org.netpilot.controller.MainController;
 import org.netpilot.controller.ReportsController;
+import org.netpilot.controller.ResellersController;
 import org.netpilot.controller.RouterConnectionController;
 import org.netpilot.controller.RouterUsersController;
 import org.netpilot.controller.SettingsController;
@@ -149,6 +150,9 @@ public class NetPilotApp extends Application {
             }
             if (type == HotspotController.class) {
                 return new HotspotController(context);
+            }
+            if (type == ResellersController.class) {
+                return new ResellersController(context);
             }
             if (type == SettingsController.class) {
                 return new SettingsController(context);

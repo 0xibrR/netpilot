@@ -11,9 +11,10 @@ enum PageId {
 
     DASHBOARD("dashboard-view.fxml", Icons.DASHBOARD, false),
     GENERATE("generate-view.fxml", Icons.TICKET, false),
-    HOTSPOT("hotspot-view.fxml", Icons.WIFI, true),
-    REPORTS("reports-view.fxml", Icons.CHART, true),
+    HOTSPOT("hotspot-view.fxml", Icons.USERS, true),
     DESIGN("voucher-design-view.fxml", Icons.PALETTE, false),
+    RESELLERS("resellers-view.fxml", Icons.STORE, false),
+    REPORTS("reports-view.fxml", Icons.CHART, true),
     HISTORY("history-view.fxml", Icons.HISTORY, false),
     SETTINGS("settings-view.fxml", Icons.SETTINGS, false);
 

@@ -41,6 +41,8 @@
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="cancelButton" text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
             <Button fx:id="closeButton" text="%button.close" onAction="#onClose" visible="false" managed="false"/>
+            <Button fx:id="handoverButton" text="%upload.handover" onAction="#onHandover" visible="false"
+                    managed="false"/>
             <Button fx:id="receiptButton" text="%upload.receipts" onAction="#onReceipts" visible="false"
                     managed="false"/>
             <Button fx:id="printButton" text="%upload.print" onAction="#onPrint" styleClass="primary"

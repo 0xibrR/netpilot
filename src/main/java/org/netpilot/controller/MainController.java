@@ -324,8 +324,8 @@ public class MainController implements RouterSession.Listener {
 
             @Override
             protected RouterUserActions.BulkResult call() throws Exception {
-                return new ExpiredCleanup(context.reportService(), context.usageRepository(),
-                        context.routerUserActions()).run(target, java.time.LocalDate.now());
+                return new ExpiredCleanup(context.usageTracker(), context.routerUserActions()).run(target,
+                        java.time.LocalDate.now());
             }
         };
         task.setOnSucceeded(e -> {

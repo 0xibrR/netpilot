@@ -42,7 +42,37 @@ class ExpiredCleanupTest {
                 .connect(new RouterEndpoint("127.0.0.1", router.port(), false, USER), PASSWORD.toCharArray(), null)
                 .client();
         usage = new UsageRepository(dir.resolve("usage.csv"));
-        cleanup = new ExpiredCleanup(new ReportService(), usage, new RouterUserActions());
+        accounts = new org.netpilot.service.ResellerAccounts(new org.netpilot.repository.ResellerRepository(
+                dir.resolve("r.csv"), dir.resolve("ledger.csv")), java.time.Clock.systemUTC());
+        cleanup = new ExpiredCleanup(new org.netpilot.service.UsageTracker(new ReportService(), usage, accounts),
+                new RouterUserActions());
+    }
+
+    private org.netpilot.service.ResellerAccounts accounts;
+
+    @Test
+    void aPointOfSaleKeepsTheSaleOfACardTheCleanUpDeletes() throws Exception {
+        usage.saveAll(java.util.List.of(new UsageRecord(client.endpoint().address(), "old", "2M", BATCH,
+                Optional.empty())));
+        router.addUser("sold-card", "p", "1M", "", BATCH, "0s", 0, 0, false);
+        var shop = accounts.save(new org.netpilot.model.Reseller("shop", "Shop", "",
+                org.netpilot.model.Reseller.CommissionType.PERCENT, java.math.BigDecimal.TEN,
+                org.netpilot.model.Reseller.Billing.ON_SALE));
+        accounts.handOver(shop, java.util.List.of(new org.netpilot.service.ResellerAccounts.Card(
+                client.endpoint().address(), "sold-card", "1M")), java.util.Map.of("1M", "1000"), false);
+        // the customer uses up the card while NetPilot is closed: one hour of a one-hour card
+        router.users().values().stream().filter(u -> u.name().equals("sold-card")).findFirst().orElseThrow();
+        String usedUp = router.addUser("sold-card-2", "p", "1M", "1h", BATCH, "1h", 10, 10, false);
+        accounts.handOver(shop, java.util.List.of(new org.netpilot.service.ResellerAccounts.Card(
+                client.endpoint().address(), "sold-card-2", "1M")), java.util.Map.of("1M", "1000"), false);
+
+        BulkResult result = cleanup.run(client, TODAY);
+
+        assertEquals(1, result.succeeded());
+        assertTrue(router.users().values().stream().noneMatch(u -> u.id().equals(usedUp)), "deleted from the router");
+        var statement = accounts.statements().getFirst();
+        assertEquals(1, statement.sold(), "the deleted card is still the shop's sale");
+        assertEquals(new java.math.BigDecimal("900"), statement.owes(), "1000 minus 10% commission");
     }
 
     @AfterEach

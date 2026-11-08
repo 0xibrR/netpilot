@@ -77,6 +77,9 @@ public class UploadController {
     @FXML
     private Button receiptButton;
     private boolean receiptsRequested;
+    @FXML
+    private Button handoverButton;
+    private boolean handoverRequested;
 
     public UploadController(AppContext context) {
         this.context = context;
@@ -127,6 +130,17 @@ public class UploadController {
     /** Whether the user asked to print vouchers for the created users. */
     public boolean printRequested() {
         return printRequested;
+    }
+
+    /** Whether the user asked to hand the created cards to a point of sale. */
+    public boolean handoverRequested() {
+        return handoverRequested;
+    }
+
+    @FXML
+    private void onHandover() {
+        handoverRequested = true;
+        stage().close();
     }
 
     /** Whether the user asked for receipts (thermal printer) for the created users. */
@@ -181,6 +195,7 @@ public class UploadController {
             setVisible(undoButton, false);
             setVisible(printButton, false);
             setVisible(receiptButton, false);
+            setVisible(handoverButton, false);
             closeButton.setDisable(true);
             headerLabel.setText(Messages.get("users.deleting", count));
         });
@@ -246,6 +261,7 @@ public class UploadController {
         boolean anyCreated = !result.created().isEmpty();
         setVisible(printButton, anyCreated);
         setVisible(receiptButton, anyCreated);
+        setVisible(handoverButton, anyCreated);
         setVisible(undoButton, anyCreated);
         printButton.setText(Messages.get("upload.printCount", result.created().size()));
         receiptButton.setText(Messages.get("upload.receiptsCount", result.created().size()));
