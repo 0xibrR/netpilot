@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
+import org.netpilot.model.CardValidity;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
@@ -83,11 +84,11 @@ final class RestRouterClient implements RouterClient {
     @Override
     public List<HotspotProfile> hotspotProfiles() throws RouterException {
         List<HotspotProfile> profiles = new ArrayList<>();
-        for (JsonNode item : array(get(PROFILES, ".id,name,rate-limit,shared-users"), "hotspot profiles")) {
+        for (JsonNode item : array(get(PROFILES, ".id,name,rate-limit,shared-users,on-login"), "hotspot profiles")) {
             String name = text(item, "name");
             if (!name.isEmpty()) {
                 profiles.add(new HotspotProfile(text(item, ".id"), name, text(item, "rate-limit"),
-                        (int) Math.max(1, number(item, "shared-users"))));
+                        (int) Math.max(1, number(item, "shared-users")), text(item, "on-login")));
             }
         }
         return List.copyOf(profiles);
@@ -124,7 +125,25 @@ final class RestRouterClient implements RouterClient {
         return JSON.createObjectNode()
                 .put("name", profile.name())
                 .put("rate-limit", profile.speed().format())
-                .put("shared-users", String.valueOf(profile.sharedUsers()));
+                .put("shared-users", String.valueOf(profile.sharedUsers()))
+                .put("on-login", profile.onLogin());
+    }
+
+    @Override
+    public Map<String, String> cardExpiries() throws RouterException {
+        Map<String, String> ends = new java.util.TreeMap<>();
+        for (JsonNode item : array(get("/system/scheduler", "name,next-run"), "scheduler")) {
+            String name = text(item, "name");
+            if (name.startsWith(CardValidity.TASK_PREFIX) && name.length() > CardValidity.TASK_PREFIX.length()) {
+                ends.put(name.substring(CardValidity.TASK_PREFIX.length()), text(item, "next-run"));
+            }
+        }
+        return ends;
+    }
+
+    @Override
+    public boolean clockSynced() throws RouterException {
+        return "true".equals(text(get("/system/ntp/client", "enabled"), "enabled"));
     }
 
     @Override

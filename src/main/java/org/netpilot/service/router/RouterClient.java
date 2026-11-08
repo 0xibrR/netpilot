@@ -77,6 +77,17 @@ public interface RouterClient extends AutoCloseable {
      */
     Map<String, String> hotspotPasswords(Collection<String> routerIds) throws RouterException;
 
+    /**
+     * When cards with a validity end, from the router's scheduler tasks (see
+     * {@link org.netpilot.model.CardValidity}).
+     *
+     * @return the end time as RouterOS shows it ({@code 2026-11-15 10:00:00}) per card name
+     */
+    Map<String, String> cardExpiries() throws RouterException;
+
+    /** Whether the router sets its clock from the internet (NTP client enabled). */
+    boolean clockSynced() throws RouterException;
+
     @Override
     void close();
 }

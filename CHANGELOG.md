@@ -29,6 +29,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Card validity counted from the first login (for example 7 days), set per package in the package editor:
+  the router enforces it itself through the package's on-login script, so it works while NetPilot is closed;
+  Manage users shows when each card ends, and a warning appears when the router does not take its time from
+  the internet
 - "Delete expired" on Manage users removes every card that used up its time, after one confirmation;
   their sales are saved first, so Earnings & sales still counts them
 - Ready for development on macOS: CI also builds on macOS, and `.idea/misc.xml` (local JDK name) is no longer tracked

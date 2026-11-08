@@ -18,6 +18,7 @@ import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.RateLimit;
+import org.netpilot.model.TimeLimit;
 
 /**
  * Dialog to add or change a hotspot profile: name, download and upload speed in the user's own
@@ -45,6 +46,7 @@ final class ProfileEditor {
         Speed upload = new Speed(speed.upload());
         Spinner<Integer> shared = new Spinner<>(1, 1000, start.sharedUsers());
         shared.setEditable(true);
+        Validity validity = new Validity(start.validity());
         Label problems = new Label();
         problems.getStyleClass().add("status-error");
         problems.setWrapText(true);
@@ -57,12 +59,13 @@ final class ProfileEditor {
         form.addRow(1, new Label(Messages.get("profile.download")), download.box());
         form.addRow(2, new Label(Messages.get("profile.upload")), upload.box());
         form.addRow(3, new Label(Messages.get("profile.sharedUsers")), shared);
+        form.addRow(4, new Label(Messages.get("profile.validity")), validity.box());
         Label hint = new Label(Messages.get("profile.hint"));
         hint.getStyleClass().add("muted");
         hint.setWrapText(true);
         hint.setMaxWidth(380);
-        form.add(hint, 0, 4, 2, 1);
-        form.add(problems, 0, 5, 2, 1);
+        form.add(hint, 0, 5, 2, 1);
+        form.add(problems, 0, 6, 2, 1);
 
         Dialog<HotspotProfile> dialog = new Dialog<>();
         dialog.initOwner(owner);
@@ -76,21 +79,53 @@ final class ProfileEditor {
 
         // keep the dialog open while the input is not valid
         dialog.getDialogPane().lookupButton(save).addEventFilter(javafx.event.ActionEvent.ACTION, e -> {
-            List<String> errors = profile(start, name, download, upload, shared).validate();
+            List<String> errors = profile(start, name, download, upload, shared, validity).validate();
             if (!errors.isEmpty()) {
                 problems.setText(String.join("\n", errors));
                 e.consume();
             }
         });
-        dialog.setResultConverter(button -> button == save ? profile(start, name, download, upload, shared) : null);
+        dialog.setResultConverter(
+                button -> button == save ? profile(start, name, download, upload, shared, validity) : null);
         javafx.application.Platform.runLater(name::requestFocus);
         return dialog.showAndWait();
     }
 
     private static HotspotProfile profile(HotspotProfile start, TextField name, Speed download, Speed upload,
-            Spinner<Integer> shared) {
+            Spinner<Integer> shared, Validity validity) {
         String limit = new RateLimit(upload.value(), download.value()).format();
-        return new HotspotProfile(start.routerId(), name.getText(), limit, shared.getValue());
+        // keeps the profile's own on-login script; only NetPilot's validity part changes
+        return new HotspotProfile(start.routerId(), name.getText(), limit, shared.getValue(), start.onLogin())
+                .withValidity(validity.value());
+    }
+
+    /** How long a card works after its first login: a number and a unit; empty means always. */
+    private static final class Validity {
+
+        private final TextField amount = new TextField();
+        private final ComboBox<TimeLimit.Unit> unit = new ComboBox<>();
+
+        Validity(Optional<TimeLimit> start) {
+            amount.setPrefColumnCount(5);
+            amount.setPromptText(Messages.get("profile.validity.none"));
+            amount.setTextFormatter(new TextFormatter<>(c -> c.getControlNewText().matches("\\d{0,5}") ? c : null));
+            unit.getItems().setAll(TimeLimit.Unit.values());
+            unit.setValue(start.map(TimeLimit::unit).orElse(TimeLimit.Unit.DAYS));
+            start.ifPresent(v -> amount.setText(String.valueOf(v.amount())));
+        }
+
+        HBox box() {
+            HBox box = new HBox(6, amount, unit);
+            box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            return box;
+        }
+
+        Optional<TimeLimit> value() {
+            String n = amount.getText().strip();
+            return n.isEmpty() || Long.parseLong(n) == 0
+                    ? Optional.empty()
+                    : Optional.of(new TimeLimit(Long.parseLong(n), unit.getValue()));
+        }
     }
 
     /** A number and its unit; an empty number means no limit. */

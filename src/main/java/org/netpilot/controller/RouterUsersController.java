@@ -82,6 +82,8 @@ public class RouterUsersController {
     private RouterClient client;
     private Consumer<List<HotspotUser>> printer;
     private Map<String, List<ActiveSession>> sessionsByUser = Map.of();
+    /** When each card with a validity ends, by card name (from the router's scheduler). */
+    private Map<String, String> expiries = Map.of();
 
     @FXML
     private TextField searchField;
@@ -109,6 +111,8 @@ public class RouterUsersController {
     private TreeTableColumn<Row, Duration> usedColumn;
     @FXML
     private TreeTableColumn<Row, String> limitColumn;
+    @FXML
+    private TreeTableColumn<Row, String> expiresColumn;
     @FXML
     private TreeTableColumn<Row, Long> uploadColumn;
     @FXML
@@ -195,7 +199,7 @@ public class RouterUsersController {
 
             @Override
             protected Snapshot call() throws Exception {
-                return new Snapshot(target.hotspotUsers(), target.activeSessions());
+                return Snapshot.read(target);
             }
         };
         task.setOnSucceeded(e -> {
@@ -217,6 +221,7 @@ public class RouterUsersController {
     void stop() {
         client = null;
         sessionsByUser = Map.of();
+        expiries = Map.of();
         users = List.of();
         applyFilter();
     }
@@ -229,7 +234,7 @@ public class RouterUsersController {
         if (target == null) {
             return;
         }
-        run(Messages.get("users.loading"), () -> new Snapshot(target.hotspotUsers(), target.activeSessions()),
+        run(Messages.get("users.loading"), () -> Snapshot.read(target),
                 this::show);
     }
 
@@ -329,11 +334,24 @@ public class RouterUsersController {
     // ------------------------------------------------------------------ data
 
     /** Everything one refresh reads from the router. */
-    private record Snapshot(List<RouterUser> users, List<ActiveSession> sessions) {
+    private record Snapshot(List<RouterUser> users, List<ActiveSession> sessions, Map<String, String> expiries) {
+
+        static Snapshot read(RouterClient target) throws RouterException {
+            Map<String, String> ends;
+            try {
+                ends = target.cardExpiries();
+            } catch (RouterException e) {
+                // a login without scheduler rights still sees its cards, just without end dates
+                LOG.log(System.Logger.Level.DEBUG, "Cannot read card validity ends", e);
+                ends = Map.of();
+            }
+            return new Snapshot(target.hotspotUsers(), target.activeSessions(), ends);
+        }
     }
 
     private void show(Snapshot snapshot) {
         sessionsByUser = snapshot.sessions().stream().collect(Collectors.groupingBy(ActiveSession::user));
+        expiries = snapshot.expiries();
         users = List.copyOf(snapshot.users());
         keepChoices(batchBox, allBatches, users.stream()
                 .map(RouterUser::comment)
@@ -348,7 +366,7 @@ public class RouterUsersController {
 
     /** Nothing changed: leave the table alone (no flicker). */
     private boolean changed(Snapshot snapshot) {
-        return !snapshot.users().equals(users) || !snapshot.sessions().stream()
+        return !snapshot.expiries().equals(expiries) || !snapshot.users().equals(users) || !snapshot.sessions().stream()
                 .collect(Collectors.groupingBy(ActiveSession::user)).equals(sessionsByUser);
     }
 
@@ -548,6 +566,7 @@ public class RouterUsersController {
         usedColumn.setCellFactory(column -> new FormattedCell<>(RouterDuration::clock));
 
         limitColumn.setCellValueFactory(c -> text(c, u -> u.limit().map(RouterDuration::format).orElse("∞")));
+        expiresColumn.setCellValueFactory(c -> text(c, u -> expiries.getOrDefault(u.name(), "")));
 
         // like WinBox: Bytes In is what the customer sent (upload), Bytes Out what they received
         uploadColumn.setCellValueFactory(

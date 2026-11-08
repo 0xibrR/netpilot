@@ -83,6 +83,8 @@ public class HotspotController implements Page {
     @FXML
     private TableColumn<HotspotProfile, String> profileSharedColumn;
     @FXML
+    private TableColumn<HotspotProfile, String> profileValidityColumn;
+    @FXML
     private Button newProfileButton;
     @FXML
     private Button editProfileButton;
@@ -128,6 +130,9 @@ public class HotspotController implements Page {
         profileUploadColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(speed(c.getValue().speed().upload())));
         profileSharedColumn.setCellValueFactory(
                 c -> new ReadOnlyStringWrapper(String.valueOf(c.getValue().sharedUsers())));
+        profileValidityColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().validity()
+                .map(v -> v.amount() + " " + v.unit())
+                .orElse("—")));
         var noProfile = profilesTable.getSelectionModel().selectedItemProperty().isNull();
         editProfileButton.disableProperty().bind(noProfile);
         deleteProfileButton.disableProperty().bind(noProfile.or(Bindings.createBooleanBinding(
@@ -267,9 +272,27 @@ public class HotspotController implements Page {
         if (target == null) {
             return;
         }
-        ProfileEditor.show(workspace.window(), null)
-                .ifPresent(profile -> run(() -> target.createHotspotProfile(profile),
-                        id -> afterProfileChange(Messages.get("profile.added", profile.name()))));
+        ProfileEditor.show(workspace.window(), null).ifPresent(profile -> run(() -> {
+            target.createHotspotProfile(profile);
+            return clockUnsafe(target, profile);
+        }, unsafe -> afterProfileChange(Messages.get("profile.added", profile.name()), unsafe)));
+    }
+
+    /**
+     * Card validity counts on the router's clock. A router without a battery clock (like the hEX)
+     * starts at a wrong time after a power cut, so without internet time cards could end early or
+     * late. Only checked; NetPilot never changes this router setting.
+     */
+    private static boolean clockUnsafe(RouterClient target, HotspotProfile profile) {
+        if (profile.validity().isEmpty()) {
+            return false;
+        }
+        try {
+            return !target.clockSynced();
+        } catch (RouterException e) {
+            LOG.log(System.Logger.Level.DEBUG, "Cannot read the NTP client setting", e);
+            return false; // unknown: no warning rather than a wrong one
+        }
     }
 
     @FXML
@@ -281,8 +304,8 @@ public class HotspotController implements Page {
         }
         ProfileEditor.show(workspace.window(), selected).ifPresent(profile -> run(() -> {
             target.updateHotspotProfile(profile);
-            return profile;
-        }, done -> afterProfileChange(Messages.get("profile.saved", profile.name()))));
+            return clockUnsafe(target, profile);
+        }, unsafe -> afterProfileChange(Messages.get("profile.saved", profile.name()), unsafe)));
     }
 
     @FXML
@@ -304,8 +327,17 @@ public class HotspotController implements Page {
 
     /** Reloads the lists, so Create cards and Voucher design see the change too. */
     private void afterProfileChange(String message) {
+        afterProfileChange(message, false);
+    }
+
+    /** @param clockUnsafe the profile has a card validity but the router does not set its clock from the internet */
+    private void afterProfileChange(String message, boolean clockUnsafe) {
         workspace.router().refresh();
         workspace.toast("✓ " + message);
+        if (clockUnsafe) {
+            Dialogs.info(workspace.window(), Messages.get("profile.validity.ntp.title"),
+                    Messages.get("profile.validity.ntp.body"));
+        }
     }
 
     @FXML

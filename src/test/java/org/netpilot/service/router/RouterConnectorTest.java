@@ -72,9 +72,10 @@ class RouterConnectorTest {
                 client.deleteHotspotProfile("*1");
 
                 assertEquals("*9", id);
-                assertEquals("{\"name\":\"Fiber-1G\",\"rate-limit\":\"100M/1G\",\"shared-users\":\"3\"}",
+                assertEquals(
+                        "{\"name\":\"Fiber-1G\",\"rate-limit\":\"100M/1G\",\"shared-users\":\"3\",\"on-login\":\"\"}",
                         router.lastProfileWrite("PUT /rest/ip/hotspot/user/profile"));
-                assertEquals("{\"name\":\"2M\",\"rate-limit\":\"\",\"shared-users\":\"1\"}",
+                assertEquals("{\"name\":\"2M\",\"rate-limit\":\"\",\"shared-users\":\"1\",\"on-login\":\"\"}",
                         router.lastProfileWrite("PATCH /rest/ip/hotspot/user/profile/*1"),
                         "an empty speed removes the limit");
                 assertEquals("", router.lastProfileWrite("DELETE /rest/ip/hotspot/user/profile/*1"));
@@ -106,6 +107,34 @@ class RouterConnectorTest {
                         "2M/2M", 1)), client.hotspotProfiles());
                 assertEquals(List.of(new HotspotServer("hotspot1", "bridge_hotspot", false),
                         new HotspotServer("old", "ether5", true)), client.hotspotServers());
+            }
+        }
+
+        @Test
+        void readsCardValidityExpiriesAndClockSync() throws Exception {
+            try (FakeRouter router = FakeRouter.http(USER, PASSWORD);
+                    RouterClient client = connector.connect(http(router.port()), PASSWORD.toCharArray(), null)
+                            .client()) {
+                String script = org.netpilot.model.CardValidity.apply(":log info hi",
+                        java.util.Optional
+                                .of(new org.netpilot.model.TimeLimit(3, org.netpilot.model.TimeLimit.Unit.DAYS)));
+                router.route("/rest/ip/hotspot/user/profile", 200, "[{\".id\":\"*1\",\"name\":\"1M\",\"on-login\":"
+                        + tools.jackson.databind.json.JsonMapper.shared().writeValueAsString(script) + "}]");
+                router.route("/rest/system/scheduler", 200, "[{\"name\":\"np-exp-48291\",\"next-run\":"
+                        + "\"2026-11-15 10:00:00\"},{\"name\":\"backup\",\"next-run\":\"2026-11-09 03:00:00\"},"
+                        + "{\"name\":\"np-exp-\"}]");
+                router.route("/rest/system/ntp/client", 200, "{\"enabled\":\"true\",\"mode\":\"unicast\"}");
+
+                HotspotProfile profile = client.hotspotProfiles().getFirst();
+
+                assertEquals(script, profile.onLogin());
+                assertEquals(java.util.Optional.of(new org.netpilot.model.TimeLimit(3,
+                        org.netpilot.model.TimeLimit.Unit.DAYS)), profile.validity());
+                assertEquals(java.util.Map.of("48291", "2026-11-15 10:00:00"), client.cardExpiries(),
+                        "only NetPilot's tasks, each with a card name");
+                assertTrue(client.clockSynced());
+                router.route("/rest/system/ntp/client", 200, "{\"enabled\":\"false\"}");
+                assertFalse(client.clockSynced());
             }
         }
 

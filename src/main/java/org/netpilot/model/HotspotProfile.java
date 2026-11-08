@@ -13,8 +13,10 @@ import org.netpilot.i18n.Messages;
  * @param name        profile name used when creating users, e.g. {@code 2M} or {@code Fiber-1G}
  * @param rateLimit   RouterOS rate limit ({@code upload/download}, e.g. {@code 10M/1000M}), empty = no limit
  * @param sharedUsers devices that may use one card at the same time (at least 1)
+ * @param onLogin     the profile's RouterOS {@code on-login} script, with the card validity part
+ *                    (see {@link CardValidity}); empty when there is none
  */
-public record HotspotProfile(String routerId, String name, String rateLimit, int sharedUsers) {
+public record HotspotProfile(String routerId, String name, String rateLimit, int sharedUsers, String onLogin) {
 
     public static final int MAX_NAME = 40;
 
@@ -24,11 +26,27 @@ public record HotspotProfile(String routerId, String name, String rateLimit, int
         name = name.strip();
         rateLimit = rateLimit == null ? "" : rateLimit.strip();
         sharedUsers = Math.max(1, sharedUsers);
+        onLogin = onLogin == null ? "" : onLogin;
+    }
+
+    /** A profile without an on-login script. */
+    public HotspotProfile(String routerId, String name, String rateLimit, int sharedUsers) {
+        this(routerId, name, rateLimit, sharedUsers, "");
     }
 
     /** A profile as listed before ids were read; one device per card. */
     public HotspotProfile(String name, String rateLimit) {
         this("", name, rateLimit, 1);
+    }
+
+    /** Days (or hours…) a card stays valid after its first login; empty when unlimited. */
+    public java.util.Optional<TimeLimit> validity() {
+        return CardValidity.read(onLogin);
+    }
+
+    /** The same profile with this validity; the user's own on-login lines are kept. */
+    public HotspotProfile withValidity(java.util.Optional<TimeLimit> validity) {
+        return new HotspotProfile(routerId, name, rateLimit, sharedUsers, CardValidity.apply(onLogin, validity));
     }
 
     /** The built-in profile; RouterOS does not allow deleting it. */

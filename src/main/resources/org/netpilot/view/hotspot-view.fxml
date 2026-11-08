@@ -66,6 +66,7 @@
                         <TableColumn fx:id="profileDownloadColumn" text="%profile.download" prefWidth="120"/>
                         <TableColumn fx:id="profileUploadColumn" text="%profile.upload" prefWidth="120"/>
                         <TableColumn fx:id="profileSharedColumn" text="%profile.sharedUsers" prefWidth="110"/>
+                        <TableColumn fx:id="profileValidityColumn" text="%profile.validity" prefWidth="110"/>
                         <TableColumn fx:id="profilePriceColumn" text="%report.column.price" prefWidth="120"/>
                     </columns>
                     <placeholder>
