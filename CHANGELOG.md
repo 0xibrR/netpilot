@@ -26,6 +26,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- "Delete expired" on Manage users removes every card that used up its time, after one confirmation;
+  their sales are saved first, so Earnings & sales still counts them
 - Ready for development on macOS: CI also builds on macOS, and `.idea/misc.xml` (local JDK name) is no longer tracked
 - Your own speeds: no built-in speed list any more; **Hotspot → User profiles** adds, edits and deletes profiles
   with any download/upload speed (k, M or G, e.g. 1 G) and devices per card

@@ -169,7 +169,8 @@ public class DashboardController implements Page {
     private void show(Figures figures) {
         List<RouterUser> cards = figures.users().stream().filter(u -> !u.builtIn()).toList();
         usersValue.setText(String.valueOf(cards.size()));
-        onlineValue.setText(String.valueOf(figures.online().size()));
+        // only cards: the router can also list sessions of names that are not hotspot users here
+        onlineValue.setText(String.valueOf(cards.stream().filter(c -> figures.online().contains(c.name())).count()));
         unusedValue.setText(String.valueOf(cards.stream().filter(RouterUser::neverUsed).count()));
         expiredValue.setText(String.valueOf(cards.stream().filter(RouterUser::expired).count()));
         revenueValue.setText(figures.report().revenue().format());

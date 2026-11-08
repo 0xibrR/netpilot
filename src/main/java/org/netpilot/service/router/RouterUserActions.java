@@ -50,6 +50,11 @@ public final class RouterUserActions {
         });
     }
 
+    /** Cards that used up their whole time limit, without RouterOS's own trial user. */
+    public static List<RouterUser> expired(List<RouterUser> users) {
+        return users.stream().filter(u -> u.expired() && !u.builtIn()).toList();
+    }
+
     /** "Select all" must never take RouterOS's own trial user with it. */
     private static void protectBuiltIn(RouterUser user) throws RouterException {
         if (user.builtIn()) {

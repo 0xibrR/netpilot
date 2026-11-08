@@ -167,4 +167,19 @@ class RouterUserActionsTest {
         assertThrows(IllegalArgumentException.class, () -> client.disconnect("1;/system/reboot"));
         assertThrows(IllegalArgumentException.class, () -> client.setHotspotUserDisabled("../x", true));
     }
+
+    @Test
+    void picksOnlyCardsThatUsedUpTheirTime() {
+        RouterUser used = card("used", "1h", Duration.ofHours(1));
+        RouterUser over = card("over", "30m", Duration.ofMinutes(45));
+        RouterUser left = card("left", "1h", Duration.ofMinutes(10));
+        RouterUser unlimited = card("unlimited", "", Duration.ofHours(9));
+        RouterUser trial = card("default-trial", "1h", Duration.ofHours(2));
+
+        assertEquals(List.of(used, over), RouterUserActions.expired(List.of(used, over, left, unlimited, trial)));
+    }
+
+    private static RouterUser card(String name, String limit, Duration uptime) {
+        return new RouterUser("*1", name, "1M", "all", uptime, limit, 10, 10, false, "");
+    }
 }

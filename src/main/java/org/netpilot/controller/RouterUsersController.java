@@ -1,6 +1,7 @@
 package org.netpilot.controller;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -42,6 +43,7 @@ import org.netpilot.model.RouterUser;
 import org.netpilot.model.UserFilter;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
+import org.netpilot.service.router.RouterUserActions;
 import org.netpilot.service.router.RouterUserActions.BulkResult;
 
 /**
@@ -129,6 +131,8 @@ public class RouterUsersController {
     private Button deleteButton;
     @FXML
     private Button printButton;
+    @FXML
+    private Button deleteExpiredButton;
 
     public RouterUsersController(AppContext context) {
         this.context = context;
@@ -154,12 +158,14 @@ public class RouterUsersController {
             action.disableProperty().bind(noSelection.or(busy));
         }
         refreshButton.disableProperty().bind(busy);
+        deleteExpiredButton.disableProperty().bind(busy);
         usersTable.getSelectionModel().getSelectedItems()
                 .addListener((ListChangeListener<TreeItem<Row>>) c -> updateSummary());
         enableButton.setGraphic(Icons.of(Icons.CHECK));
         disableButton.setGraphic(Icons.of(Icons.PAUSE));
         disconnectButton.setGraphic(Icons.of(Icons.UNPLUG));
         deleteButton.setGraphic(Icons.of(Icons.CROSS));
+        deleteExpiredButton.setGraphic(Icons.of(Icons.CROSS));
         printButton.setGraphic(Icons.of(Icons.PRINTER));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
     }
@@ -279,6 +285,31 @@ public class RouterUsersController {
         }
         bulk(Messages.get("users.deleting", selected.size()),
                 () -> context.routerUserActions().delete(client, selected));
+    }
+
+    /**
+     * Deletes every card that used up its time. Their sales are saved first, so the Earnings page
+     * still counts them after they are gone from the router.
+     */
+    @FXML
+    private void onDeleteExpired() {
+        List<RouterUser> expired = RouterUserActions.expired(users);
+        if (expired.isEmpty()) {
+            Dialogs.info(stage(), Messages.get("users.deleteExpired.none.title"),
+                    Messages.get("users.deleteExpired.none.body"));
+            return;
+        }
+        if (!Dialogs.confirm(stage(), Messages.get("users.deleteExpired.title", expired.size()),
+                Messages.get("users.deleteExpired.body"))) {
+            return;
+        }
+        List<RouterUser> all = users;
+        bulk(Messages.get("users.deleting", expired.size()), () -> {
+            String router = client.endpoint().address();
+            context.usageRepository().saveAll(context.reportService().track(router, all,
+                    context.usageRepository().findAll(), LocalDate.now()));
+            return context.routerUserActions().delete(client, expired);
+        });
     }
 
     @FXML
