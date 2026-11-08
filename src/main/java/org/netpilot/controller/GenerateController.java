@@ -325,6 +325,9 @@ public class GenerateController implements Page {
             if (upload.printRequested()) {
                 exportUsers(report.createdUsers());
             }
+            if (upload.receiptsRequested()) {
+                workspace.printReceipts(report.createdUsers());
+            }
         });
     }
 
@@ -442,14 +445,14 @@ public class GenerateController implements Page {
         }
         GenerationSettings generation = readGenerationSettings();
         workspace.updateSettings(s -> new AppSettings(generation, loginUrlField.getText(), perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui()));
+                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui(), s.receipt()));
     }
 
     /** The shared settings with this page's current fields. */
     private AppSettings currentAppSettings() {
         AppSettings s = workspace.settings();
         return new AppSettings(readGenerationSettings(), loginUrlField.getText(), perRowSpinner.getValue(),
-                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui());
+                Path.of(outputDirField.getText()), s.router(), s.voucherTemplate(), s.ui(), s.receipt());
     }
 
     private GenerationSettings readGenerationSettings() {

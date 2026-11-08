@@ -685,3 +685,12 @@
 .tree-table-cell.state-offline {
     -fx-text-fill: #d64545;
 }
+
+/* Receipt preview on Card design: white paper in every theme, like the A4 card preview */
+.receipt-paper {
+    -fx-background-color: white;
+    -fx-border-color: #c8ced6;
+    -fx-border-width: 1;
+    -fx-padding: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 6, 0, 0, 2);
+}

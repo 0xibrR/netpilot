@@ -12,6 +12,8 @@ import java.util.Objects;
  * @param outputDirectory where export folders are created
  * @param router          last router endpoint and trusted HTTPS certificates
  * @param voucherTemplate how printed vouchers look
+ * @param ui              language, theme and colour
+ * @param receipt         receipt printer and paper width
  */
 public record AppSettings(
         GenerationSettings generation,
@@ -20,7 +22,8 @@ public record AppSettings(
         Path outputDirectory,
         RouterSettings router,
         VoucherTemplate voucherTemplate,
-        UiPreferences ui) {
+        UiPreferences ui,
+        ReceiptSettings receipt) {
 
     public static final int MIN_PER_ROW = 2;
     public static final int MAX_PER_ROW = 8;
@@ -33,23 +36,38 @@ public record AppSettings(
         router = router == null ? RouterSettings.defaults() : router;
         voucherTemplate = voucherTemplate == null ? VoucherTemplate.defaults() : voucherTemplate;
         ui = ui == null ? UiPreferences.defaults() : ui;
+        receipt = receipt == null ? ReceiptSettings.defaults() : receipt;
+    }
+
+    /** Settings with the default receipt printer. */
+    public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
+            RouterSettings router, VoucherTemplate voucherTemplate, UiPreferences ui) {
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui, null);
     }
 
     /** Settings with the default interface preferences. */
     public AppSettings(GenerationSettings generation, String loginUrl, int vouchersPerRow, Path outputDirectory,
             RouterSettings router, VoucherTemplate voucherTemplate) {
-        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null);
+        this(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, null, null);
     }
 
     public AppSettings withRouter(RouterSettings newRouter) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate, ui);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, newRouter, voucherTemplate, ui,
+                receipt);
     }
 
     public AppSettings withVoucherTemplate(VoucherTemplate newTemplate) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate, ui);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, newTemplate, ui,
+                receipt);
     }
 
     public AppSettings withUi(UiPreferences newUi) {
-        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, newUi);
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, newUi,
+                receipt);
+    }
+
+    public AppSettings withReceipt(ReceiptSettings newReceipt) {
+        return new AppSettings(generation, loginUrl, vouchersPerRow, outputDirectory, router, voucherTemplate, ui,
+                newReceipt);
     }
 }

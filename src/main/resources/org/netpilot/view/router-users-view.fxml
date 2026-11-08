@@ -21,6 +21,7 @@
                 <Button fx:id="deleteExpiredButton" text="%users.deleteExpired" onAction="#onDeleteExpired"
                         styleClass="tool-button, danger"/>
                 <Button fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="tool-button"/>
+                <Button fx:id="receiptButton" text="%users.receipt" onAction="#onPrintReceipt" styleClass="tool-button"/>
                 <Separator orientation="VERTICAL"/>
                 <Button text="%users.selectAll" onAction="#onSelectAll" styleClass="tool-button"/>
                 <Region HBox.hgrow="ALWAYS"/>

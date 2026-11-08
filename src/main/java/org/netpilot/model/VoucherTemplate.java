@@ -49,21 +49,36 @@ public record VoucherTemplate(
     /** Language of the labels printed next to the values. */
     public enum Language {
 
-        ENGLISH("English", "User", "Pass", "Time", "Price"),
-        ARABIC("العربية", "اسم المستخدم", "كلمة المرور", "المدة", "السعر");
+        ENGLISH("English", "User", "Pass", "Time", "Price", "Package", "Valid for"),
+        ARABIC("العربية", "اسم المستخدم", "كلمة المرور", "المدة", "السعر", "الباقة", "الصلاحية");
 
         private final String label;
         private final String username;
         private final String password;
         private final String time;
         private final String price;
+        private final String profile;
+        private final String validity;
 
-        Language(String label, String username, String password, String time, String price) {
+        Language(String label, String username, String password, String time, String price, String profile,
+                String validity) {
             this.label = label;
             this.username = username;
             this.password = password;
             this.time = time;
             this.price = price;
+            this.profile = profile;
+            this.validity = validity;
+        }
+
+        /** Label of the package (hotspot profile) name. */
+        public String profile() {
+            return profile;
+        }
+
+        /** Label of the card validity after its first login. */
+        public String validity() {
+            return validity;
         }
 
         public String username() {

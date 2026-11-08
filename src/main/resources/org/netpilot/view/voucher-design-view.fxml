@@ -80,6 +80,27 @@
                     </HBox>
                 </VBox>
 
+                <!-- receipts for 58/80 mm thermal printers; the A4 PDF stays as it is -->
+                <VBox styleClass="card" spacing="8">
+                    <Label text="%receipt.section" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="8">
+                        <Label text="%receipt.printer" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="receiptPrinterBox" maxWidth="Infinity" GridPane.rowIndex="0"
+                                  GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
+                        <Label text="%receipt.paper" GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="receiptPaperBox" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <HBox spacing="12">
+                        <VBox styleClass="receipt-paper" minWidth="150" maxWidth="150" alignment="TOP_CENTER">
+                            <ImageView fx:id="receiptPreview" fitWidth="146" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="8" HBox.hgrow="ALWAYS">
+                            <Button fx:id="receiptTestButton" text="%receipt.test" onAction="#onTestReceipt"/>
+                            <Label text="%receipt.help" styleClass="muted" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
                 <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS">
                     <Label text="%design.prices" styleClass="card-title"/>
                     <Label text="%design.prices.help" styleClass="muted" wrapText="true"/>

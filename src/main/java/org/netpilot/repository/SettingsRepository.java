@@ -18,6 +18,7 @@ import org.netpilot.model.CardSize;
 import org.netpilot.model.CodeFormat;
 import org.netpilot.model.GenerationSettings;
 import org.netpilot.model.PasswordStyle;
+import org.netpilot.model.ReceiptSettings;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterSettings;
 import org.netpilot.model.Theme;
@@ -137,7 +138,9 @@ public class SettingsRepository {
                 loadTemplate(p, d.voucherTemplate()),
                 new UiPreferences(enumValue(p, "ui.language", UiLanguage.class, d.ui().language()),
                         enumValue(p, "ui.theme", Theme.class, d.ui().theme()),
-                        p.getProperty("ui.accent", d.ui().accent())));
+                        p.getProperty("ui.accent", d.ui().accent())),
+                new ReceiptSettings(p.getProperty("receipt.printer", d.receipt().printer()),
+                        intValue(p, "receipt.paperMm", d.receipt().paperMm())));
     }
 
     private static VoucherTemplate loadTemplate(Properties p, VoucherTemplate d) {
@@ -308,6 +311,8 @@ public class SettingsRepository {
         p.setProperty("ui.language", settings.ui().language().name());
         p.setProperty("ui.theme", settings.ui().theme().name());
         p.setProperty("ui.accent", settings.ui().accent());
+        p.setProperty("receipt.printer", settings.receipt().printer());
+        p.setProperty("receipt.paperMm", String.valueOf(settings.receipt().paperMm()));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

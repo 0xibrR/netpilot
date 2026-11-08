@@ -44,10 +44,12 @@ import org.netpilot.model.AppSettings;
 import org.netpilot.model.CardImage;
 import org.netpilot.model.CardSize;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.ReceiptSettings;
 import org.netpilot.model.VoucherStyle;
 import org.netpilot.model.VoucherTemplate;
 import org.netpilot.service.CardLayout;
 import org.netpilot.service.QrCodeService;
+import org.netpilot.service.ReceiptContent;
 
 /**
  * "Voucher Design" window: edits the {@link VoucherTemplate} with a live preview card, and can
@@ -150,6 +152,14 @@ public class VoucherDesignController implements Page {
     private Label noteLabel;
     @FXML
     private Button testPrintButton;
+    @FXML
+    private ComboBox<String> receiptPrinterBox;
+    @FXML
+    private ComboBox<Integer> receiptPaperBox;
+    @FXML
+    private ImageView receiptPreview;
+    @FXML
+    private Button receiptTestButton;
 
     /** One editable line of the price table. */
     public static final class PriceRow {
@@ -245,6 +255,33 @@ public class VoucherDesignController implements Page {
         for (CheckBox box : List.of(showQrCheck, showUptimeCheck, showPriceCheck, showProfileCheck)) {
             box.selectedProperty().addListener((obs, old, value) -> updatePreview());
         }
+
+        receiptPrinterBox.setConverter(new javafx.util.StringConverter<>() {
+
+            @Override
+            public String toString(String name) {
+                return name == null || name.isEmpty() ? Messages.get("receipt.defaultPrinter") : name;
+            }
+
+            @Override
+            public String fromString(String text) {
+                return text;
+            }
+        });
+        receiptPaperBox.getItems().setAll(ReceiptSettings.WIDE, ReceiptSettings.NARROW);
+        receiptPaperBox.setConverter(new javafx.util.StringConverter<>() {
+
+            @Override
+            public String toString(Integer mm) {
+                return mm == null ? "" : Messages.get("receipt.paper.mm", mm);
+            }
+
+            @Override
+            public Integer fromString(String text) {
+                return ReceiptSettings.WIDE;
+            }
+        });
+        receiptPaperBox.valueProperty().addListener((obs, old, value) -> updatePreview());
     }
 
     /**
@@ -270,6 +307,17 @@ public class VoucherDesignController implements Page {
         scaleSlider.setValue(cardImage.scale());
         textBoxCheck.setSelected(cardImage.textBox());
         showImageName();
+
+        // "" = the Windows default printer; a saved printer that is gone stays listed so it is not lost silently
+        List<String> printers = new ArrayList<>();
+        printers.add("");
+        printers.addAll(ReceiptPrinter.printerNames());
+        if (!printers.contains(current.receipt().printer())) {
+            printers.add(current.receipt().printer());
+        }
+        receiptPrinterBox.getItems().setAll(printers);
+        receiptPrinterBox.setValue(current.receipt().printer());
+        receiptPaperBox.setValue(current.receipt().paperMm());
 
         // offer every known profile, plus any that already has a price
         Set<String> names = new LinkedHashSet<>(profiles);
@@ -395,9 +443,61 @@ public class VoucherDesignController implements Page {
             return;
         }
         result = template;
-        workspace.updateSettings(s -> s.withVoucherTemplate(template));
+        ReceiptSettings receipt = currentReceipt();
+        workspace.updateSettings(s -> s.withVoucherTemplate(template).withReceipt(receipt));
         settings = workspace.settings();
         workspace.toast("✓ " + Messages.get("main.status.designSaved") + " " + Messages.get("design.savedBody"));
+    }
+
+    /** Prints one sample receipt with the settings on screen (saved or not). */
+    @FXML
+    private void onTestReceipt() {
+        VoucherTemplate template = currentTemplate();
+        ReceiptSettings receipt = currentReceipt();
+        List<javafx.scene.image.WritableImage> sample = List.of(sampleReceipt(template, receipt));
+        Task<Void> task = new Task<>() {
+
+            @Override
+            protected Void call() {
+                ReceiptPrinter.print(sample, receipt);
+                return null;
+            }
+        };
+        task.setOnRunning(e -> receiptTestButton.setDisable(true));
+        task.setOnSucceeded(e -> {
+            receiptTestButton.setDisable(false);
+            workspace.toast("✓ " + Messages.get("receipt.printed", 1));
+        });
+        task.setOnFailed(e -> {
+            receiptTestButton.setDisable(false);
+            LOG.log(System.Logger.Level.WARNING, "Test receipt failed", task.getException());
+            Dialogs.error(stage(), Messages.get("receipt.error.title"),
+                    task.getException() instanceof IllegalStateException
+                            ? task.getException().getMessage()
+                            : Messages.get("receipt.error.failed", receipt.printer()));
+        });
+        Thread thread = new Thread(task, "netpilot-test-receipt");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private ReceiptSettings currentReceipt() {
+        Integer paper = receiptPaperBox.getValue();
+        return new ReceiptSettings(receiptPrinterBox.getValue(), paper == null ? ReceiptSettings.WIDE : paper);
+    }
+
+    /** The first sample card as a receipt, with the selected package's validity when known. */
+    private javafx.scene.image.WritableImage sampleReceipt(VoucherTemplate template, ReceiptSettings receipt) {
+        HotspotUser card = sampleUsers().getFirst();
+        Optional<org.netpilot.model.TimeLimit> validity = workspace == null
+                ? Optional.empty()
+                : workspace.router().lists().flatMap(l -> l.profiles().stream()
+                        .filter(p -> p.name().equals(card.profile()))
+                        .findFirst())
+                        .flatMap(org.netpilot.model.HotspotProfile::validity);
+        String loginUrl = settings == null ? "" : settings.loginUrl();
+        return ReceiptPrinter.render(ReceiptContent.of(card, template, Workspace.qrLink(loginUrl, card), validity),
+                receipt, Optional.ofNullable(logo));
     }
 
     // ------------------------------------------------------------------ form <-> template
@@ -449,6 +549,9 @@ public class VoucherDesignController implements Page {
             return; // not prepared yet
         }
         VoucherTemplate t = currentTemplate();
+        if (receiptPaperBox.getValue() != null) {
+            receiptPreview.setImage(sampleReceipt(t, currentReceipt()));
+        }
         boolean compact = t.style().compact();
         show(voucherCard, !compact);
         show(cardPane, compact);

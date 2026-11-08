@@ -81,6 +81,8 @@ public class RouterUsersController {
     private List<RouterUser> visible = List.of();
     private RouterClient client;
     private Consumer<List<HotspotUser>> printer;
+    private Consumer<List<HotspotUser>> receipts = cards -> {
+    };
     private Map<String, List<ActiveSession>> sessionsByUser = Map.of();
     /** When each card with a validity ends, by card name (from the router's scheduler). */
     private Map<String, String> expiries = Map.of();
@@ -136,6 +138,8 @@ public class RouterUsersController {
     @FXML
     private Button printButton;
     @FXML
+    private Button receiptButton;
+    @FXML
     private Button deleteExpiredButton;
 
     public RouterUsersController(AppContext context) {
@@ -158,7 +162,8 @@ public class RouterUsersController {
         statusBox.valueProperty().addListener((obs, old, value) -> applyFilter());
 
         var noSelection = Bindings.isEmpty(usersTable.getSelectionModel().getSelectedItems());
-        for (Button action : List.of(enableButton, disableButton, disconnectButton, deleteButton, printButton)) {
+        for (Button action : List.of(enableButton, disableButton, disconnectButton, deleteButton, printButton,
+                receiptButton)) {
             action.disableProperty().bind(noSelection.or(busy));
         }
         refreshButton.disableProperty().bind(busy);
@@ -171,15 +176,19 @@ public class RouterUsersController {
         deleteButton.setGraphic(Icons.of(Icons.CROSS));
         deleteExpiredButton.setGraphic(Icons.of(Icons.CROSS));
         printButton.setGraphic(Icons.of(Icons.PRINTER));
+        receiptButton.setGraphic(Icons.of(Icons.PRINTER));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
     }
 
     /**
-     * @param printer prints vouchers for the given users (the Create cards page export)
+     * @param voucherPrinter prints A4 vouchers for the given users (the Create cards page export)
+     * @param receiptPrinter prints one receipt per user on the thermal printer
      */
-    public void start(RouterClient routerClient, String routerName, Consumer<List<HotspotUser>> voucherPrinter) {
+    public void start(RouterClient routerClient, String routerName, Consumer<List<HotspotUser>> voucherPrinter,
+            Consumer<List<HotspotUser>> receiptPrinter) {
         this.client = routerClient;
         this.printer = voucherPrinter;
+        this.receipts = receiptPrinter;
         onRefresh();
     }
 
@@ -319,6 +328,16 @@ public class RouterUsersController {
 
     @FXML
     private void onPrint() {
+        printSelected(printer);
+    }
+
+    @FXML
+    private void onPrintReceipt() {
+        printSelected(receipts);
+    }
+
+    /** Reads the selected cards' passwords, then hands them to the A4 or the receipt printer. */
+    private void printSelected(Consumer<List<HotspotUser>> target) {
         List<RouterUser> selected = selected();
         run(Messages.get("users.readingPasswords", selected.size()),
                 () -> context.routerUserActions().voucherUsers(client, selected), vouchers -> {
@@ -326,7 +345,7 @@ public class RouterUsersController {
                         Dialogs.info(stage(), Messages.get("users.nothingToPrint.title"),
                                 Messages.get("users.nothingToPrint.body"));
                     } else {
-                        printer.accept(vouchers);
+                        target.accept(vouchers);
                     }
                 });
     }

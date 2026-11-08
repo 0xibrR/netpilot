@@ -74,6 +74,9 @@ public class UploadController {
     private Button closeButton;
     @FXML
     private Button printButton;
+    @FXML
+    private Button receiptButton;
+    private boolean receiptsRequested;
 
     public UploadController(AppContext context) {
         this.context = context;
@@ -126,6 +129,11 @@ public class UploadController {
         return printRequested;
     }
 
+    /** Whether the user asked for receipts (thermal printer) for the created users. */
+    public boolean receiptsRequested() {
+        return receiptsRequested;
+    }
+
     // ------------------------------------------------------------------ actions
 
     @FXML
@@ -151,6 +159,12 @@ public class UploadController {
     }
 
     @FXML
+    private void onReceipts() {
+        receiptsRequested = true;
+        stage().close();
+    }
+
+    @FXML
     private void onUndo() {
         int count = report.created().size();
         if (!Dialogs.confirm(stage(), Messages.get("upload.undo.title", count), Messages.get("upload.undo.body"))) {
@@ -166,6 +180,7 @@ public class UploadController {
         task.setOnRunning(e -> {
             setVisible(undoButton, false);
             setVisible(printButton, false);
+            setVisible(receiptButton, false);
             closeButton.setDisable(true);
             headerLabel.setText(Messages.get("users.deleting", count));
         });
@@ -230,8 +245,10 @@ public class UploadController {
         setVisible(closeButton, true);
         boolean anyCreated = !result.created().isEmpty();
         setVisible(printButton, anyCreated);
+        setVisible(receiptButton, anyCreated);
         setVisible(undoButton, anyCreated);
         printButton.setText(Messages.get("upload.printCount", result.created().size()));
+        receiptButton.setText(Messages.get("upload.receiptsCount", result.created().size()));
         stage().sizeToScene();
     }
 

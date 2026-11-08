@@ -1,16 +1,26 @@
 package org.netpilot.controller;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import javafx.concurrent.Task;
+import javafx.scene.image.WritableImage;
 import javafx.stage.Window;
 import org.netpilot.AppContext;
+import org.netpilot.i18n.Messages;
 import org.netpilot.model.AppSettings;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.TimeLimit;
+import org.netpilot.repository.AppPaths;
+import org.netpilot.service.QrCodeService;
+import org.netpilot.service.ReceiptContent;
 
 /**
  * What every page shares: services, the router session, the saved settings and a few actions
@@ -80,6 +90,58 @@ final class Workspace {
     /** Exports PDF/CSV/RSC for these users (done by the Generate page). */
     void printVouchers(List<HotspotUser> users) {
         printer.accept(users);
+    }
+
+    /**
+     * Prints one receipt per card on the receipt printer chosen in Card design, in the background.
+     * The A4 PDF ({@link #printVouchers}) stays available next to it.
+     */
+    void printReceipts(List<HotspotUser> cards) {
+        if (cards.isEmpty()) {
+            return;
+        }
+        AppSettings s = settings;
+        Map<String, Optional<TimeLimit>> validity = router.lists()
+                .map(l -> l.profiles().stream()
+                        .collect(Collectors.toMap(HotspotProfile::name, HotspotProfile::validity, (a, b) -> a)))
+                .orElse(Map.of());
+        Optional<Path> logo = Optional.ofNullable(s.voucherTemplate().logo())
+                .map(p -> p.isAbsolute() ? p : AppPaths.dataDirectory().resolve(p));
+        // drawing needs the JavaFX thread; printing then runs in the background
+        List<WritableImage> receipts = cards.stream()
+                .map(card -> ReceiptPrinter.render(ReceiptContent.of(card, s.voucherTemplate(),
+                        qrLink(s.loginUrl(), card), validity.getOrDefault(card.profile(), Optional.empty())),
+                        s.receipt(), logo))
+                .toList();
+        Task<Void> task = new Task<>() {
+
+            @Override
+            protected Void call() {
+                ReceiptPrinter.print(receipts, s.receipt());
+                return null;
+            }
+        };
+        task.setOnSucceeded(e -> toast("✓ " + Messages.get("receipt.printed", cards.size())));
+        task.setOnFailed(e -> {
+            Throwable error = task.getException();
+            LOG.log(System.Logger.Level.WARNING, "Receipt printing failed", error);
+            Dialogs.error(window(), Messages.get("receipt.error.title"),
+                    error instanceof IllegalStateException
+                            ? error.getMessage()
+                            : Messages.get("receipt.error.failed", s.receipt().printer()));
+        });
+        Thread thread = new Thread(task, "netpilot-receipts");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    /** The QR auto-login link, or empty when the login address is not a valid http(s) URL. */
+    static Optional<String> qrLink(String loginUrl, HotspotUser card) {
+        try {
+            return Optional.of(new QrCodeService().loginLink(loginUrl, card));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     void show(PageId page) {

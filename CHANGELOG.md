@@ -29,6 +29,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Receipt printing on 58/80 mm thermal printers through the printer's Windows driver: one receipt per card
+  ("Print receipt" on Manage users, "Print receipts" after sending a batch), printer and paper width in Card
+  design with a live receipt preview and a test print; A4 PDF printing is unchanged
 - Windows installer (`NetPilot-<version>.exe`) and portable zip, both with their own Java: built by the
   new **Windows installer** GitHub workflow on every push to master, or locally with
   `mvnw clean -Pinstaller package` (see docs/INSTALLER.md)
