@@ -75,12 +75,15 @@ public final class ReportService {
         Prices prices = Prices.of(template, warnings);
         List<RouterUser> cards = users.stream().filter(u -> !u.builtIn()).toList();
         List<UsageRecord> usage = history.stream().filter(r -> r.router().equals(router)).toList();
+        // sales are NetPilot cards only: hand-made users (admins, own devices, monthly users) are not sold
+        List<RouterUser> ourCards = cards.stream().filter(u -> BatchTag.parse(u.comment()).isPresent()).toList();
+        List<UsageRecord> ourUsage = usage.stream().filter(r -> BatchTag.parse(r.batch()).isPresent()).toList();
 
         // sold in the period, by first-use day
-        List<UsageRecord> sold = usage.stream()
+        List<UsageRecord> sold = ourUsage.stream()
                 .filter(r -> r.firstUsed().map(day -> period.contains(day, today)).orElse(period == ReportPeriod.ALL))
                 .toList();
-        long undated = usage.stream().filter(r -> r.firstUsed().isEmpty()).count();
+        long undated = ourUsage.stream().filter(r -> r.firstUsed().isEmpty()).count();
         if (undated > 0 && period != ReportPeriod.ALL) {
             warnings.add(Messages.get("report.warning.undated", undated));
         }
@@ -94,7 +97,7 @@ public final class ReportService {
             }
         }
 
-        List<RouterUser> unusedCards = cards.stream().filter(RouterUser::neverUsed).toList();
+        List<RouterUser> unusedCards = ourCards.stream().filter(RouterUser::neverUsed).toList();
         Money potential = prices.total(unusedCards.stream().map(RouterUser::profile).toList());
 
         List<SalesReport.BatchRow> batches = batches(cards, usage, prices, period, today);
@@ -104,7 +107,7 @@ public final class ReportService {
                 .sum();
 
         return new SalesReport(period, revenue, potential, sold.size(), unusedCards.size(), created, daily, batches,
-                profiles(cards, sold, prices), warnings);
+                profiles(ourCards, sold, prices), warnings);
     }
 
     /** NetPilot batches created in the period (newest first), then hand-made users as "Other". */
@@ -136,7 +139,7 @@ public final class ReportService {
             List<String> usedProfiles = members.stream().filter(Card::used).map(Card::profile).toList();
             rows.add(new SalesReport.BatchRow(batch, tag.map(BatchTag::created),
                     profiles.size() == 1 ? profiles.iterator().next() : MIXED, members.size(),
-                    usedProfiles.size(), prices.total(usedProfiles)));
+                    usedProfiles.size(), tag.isPresent() ? prices.total(usedProfiles) : prices.zero()));
         });
         rows.sort(Comparator.comparing((SalesReport.BatchRow r) -> r.created().isEmpty())
                 .thenComparing(r -> r.created().orElse(null), Comparator.nullsLast(Comparator.reverseOrder())));

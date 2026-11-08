@@ -116,18 +116,22 @@ class ReportServiceTest {
 
         assertEquals(ReportService.OTHER, all.batches().getFirst().batch());
         assertEquals(2, all.batches().getFirst().cards());
-        assertEquals("500", all.revenue().format());
+        assertEquals("0", all.batches().getFirst().revenue().format(), "hand-made users are not sales");
+        assertEquals("0", all.revenue().format());
+        assertEquals(0, all.sold());
+        assertEquals(0, all.unused(), "only NetPilot cards are waiting to be sold");
         assertTrue(week.batches().isEmpty(), "\"Other\" has no creation date, so only All time shows it");
-        assertTrue(week.warnings().stream().anyMatch(w -> w.contains("before NetPilot started recording first use")));
+        assertTrue(week.warnings().stream().noneMatch(w -> w.contains("before NetPilot started recording first use")),
+                "old hand-made users never make the undated warning");
     }
 
     @Test
     void unreadableAndForeignCurrencyPricesAreWarnedAboutNotSummed() {
         List<UsageRecord> history = List.of(
-                new UsageRecord(ROUTER, "a", "1M", "", Optional.of(TODAY)),
-                new UsageRecord(ROUTER, "b", "2M", "", Optional.of(TODAY)),
-                new UsageRecord(ROUTER, "c", "5M", "", Optional.of(TODAY)),
-                new UsageRecord(ROUTER, "d", "10M", "", Optional.of(TODAY)));
+                new UsageRecord(ROUTER, "a", "1M", BATCH_NOV6, Optional.of(TODAY)),
+                new UsageRecord(ROUTER, "b", "2M", BATCH_NOV6, Optional.of(TODAY)),
+                new UsageRecord(ROUTER, "c", "5M", BATCH_NOV6, Optional.of(TODAY)),
+                new UsageRecord(ROUTER, "d", "10M", BATCH_NOV6, Optional.of(TODAY)));
         VoucherTemplate template = prices(Map.of("1M", "500 ل.س", "2M", "1000 ل.س", "5M", "3 $", "10M", "مجاني"));
 
         SalesReport report = service.build(ROUTER, List.of(), history, template, ReportPeriod.ALL, TODAY);
@@ -139,8 +143,8 @@ class ReportServiceTest {
 
     @Test
     void noPricesGivesZeroRevenueAndAHint() {
-        SalesReport report = service.build(ROUTER, List.of(card("a", "1M", true, "")),
-                List.of(new UsageRecord(ROUTER, "a", "1M", "", Optional.of(TODAY))), VoucherTemplate.defaults(),
+        SalesReport report = service.build(ROUTER, List.of(card("a", "1M", true, BATCH_NOV6)),
+                List.of(new UsageRecord(ROUTER, "a", "1M", BATCH_NOV6, Optional.of(TODAY))), VoucherTemplate.defaults(),
                 ReportPeriod.ALL, TODAY);
 
         assertEquals("0", report.revenue().format());
@@ -149,10 +153,10 @@ class ReportServiceTest {
 
     @Test
     void profilesAreSortedByRevenueWithData() {
-        List<RouterUser> users = List.of(card("a", "1M", true, ""), card("b", "2M", true, ""),
-                card("c", "2M", false, ""));
-        List<UsageRecord> history = List.of(new UsageRecord(ROUTER, "a", "1M", "", Optional.of(TODAY)),
-                new UsageRecord(ROUTER, "b", "2M", "", Optional.of(TODAY)));
+        List<RouterUser> users = List.of(card("a", "1M", true, BATCH_NOV6), card("b", "2M", true, BATCH_NOV6),
+                card("c", "2M", false, BATCH_NOV6));
+        List<UsageRecord> history = List.of(new UsageRecord(ROUTER, "a", "1M", BATCH_NOV6, Optional.of(TODAY)),
+                new UsageRecord(ROUTER, "b", "2M", BATCH_NOV6, Optional.of(TODAY)));
 
         SalesReport report = service.build(ROUTER, users, history, prices(Map.of("1M", "500", "2M", "1000")),
                 ReportPeriod.ALL, TODAY);
@@ -166,9 +170,9 @@ class ReportServiceTest {
 
     @Test
     void dataColumnCountsOnlyCardsSoldInThePeriod() {
-        List<RouterUser> users = List.of(card("old", "2M", true, ""), card("new", "2M", true, ""));
-        List<UsageRecord> history = List.of(new UsageRecord(ROUTER, "old", "2M", "", Optional.empty()),
-                new UsageRecord(ROUTER, "new", "2M", "", Optional.of(TODAY)));
+        List<RouterUser> users = List.of(card("old", "2M", true, BATCH_NOV6), card("new", "2M", true, BATCH_NOV6));
+        List<UsageRecord> history = List.of(new UsageRecord(ROUTER, "old", "2M", BATCH_NOV6, Optional.empty()),
+                new UsageRecord(ROUTER, "new", "2M", BATCH_NOV6, Optional.of(TODAY)));
 
         SalesReport week = service.build(ROUTER, users, history, prices(Map.of("2M", "1000")),
                 ReportPeriod.LAST_7_DAYS, TODAY);

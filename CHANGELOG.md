@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Earnings & sales counts only cards created by NetPilot: users made by hand on the router (admins, own
+  devices, monthly users) are not sales, so they no longer add to sold cards or revenue or raise the
+  "used before recording" warning; under All time they still show as the "Other" row
 - The interface language changes at once, without restarting: the window is rebuilt in the new language, the router
   stays connected and the same page stays open
 - Arabic texts say "card" (بطاقة) everywhere, matching the menu; unused styles and code removed
