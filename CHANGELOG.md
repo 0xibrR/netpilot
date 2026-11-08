@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Manage cards: the connection column is titled and shows "Online" in green or "Offline" in red (online first when sorted)
 - Own clearer names in the side menu (Card center: New batch, Manage cards (list, online now and search on one page), Earnings, Card look,
   Print archive; Network: Speeds and profiles, Hotspot servers) and flat theme-coloured controls, so dark mode has no
   grey gradients

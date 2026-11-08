@@ -52,3 +52,11 @@
 .voucher-card .voucher-qr {
     -fx-text-fill: #9aa3b0;
 }
+
+.tree-table-cell.state-online {
+    -fx-text-fill: #56d364;
+}
+
+.tree-table-cell.state-offline {
+    -fx-text-fill: #ff7b72;
+}

@@ -705,3 +705,13 @@
     -fx-border-color: transparent;
     -fx-background-color: transparent;
 }
+
+/* Connection column in the card list: green when online, red when not */
+.tree-table-cell.state-online {
+    -fx-text-fill: #1f9d55;
+    -fx-font-weight: bold;
+}
+
+.tree-table-cell.state-offline {
+    -fx-text-fill: #d64545;
+}

@@ -45,7 +45,7 @@
             </columnResizePolicy>
             <columns>
                 <TreeTableColumn fx:id="nameColumn" text="%users.column.name" prefWidth="200"/>
-                <TreeTableColumn fx:id="onlineColumn" text="●" prefWidth="34" maxWidth="40"/>
+                <TreeTableColumn fx:id="onlineColumn" text="%users.column.connection" prefWidth="105" minWidth="95"/>
                 <TreeTableColumn fx:id="profileColumn" text="%column.profile" prefWidth="80"/>
                 <TreeTableColumn fx:id="serverColumn" text="%column.server" prefWidth="90"/>
                 <TreeTableColumn fx:id="usedColumn" text="%users.column.used" prefWidth="90"/>

@@ -96,7 +96,7 @@ public class RouterUsersController {
     @FXML
     private TreeTableColumn<Row, String> nameColumn;
     @FXML
-    private TreeTableColumn<Row, String> onlineColumn;
+    private TreeTableColumn<Row, Boolean> onlineColumn;
     @FXML
     private TreeTableColumn<Row, String> profileColumn;
     @FXML
@@ -496,9 +496,24 @@ public class RouterUsersController {
                 (g.batch().isEmpty() ? Messages.get("users.manualGroup") : g.batch()) + "  ·  " + g.count();
             case UserRow u -> u.user().name();
         }));
-        onlineColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                user(c).filter(u -> sessionsByUser.containsKey(u.name())).map(u -> "●").orElse("")));
-        onlineColumn.getStyleClass().add("online-dot");
+        // "● Online" in green or "● Offline" in red; empty on batch rows. Sorting puts online first.
+        onlineColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
+                user(c).map(u -> sessionsByUser.containsKey(u.name())).orElse(null)));
+        onlineColumn.setCellFactory(column -> new TreeTableCell<>() {
+
+            @Override
+            protected void updateItem(Boolean online, boolean empty) {
+                super.updateItem(online, empty);
+                getStyleClass().removeAll("state-online", "state-offline");
+                if (empty || online == null) {
+                    setText(null);
+                    return;
+                }
+                setText("● " + Messages.get(online ? "users.online" : "users.offline"));
+                getStyleClass().add(online ? "state-online" : "state-offline");
+            }
+        });
+        onlineColumn.setComparator(java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()));
         profileColumn.setCellValueFactory(c -> text(c, RouterUser::profile));
         serverColumn.setCellValueFactory(c -> text(c, RouterUser::server));
 
