@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="NetPilot">
+  <!-- One colour: takes the surrounding text colour (currentColor), so it works on light and dark backgrounds. -->
+  <g fill="currentColor">
+    <path d="M38 90V38l52 52V38" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="38" cy="90" r="11"/>
+    <circle cx="90" cy="38" r="11"/>
+  </g>
+</svg>
