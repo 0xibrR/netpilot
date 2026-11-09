@@ -49,6 +49,15 @@ public class NetPilotApp extends Application {
         AppLogging.configure(AppPaths.logDirectory());
         AppLogging.installUncaughtExceptionHandler();
         LOG.log(System.Logger.Level.INFO, "Starting {0} {1} on Java {2}", NAME, VERSION, Runtime.version());
+        try {
+            // before anything reads the data: a restore cut short (power cut) is undone here
+            if (new org.netpilot.service.BackupService(AppPaths.dataDirectory(), java.time.Clock.systemDefaultZone(),
+                    VERSION).recoverInterruptedRestore()) {
+                LOG.log(System.Logger.Level.WARNING, "An interrupted restore was undone; the previous data is back");
+            }
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot check for an interrupted restore", e);
+        }
     }
 
     @Override
@@ -102,7 +111,9 @@ public class NetPilotApp extends Application {
     private void reloadUi(Stage stage) {
         try {
             mainController.detach();
-            Messages.use(context.settingsRepository().load().ui().language().locale());
+            UiPreferences ui = context.settingsRepository().load().ui();
+            Messages.use(ui.language().locale());
+            Styling.setAppearance(ui.theme(), ui.accent()); // a restore may bring another theme
             Parent root = loadMainView();
             stage.getScene().setRoot(root);
             Styling.apply(stage.getScene());

@@ -32,6 +32,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Backup and restore (Settings): one file with settings, card design and pictures, sales history, print
+  history and the points of sale ledger, optionally encrypted with a password (AES-256-GCM); automatic daily
+  backups keeping the last 14. Backups are written atomically and checked before they get their name; a
+  restore checks format and every SHA-256 first, warns when newer transactions would be lost, saves the
+  current data, swaps all files as one step (rolled back on failure, undone at start after a power cut) and
+  relinks the pictures on another computer. See docs/BACKUP.md
 - Points of sale: hand cards to resellers (from the new page, Manage users or after sending a batch), see
   what each received, sold, paid and still owes, record partial payments and cancel mistaken ones, take back
   unsold cards and export a statement. Everything comes from an append-only ledger

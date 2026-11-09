@@ -407,6 +407,48 @@ public class MainController implements RouterSession.Listener {
 
     private void showTime() {
         clockLabel.setText(java.time.LocalDateTime.now().format(CLOCK));
+        if (++seconds % 60 == 1) {
+            backUpIfDue(); // once a minute is plenty for a daily backup; also right after start
+        }
+    }
+
+    private long seconds;
+    private boolean backingUp;
+    private java.time.LocalDateTime nextBackupAttempt = java.time.LocalDateTime.MIN;
+
+    /**
+     * The automatic daily backup (Settings), router or not. A failed attempt is logged and tried
+     * again an hour later; the backup service never removes old backups when a new one fails.
+     */
+    private void backUpIfDue() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        org.netpilot.model.BackupSettings backup = workspace.settings().backup();
+        if (backingUp || now.isBefore(nextBackupAttempt) || !backup.due(now)) {
+            return;
+        }
+        backingUp = true;
+        java.nio.file.Path folder = java.nio.file.Path.of(backup.folder());
+        Task<java.nio.file.Path> task = new Task<>() {
+
+            @Override
+            protected java.nio.file.Path call() throws java.io.IOException {
+                return context.backupService().createAutomatic(folder);
+            }
+        };
+        task.setOnSucceeded(e -> {
+            backingUp = false;
+            workspace.updateSettings(s -> s.withBackup(s.backup().ran(java.time.LocalDateTime.now())));
+            LOG.log(System.Logger.Level.INFO, "Automatic backup written to {0}", task.getValue());
+        });
+        task.setOnFailed(e -> {
+            backingUp = false;
+            nextBackupAttempt = java.time.LocalDateTime.now().plusHours(1);
+            LOG.log(System.Logger.Level.WARNING, "Automatic backup to " + folder + " failed", task.getException());
+            workspace.toast("⚠ " + Messages.get("backup.autoFailed"));
+        });
+        Thread thread = new Thread(task, "netpilot-backup");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private static String mebibytes(long bytes) {

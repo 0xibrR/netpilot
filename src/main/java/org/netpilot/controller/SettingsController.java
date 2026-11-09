@@ -53,6 +53,65 @@ public class SettingsController implements Page {
     private Label cleanupLastLabel;
     @FXML
     private javafx.scene.control.Spinner<Integer> lowStockSpinner;
+    @FXML
+    private CheckBox autoBackupCheck;
+    @FXML
+    private Label backupFolderLabel;
+    @FXML
+    private Label lastBackupLabel;
+    private BackupActions backups;
+
+    @FXML
+    private void onBackupNow() {
+        backups.backUpNow();
+    }
+
+    @FXML
+    private void onRestore() {
+        backups.restore();
+    }
+
+    @FXML
+    private void onChooseBackupFolder() {
+        javafx.stage.DirectoryChooser chooser = new javafx.stage.DirectoryChooser();
+        chooser.setTitle(Messages.get("backup.chooseFolder"));
+        java.io.File folder = chooser.showDialog(workspace.window());
+        if (folder != null) {
+            workspace.updateSettings(s -> s.withBackup(s.backup().withAutomatic(s.backup().enabled(),
+                    folder.getAbsolutePath())));
+            showBackup();
+        }
+    }
+
+    /** Automatic backup needs a folder: choosing one is offered when it is turned on without. */
+    private void saveAutoBackup(boolean on) {
+        if (loading || workspace == null) {
+            return;
+        }
+        if (on && workspace.settings().backup().folder().isEmpty()) {
+            onChooseBackupFolder();
+            if (workspace.settings().backup().folder().isEmpty()) {
+                loading = true;
+                autoBackupCheck.setSelected(false);
+                loading = false;
+                return;
+            }
+        }
+        workspace.updateSettings(s -> s.withBackup(s.backup().withAutomatic(on, s.backup().folder())));
+        showBackup();
+    }
+
+    private void showBackup() {
+        org.netpilot.model.BackupSettings b = workspace.settings().backup();
+        boolean wasLoading = loading;
+        loading = true;
+        autoBackupCheck.setSelected(b.enabled());
+        loading = wasLoading;
+        backupFolderLabel.setText(b.folder().isEmpty() ? Messages.get("backup.noFolder") : b.folder());
+        lastBackupLabel.setText(b.lastRun()
+                .map(when -> Messages.get("backup.last", when.format(LAST_RUN)))
+                .orElse(Messages.get("backup.never")));
+    }
 
     public SettingsController(AppContext context) {
         this.context = context;
@@ -105,6 +164,7 @@ public class SettingsController implements Page {
             }
         });
         cleanupCheck.selectedProperty().addListener((obs, old, on) -> saveCleanup());
+        autoBackupCheck.selectedProperty().addListener((obs, old, on) -> saveAutoBackup(on));
         cleanupTimeBox.valueProperty().addListener((obs, old, time) -> saveCleanup());
     }
 
@@ -135,6 +195,7 @@ public class SettingsController implements Page {
     @Override
     public void attach(Workspace shared) {
         this.workspace = shared;
+        this.backups = new BackupActions(shared, this::showBackup);
         shown();
     }
 
@@ -152,6 +213,7 @@ public class SettingsController implements Page {
                     .ifPresent(t -> t.setSelected(true));
             showCleanup(workspace.settings().cleanup());
             lowStockSpinner.getValueFactory().setValue(workspace.settings().lowStockBelow());
+            showBackup();
         } finally {
             loading = false;
         }

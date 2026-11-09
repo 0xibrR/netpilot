@@ -42,6 +42,7 @@ public record AppContext(
         PasswordVault passwordVault,
         ResellerAccounts resellerAccounts,
         UsageTracker usageTracker,
+        org.netpilot.service.BackupService backupService,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -73,6 +74,8 @@ public record AppContext(
                 new PasswordVault(AppPaths.credentialsFile(), new DpapiProtector()),
                 resellers,
                 new UsageTracker(reports, usage, resellers),
+                new org.netpilot.service.BackupService(AppPaths.dataDirectory(), Clock.systemDefaultZone(),
+                        NetPilotApp.VERSION),
                 hostServices);
     }
 }

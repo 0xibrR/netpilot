@@ -144,7 +144,9 @@ public class SettingsRepository {
                 new ReceiptSettings(p.getProperty("receipt.printer", d.receipt().printer()),
                         intValue(p, "receipt.paperMm", d.receipt().paperMm())),
                 loadCleanup(p, d.cleanup()),
-                intValue(p, "alert.lowStockBelow", d.lowStockBelow()));
+                intValue(p, "alert.lowStockBelow", d.lowStockBelow()),
+                new org.netpilot.model.BackupSettings(booleanValue(p, "backup.automatic", false),
+                        p.getProperty("backup.folder", ""), lastBackup(p)));
     }
 
     private static CleanupSettings loadCleanup(Properties p, CleanupSettings d) {
@@ -344,6 +346,9 @@ public class SettingsRepository {
         p.setProperty("cleanup.lastRun", cleanup.lastRun().map(java.time.LocalDateTime::toString).orElse(""));
         p.setProperty("cleanup.lastDeleted", String.valueOf(cleanup.lastDeleted()));
         p.setProperty("alert.lowStockBelow", String.valueOf(settings.lowStockBelow()));
+        p.setProperty("backup.automatic", String.valueOf(settings.backup().enabled()));
+        p.setProperty("backup.folder", settings.backup().folder());
+        p.setProperty("backup.last", settings.backup().lastRun().map(java.time.LocalDateTime::toString).orElse(""));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");
@@ -358,6 +363,17 @@ public class SettingsRepository {
             return Integer.parseInt(p.getProperty(key, "").strip());
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    private static java.util.Optional<java.time.LocalDateTime> lastBackup(Properties p) {
+        try {
+            String value = p.getProperty("backup.last", "").strip();
+            return value.isEmpty()
+                    ? java.util.Optional.empty()
+                    : java.util.Optional.of(java.time.LocalDateTime.parse(value));
+        } catch (java.time.format.DateTimeParseException e) {
+            return java.util.Optional.empty();
         }
     }
 
