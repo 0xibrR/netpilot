@@ -5,11 +5,20 @@
 <?import javafx.scene.layout.*?>
 
 <!-- Hotspot page: WinBox-style tabs. Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
-<TabPane xmlns="http://javafx.com/javafx"
-         xmlns:fx="http://javafx.com/fxml"
-         fx:id="tabs"
-         fx:controller="org.netpilot.controller.HotspotController"
-         styleClass="page, winbox-tabs" tabClosingPolicy="UNAVAILABLE">
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.HotspotController"
+            styleClass="page">
+    <top>
+        <HBox alignment="CENTER_LEFT">
+            <Label text="%nav.cards.users" styleClass="page-title"/>
+            <padding>
+                <Insets top="16" right="20" bottom="6" left="20"/>
+            </padding>
+        </HBox>
+    </top>
+    <center>
+<TabPane fx:id="tabs" styleClass="winbox-tabs" tabClosingPolicy="UNAVAILABLE">
 
     <Tab fx:id="usersTab" text="%hotspot.tab.users">
         <fx:include fx:id="users" source="router-users-view.fxml"/>
@@ -93,3 +102,5 @@
         </TableView>
     </Tab>
 </TabPane>
+    </center>
+</BorderPane>

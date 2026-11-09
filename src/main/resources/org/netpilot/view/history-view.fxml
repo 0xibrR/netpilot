@@ -9,6 +9,15 @@
             fx:controller="org.netpilot.controller.HistoryController"
             styleClass="page">
 
+    <top>
+        <HBox alignment="CENTER_LEFT">
+            <Label text="%nav.HISTORY" styleClass="page-title"/>
+            <padding>
+                <Insets top="16" right="20" bottom="6" left="20"/>
+            </padding>
+        </HBox>
+    </top>
+
     <center>
         <TableView fx:id="historyTable">
             <columnResizePolicy>

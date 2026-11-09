@@ -10,6 +10,15 @@
             fx:controller="org.netpilot.controller.VoucherDesignController"
             styleClass="page">
 
+    <top>
+        <HBox alignment="CENTER_LEFT">
+            <Label text="%nav.DESIGN" styleClass="page-title"/>
+            <padding>
+                <Insets top="16" right="20" bottom="6" left="20"/>
+            </padding>
+        </HBox>
+    </top>
+
     <!-- ===== Left: settings ===== -->
     <left>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="form-scroll" prefWidth="430">

@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Changed
+- Every page has its title at the top, like Home and Settings: Manage users, Card design, Earnings and sales,
+  and Print history now too
 - Side menu in groups that new pages can join: Home; Hotspot management (Create cards, Manage users, Card
   design); Reports and money (Points of sale, Earnings and sales, Print history); Settings. Entries inside a
   group have their own small icon, and `Ctrl+1`…`Ctrl+8` follow the menu order

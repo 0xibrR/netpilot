@@ -13,6 +13,13 @@
             styleClass="page">
 
     <top>
+        <VBox>
+        <HBox alignment="CENTER_LEFT">
+            <Label text="%nav.cards.sales" styleClass="page-title"/>
+            <padding>
+                <Insets top="16" right="20" bottom="2" left="20"/>
+            </padding>
+        </HBox>
         <HBox spacing="8" alignment="CENTER_LEFT">
             <Label text="%reports.period" styleClass="section-title"/>
             <ComboBox fx:id="periodBox" prefWidth="160"/>
@@ -21,9 +28,10 @@
             <Button fx:id="exportButton" text="%reports.export" onAction="#onExport"/>
             <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
             <padding>
-                <Insets top="12" right="12" bottom="0" left="12"/>
+                <Insets top="8" right="12" bottom="0" left="12"/>
             </padding>
         </HBox>
+        </VBox>
     </top>
 
     <center>
