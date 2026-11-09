@@ -34,6 +34,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Platform layer, ready for macOS: one place detects the system and processor (Intel and Apple Silicon
+  Macs), `AppDirectories` gives each platform its own data, config, cache and log folders (Windows keeps
+  `~/.netpilot`), `CredentialStore` keeps the remembered router password in the existing DPAPI file on
+  Windows and in the Keychain on macOS, and receipt printing sits behind a common interface. Windows behaves
+  exactly as before; the macOS package itself comes later
 - Backup and restore (Settings): one file with settings, card design and pictures, sales history, print
   history and the points of sale ledger, optionally encrypted with a password (AES-256-GCM); automatic daily
   backups keeping the last 14. Backups are written atomically and checked before they get their name; a

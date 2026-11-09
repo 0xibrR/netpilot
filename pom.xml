@@ -186,6 +186,8 @@
                         <exclude>org/netpilot/Launcher*</exclude>
                         <exclude>org/netpilot/AppContext*</exclude>
                         <exclude>org/netpilot/AppLogging*</exclude>
+                        <!-- calls the macOS Security framework: runs only on a Mac; its logic is tested through KeychainCredentialStore -->
+                        <exclude>org/netpilot/platform/mac/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

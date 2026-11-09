@@ -17,6 +17,7 @@ module org.netpilot {
     requires com.github.librepdf.openpdf;
     requires com.google.zxing;
     requires com.google.zxing.javase;
+    requires com.sun.jna; // native calls: macOS Keychain
     requires com.sun.jna.platform; // Windows DPAPI for a remembered router password
 
     // JavaFX instantiates the Application subclass reflectively
@@ -24,4 +25,7 @@ module org.netpilot {
 
     // FXMLLoader injects @FXML fields and handlers into controllers
     opens org.netpilot.controller to javafx.fxml;
+
+    // JNA builds the Keychain bindings (org.netpilot.platform.mac) by reflection
+    exports org.netpilot.platform.mac to com.sun.jna;
 }

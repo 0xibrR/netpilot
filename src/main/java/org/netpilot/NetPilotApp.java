@@ -48,7 +48,8 @@ public class NetPilotApp extends Application {
     public void init() {
         AppLogging.configure(AppPaths.logDirectory());
         AppLogging.installUncaughtExceptionHandler();
-        LOG.log(System.Logger.Level.INFO, "Starting {0} {1} on Java {2}", NAME, VERSION, Runtime.version());
+        LOG.log(System.Logger.Level.INFO, "Starting {0} {1} on Java {2}, {3}", NAME, VERSION, Runtime.version(),
+                org.netpilot.platform.PlatformInfo.current().describe());
         try {
             // before anything reads the data: a restore cut short (power cut) is undone here
             if (new org.netpilot.service.BackupService(AppPaths.dataDirectory(), java.time.Clock.systemDefaultZone(),

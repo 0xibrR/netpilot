@@ -19,6 +19,9 @@
             <Class name="org.netpilot.service.ExportService"/>
             <!-- holds the shared sales repository and router actions, like ExportService -->
             <Class name="org.netpilot.service.ExpiredCleanup"/>
+            <!-- hold the platform's shared credential store / Keychain access, which must not be copied -->
+            <Class name="org.netpilot.repository.PasswordVault"/>
+            <Class name="org.netpilot.platform.KeychainCredentialStore"/>
             <Class name="org.netpilot.service.PdfVoucherGenerator"/>
             <Class name="org.netpilot.service.UserGenerator"/>
             <!-- holds the shared generator, like the services above -->

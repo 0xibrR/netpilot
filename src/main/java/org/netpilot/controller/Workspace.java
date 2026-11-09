@@ -121,7 +121,7 @@ final class Workspace {
 
             @Override
             protected Void call() {
-                ReceiptPrinter.print(receipts, s.receipt());
+                ReceiptPrinting.forPlatform(org.netpilot.platform.PlatformInfo.current()).print(receipts, s.receipt());
                 return null;
             }
         };

@@ -71,7 +71,9 @@ public record AppContext(
                 usage,
                 new ReportExporter(),
                 new NeighborDiscovery(),
-                new PasswordVault(AppPaths.credentialsFile(), new DpapiProtector()),
+                new PasswordVault(org.netpilot.platform.CredentialStore.forPlatform(
+                        org.netpilot.platform.PlatformInfo.current(), AppPaths.credentialsFile(),
+                        new DpapiProtector())),
                 resellers,
                 new UsageTracker(reports, usage, resellers),
                 new org.netpilot.service.BackupService(AppPaths.dataDirectory(), Clock.systemDefaultZone(),

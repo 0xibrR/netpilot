@@ -76,6 +76,26 @@ The resulting `UploadReport` drives the summary. **Print** exports only the crea
 | Exports | `~/Documents/NetPilot/<timestamp>_<profile>_<count>users/` (configurable) |
 | Voucher logo | `~/.netpilot/voucher-logo.png` (a copy, so moving the original does not break the design) |
 | Sales history | `~/.netpilot/usage.csv`: one line per used card with the day NetPilot first saw it used |
+| Points of sale | `~/.netpilot/resellers.csv` and `~/.netpilot/reseller-ledger.csv` (append-only) |
+
+The table shows Windows. The folders come from `AppDirectories` (see below): macOS uses
+`~/Library/Application Support/NetPilot` (logs in `~/Library/Logs/NetPilot`), Linux the XDG folders.
+
+## Platform layer (`org.netpilot.platform`)
+
+Everything that depends on the operating system goes through one small layer, so the business
+logic (cards, sales, ledger, backups) never checks the system itself:
+
+| Part | Role | Windows | macOS | Linux / other |
+|---|---|---|---|---|
+| `PlatformInfo` | the only reader of `os.name` / `os.arch`: system, processor (x64, ARM64; Intel vs Apple Silicon Macs) | | | |
+| `AppDirectories` | data, config, cache, logs, documents folders | `~/.netpilot` (unchanged) | `~/Library/...` | XDG |
+| `CredentialStore` | remembered router password | `ProtectedFileCredentialStore`: the DPAPI-encrypted `credentials` file, same format as before | `KeychainCredentialStore` + `NativeKeychain` (Security framework via JNA) | not available |
+| `ReceiptPrinting` (controller) | list printers, print receipts | JavaFX printing | JavaFX printing (CUPS) | JavaFX printing |
+
+A future macOS `.app` / `.dmg` needs no changes here: it brings an aarch64 (or x64) Java runtime and
+packages the same modules with `jpackage --type dmg`. An existing `~/.netpilot` outside Windows is
+kept as long as the platform folder does not exist, so no data is left behind.
 
 ## How sales are counted
 

@@ -311,7 +311,7 @@ public class VoucherDesignController implements Page {
         // "" = the Windows default printer; a saved printer that is gone stays listed so it is not lost silently
         List<String> printers = new ArrayList<>();
         printers.add("");
-        printers.addAll(ReceiptPrinter.printerNames());
+        printers.addAll(ReceiptPrinting.forPlatform(org.netpilot.platform.PlatformInfo.current()).printerNames());
         if (!printers.contains(current.receipt().printer())) {
             printers.add(current.receipt().printer());
         }
@@ -459,7 +459,7 @@ public class VoucherDesignController implements Page {
 
             @Override
             protected Void call() {
-                ReceiptPrinter.print(sample, receipt);
+                ReceiptPrinting.forPlatform(org.netpilot.platform.PlatformInfo.current()).print(sample, receipt);
                 return null;
             }
         };
