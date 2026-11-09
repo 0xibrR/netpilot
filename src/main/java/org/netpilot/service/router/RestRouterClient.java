@@ -20,6 +20,7 @@ import org.netpilot.model.CardValidity;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.PingReply;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterEndpoint;
 import org.netpilot.model.RouterInfo;
@@ -289,6 +290,31 @@ final class RestRouterClient implements RouterClient {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    /**
+     * One probe through the router's own ping ({@code POST /rest/ping}, {@code count=1}), so the
+     * test shows what the router sees, not this computer. The address is checked before it is sent.
+     */
+    @Override
+    public PingReply ping(String address, int seq) throws RouterException {
+        String target = PingReply.target(address);
+        ObjectNode body = JSON.createObjectNode().put("address", target).put("count", "1");
+        JsonNode result = send("/ping", HttpRequest.newBuilder(URI.create(baseUri + "/ping"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(body))));
+        JsonNode line = result.isArray() && !result.isEmpty() ? result.get(result.size() - 1) : result;
+        boolean received = number(line, "received") > 0;
+        java.util.Optional<java.time.Duration> time = received
+                ? PingReply.parseTime(text(line, "time"))
+                : java.util.Optional.empty();
+        String status = text(line, "status");
+        if (!received && status.isEmpty()) {
+            status = "timeout";
+        }
+        String host = text(line, "host");
+        return new PingReply(seq, host.isEmpty() ? target : host, time, (int) number(line, "ttl"),
+                (int) number(line, "size"), received ? "" : status);
     }
 
     @Override

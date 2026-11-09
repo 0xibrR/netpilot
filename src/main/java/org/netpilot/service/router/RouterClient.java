@@ -88,6 +88,13 @@ public interface RouterClient extends AutoCloseable {
     /** Whether the router sets its clock from the internet (NTP client enabled). */
     boolean clockSynced() throws RouterException;
 
+    /**
+     * Sends one ping probe from the router to {@code address} and waits for its reply (or timeout).
+     *
+     * @throws IllegalArgumentException when the address is not an IP address or host name
+     */
+    org.netpilot.model.PingReply ping(String address, int seq) throws RouterException;
+
     @Override
     void close();
 }

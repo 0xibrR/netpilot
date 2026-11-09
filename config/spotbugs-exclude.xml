@@ -22,6 +22,8 @@
             <!-- hold the platform's shared credential store / Keychain access, which must not be copied -->
             <Class name="org.netpilot.repository.PasswordVault"/>
             <Class name="org.netpilot.platform.KeychainCredentialStore"/>
+            <!-- uses the shared live router connection; a copy of a network session makes no sense -->
+            <Class name="org.netpilot.service.tools.PingSession"/>
             <Class name="org.netpilot.service.PdfVoucherGenerator"/>
             <Class name="org.netpilot.service.UserGenerator"/>
             <!-- holds the shared generator, like the services above -->

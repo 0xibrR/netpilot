@@ -16,6 +16,7 @@ enum PageId {
     RESELLERS("resellers-view.fxml", Icons.STORE, false),
     REPORTS("reports-view.fxml", Icons.CHART, true),
     HISTORY("history-view.fxml", Icons.HISTORY, false),
+    PING("ping-view.fxml", Icons.PULSE, true),
     SETTINGS("settings-view.fxml", Icons.SETTINGS, false);
 
     private final String view;

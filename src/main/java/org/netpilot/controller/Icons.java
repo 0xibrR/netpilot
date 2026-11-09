@@ -13,6 +13,10 @@ final class Icons {
             + "a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2";
     static final String WIFI = "M12 18h.01 M9.2 15.2a4 4 0 0 1 5.6 0 M6.3 12.3a8 8 0 0 1 11.4 0"
             + " M3.5 9.5a12 12 0 0 1 17 0";
+    /** A command prompt, for the developer tools group. */
+    static final String TERMINAL = "M4 17l6-5-6-5 M12 19h8";
+    /** A heartbeat line, for ping. */
+    static final String PULSE = "M3 12h4l3-8 4 16 3-8h4";
     /** Two people, for Manage users. */
     static final String USERS = "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 12 0v1 M16 3.1a4 4 0 0 1 0 7.8 M22 21v-1a6 6 0 0 0-4-5.6";
     /** A rising line, for the reports and money group. */

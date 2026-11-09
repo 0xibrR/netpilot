@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Ping page (developer tools). Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.PingController"
+            styleClass="page">
+    <top>
+        <VBox spacing="12">
+            <padding>
+                <Insets top="16" right="20" bottom="8" left="20"/>
+            </padding>
+            <Label text="%nav.PING" styleClass="page-title"/>
+            <Label text="%ping.help" styleClass="muted" wrapText="true"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%ping.address"/>
+                <TextField fx:id="addressField" promptText="%ping.address.prompt" prefColumnCount="22"
+                           onAction="#onStart"/>
+                <Label text="%ping.count"/>
+                <ComboBox fx:id="countBox" prefWidth="130"/>
+                <Button fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
+                <Button fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
+                <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+            </HBox>
+            <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
+
+            <FlowPane hgap="12" vgap="12">
+                <VBox styleClass="stat-card" prefWidth="140">
+                    <Label text="%ping.sent" styleClass="stat-title"/>
+                    <Label fx:id="sentValue" text="—" styleClass="stat-value"/>
+                </VBox>
+                <VBox styleClass="stat-card" prefWidth="140">
+                    <Label text="%ping.received" styleClass="stat-title"/>
+                    <Label fx:id="receivedValue" text="—" styleClass="stat-value, stat-online"/>
+                </VBox>
+                <VBox styleClass="stat-card" prefWidth="140">
+                    <Label text="%ping.loss" styleClass="stat-title"/>
+                    <Label fx:id="lossValue" text="—" styleClass="stat-value"/>
+                </VBox>
+                <VBox styleClass="stat-card" prefWidth="200">
+                    <Label text="%ping.latency" styleClass="stat-title"/>
+                    <Label fx:id="latencyValue" text="—" styleClass="stat-value"/>
+                </VBox>
+            </FlowPane>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="repliesTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="seqColumn" text="#" prefWidth="60"/>
+                <TableColumn fx:id="hostColumn" text="%ping.column.host" prefWidth="200"/>
+                <TableColumn fx:id="timeColumn" text="%ping.column.time" prefWidth="110"/>
+                <TableColumn fx:id="ttlColumn" text="%ping.column.ttl" prefWidth="70"/>
+                <TableColumn fx:id="sizeColumn" text="%ping.column.size" prefWidth="90"/>
+                <TableColumn fx:id="statusColumn" text="%ping.column.status" prefWidth="160"/>
+            </columns>
+            <placeholder>
+                <Label text="%ping.empty" styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="0" right="20" bottom="16" left="20"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+</BorderPane>

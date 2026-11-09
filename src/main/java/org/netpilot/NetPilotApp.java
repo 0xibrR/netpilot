@@ -16,6 +16,7 @@ import org.netpilot.controller.GenerateController;
 import org.netpilot.controller.HistoryController;
 import org.netpilot.controller.HotspotController;
 import org.netpilot.controller.MainController;
+import org.netpilot.controller.PingController;
 import org.netpilot.controller.ReportsController;
 import org.netpilot.controller.ResellersController;
 import org.netpilot.controller.RouterConnectionController;
@@ -162,6 +163,9 @@ public class NetPilotApp extends Application {
             }
             if (type == HotspotController.class) {
                 return new HotspotController(context);
+            }
+            if (type == PingController.class) {
+                return new PingController(context);
             }
             if (type == ResellersController.class) {
                 return new ResellersController(context);

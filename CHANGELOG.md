@@ -34,6 +34,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Developer tools menu group with a Ping page: the connected router pings an IP address or domain (one probe a
+  second, a set count or until stopped) through its REST API, showing each reply, sent/received packets,
+  packet loss and min/avg/max latency. Runs in a background `PingSession` (package `service.tools`, ready for
+  more tools); addresses are checked before they reach the router
 - Quick sale on Home: one button per priced package (with the cards left) prints the receipt of the oldest
   ready card. Direct sales have their own ledger entries (DIRECT_RESERVE, DIRECT_SALE, DIRECT_RELEASE), kept
   apart from points of sale and their balances: the card is reserved before printing (never sold twice), the
