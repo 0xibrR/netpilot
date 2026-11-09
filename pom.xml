@@ -6,7 +6,7 @@
 
     <groupId>org.netpilot</groupId>
     <artifactId>netpilot</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>NetPilot</name>
@@ -277,7 +277,7 @@
             <id>installer</id>
             <properties>
                 <!-- numbers only: Windows rejects -SNAPSHOT; keep equal to NetPilotApp.VERSION -->
-                <installer.version>1.0.0</installer.version>
+                <installer.version>1.1.0</installer.version>
                 <installer.exe>false</installer.exe>
                 <installer.dir>${project.build.directory}/installer</installer.dir>
                 <installer.fx.classifier>win</installer.fx.classifier>

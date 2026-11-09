@@ -32,8 +32,8 @@ Built with **Java 25**, **JavaFX 27**, and **Maven**, using an MVC architecture.
 Download `NetPilot-windows` from the latest run of **Windows installer** on the repository's
 [Actions](https://github.com/0xibrR/netpilot/actions/workflows/installer.yml) page. It holds:
 
-- `NetPilot-1.0.0.exe`: installs NetPilot with a desktop and Start-menu shortcut
-- `NetPilot-1.0.0-windows.zip`: portable; unzip and run `NetPilot.exe`
+- `NetPilot-1.1.0.exe`: installs NetPilot with a desktop and Start-menu shortcut
+- `NetPilot-1.1.0-windows.zip`: portable; unzip and run `NetPilot.exe`
 
 Both include their own Java, so nothing else is needed. See [docs/INSTALLER.md](docs/INSTALLER.md).
 
