@@ -160,7 +160,10 @@ public class ReportsController implements Page {
             @Override
             protected Snapshot call() throws Exception {
                 List<RouterUser> current = client.hotspotUsers();
-                List<UsageRecord> updated = context.usageTracker().track(router, current, LocalDate.now());
+                java.util.Set<String> online = client.activeSessions().stream()
+                        .map(org.netpilot.model.ActiveSession::user)
+                        .collect(java.util.stream.Collectors.toSet());
+                List<UsageRecord> updated = context.usageTracker().track(router, current, online, LocalDate.now());
                 return new Snapshot(current, updated);
             }
         };

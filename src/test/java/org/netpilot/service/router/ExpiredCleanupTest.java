@@ -51,6 +51,43 @@ class ExpiredCleanupTest {
     private org.netpilot.service.ResellerAccounts accounts;
 
     @Test
+    void aShopsCardIsSoldOnItsFirstLoginWhileStillConnected() throws Exception {
+        String router = client.endpoint().address();
+        usage.saveAll(java.util.List.of(new UsageRecord(router, "old", "2M", BATCH, Optional.empty())));
+        router_addUnused("phone-card");
+        var shop = accounts.save(new org.netpilot.model.Reseller("ibrahim", "ابراهيم", "",
+                org.netpilot.model.Reseller.CommissionType.PERCENT, new java.math.BigDecimal("35"),
+                org.netpilot.model.Reseller.Billing.ON_SALE));
+        accounts.handOver(shop, java.util.List.of(new org.netpilot.service.ResellerAccounts.Card(router, "phone-card",
+                "1M")), java.util.Map.of("1M", "1000"), false);
+        var tracker = new org.netpilot.service.UsageTracker(new ReportService(), usage, accounts);
+
+        // what the 15-second poll does, before and after the phone logs in
+        tracker.track(router, client.hotspotUsers(), online(), TODAY);
+        assertEquals(0, accounts.statements().getFirst().sold(), "not used yet");
+        this.router.addSession("phone-card", "10.10.0.20");
+        assertTrue(client.hotspotUsers().stream().filter(u -> u.name().equals("phone-card")).findFirst()
+                .orElseThrow().neverUsed(), "the user list still shows no uptime while it is connected");
+        tracker.track(router, client.hotspotUsers(), online(), TODAY);
+        tracker.track(router, client.hotspotUsers(), online(), TODAY); // the next poll changes nothing
+
+        var statement = accounts.statements().getFirst();
+        assertEquals(1, statement.sold(), "sold on its first login, without waiting for logout");
+        assertEquals(new java.math.BigDecimal("350"), statement.commission());
+        assertEquals(1, statement.events().stream().filter(e -> e.kind() == org.netpilot.model.LedgerEvent.Kind.SALE)
+                .count(), "recorded once");
+    }
+
+    private void router_addUnused(String name) {
+        router.addUser(name, "p", "1M", "", BATCH, "0s", 0, 0, false);
+    }
+
+    private java.util.Set<String> online() throws RouterException {
+        return client.activeSessions().stream().map(org.netpilot.model.ActiveSession::user)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    @Test
     void aPointOfSaleKeepsTheSaleOfACardTheCleanUpDeletes() throws Exception {
         usage.saveAll(java.util.List.of(new UsageRecord(client.endpoint().address(), "old", "2M", BATCH,
                 Optional.empty())));

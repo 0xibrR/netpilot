@@ -139,6 +139,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 - Dependency updates are applied manually; Dependabot version-update PRs are disabled
 
 ### Fixed
+- A card on its first login now counts as used at once: RouterOS adds a session's uptime to the user only
+  when it logs out, so first use (Earnings, points of sale) also looks at the active sessions. Points of sale
+  read the router on Refresh, when opened and every 15 seconds, and log each recorded sale and any failed sync
 - Possible null path when creating the settings and history folders (found by SpotBugs)
 - Login URL validation no longer relies on catching `NullPointerException`
 

@@ -147,7 +147,7 @@ public class DashboardController implements Page {
                 List<RouterUser> users = target.hotspotUsers();
                 Set<String> online = target.activeSessions().stream().map(ActiveSession::user)
                         .collect(Collectors.toSet());
-                List<UsageRecord> history = context.usageTracker().track(router, users, LocalDate.now());
+                List<UsageRecord> history = context.usageTracker().track(router, users, online, LocalDate.now());
                 SalesReport report = context.reportService().build(router, users, history,
                         workspace.settings().voucherTemplate(), ReportPeriod.THIS_MONTH, LocalDate.now());
                 return new Figures(users, online, report);

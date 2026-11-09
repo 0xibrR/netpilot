@@ -52,6 +52,19 @@ public final class ReportService {
      */
     public List<UsageRecord> track(String router, List<RouterUser> users, List<UsageRecord> history,
             LocalDate today) {
+        return track(router, users, Set.of(), history, today);
+    }
+
+    /**
+     * Like {@link #track(String, List, List, LocalDate)}, also counting cards that are logged in
+     * right now. RouterOS adds a session's uptime and bytes to the user only when the session
+     * ends, so during its first session a card still looks never used in the user list; its
+     * active session is what shows it was used.
+     *
+     * @param online names of users with an active session
+     */
+    public List<UsageRecord> track(String router, List<RouterUser> users, Set<String> online,
+            List<UsageRecord> history, LocalDate today) {
         Set<String> known = history.stream()
                 .filter(r -> r.router().equals(router))
                 .map(UsageRecord::username)
@@ -60,7 +73,8 @@ public final class ReportService {
 
         List<UsageRecord> updated = new ArrayList<>(history);
         for (RouterUser user : users) {
-            if (user.builtIn() || user.neverUsed() || known.contains(user.name())) {
+            boolean used = !user.neverUsed() || online.contains(user.name());
+            if (user.builtIn() || !used || known.contains(user.name())) {
                 continue;
             }
             updated.add(new UsageRecord(router, user.name(), user.profile(), user.comment(),

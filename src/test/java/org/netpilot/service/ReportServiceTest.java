@@ -53,6 +53,21 @@ class ReportServiceTest {
     }
 
     @Test
+    void aCardLoggedInForTheFirstTimeCountsAsUsedBeforeItsUptimeIsWritten() {
+        List<UsageRecord> history = service.track(ROUTER, List.of(card("old", "1M", true, BATCH_OCT)), List.of(),
+                TODAY.minusDays(1));
+        // RouterOS adds uptime to the user when the session ends: the user list still says unused
+        RouterUser firstLogin = card("phone", "1M", false, BATCH_NOV6);
+
+        assertEquals(1, service.track(ROUTER, List.of(firstLogin), history, TODAY).size(),
+                "without the active list it looks unused");
+        List<UsageRecord> withOnline = service.track(ROUTER, List.of(firstLogin), java.util.Set.of("phone"),
+                history, TODAY);
+        assertEquals(2, withOnline.size(), "its active session shows it was used");
+        assertEquals(Optional.of(TODAY), withOnline.get(1).firstUsed());
+    }
+
+    @Test
     void laterTrackingDatesNewlyUsedCardsAndKeepsOldOnes() {
         List<UsageRecord> history = service.track(ROUTER, List.of(card("a", "1M", true, BATCH_OCT)), List.of(),
                 TODAY.minusDays(1));

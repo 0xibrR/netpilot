@@ -39,6 +39,18 @@ public final class ResellerAccounts {
     private final Clock clock;
     private final Supplier<String> ids;
 
+    private static final System.Logger LOG = System.getLogger(ResellerAccounts.class.getName());
+
+    /** Every line written to the ledger also goes to the log, to trace what happened when. */
+    private static List<LedgerEvent> logged(List<LedgerEvent> added) {
+        for (LedgerEvent e : added) {
+            LOG.log(System.Logger.Level.INFO, "Ledger {0}: point of sale {1}, card {2}, price {3}, amount {4}",
+                    e.kind(), e.resellerId(), e.card().isEmpty() ? "-" : e.card(), e.price().toPlainString(),
+                    e.amount().toPlainString());
+        }
+        return added;
+    }
+
     public ResellerAccounts(ResellerRepository repository, Clock clock) {
         this(repository, clock, () -> UUID.randomUUID().toString());
     }
@@ -189,7 +201,7 @@ public final class ResellerAccounts {
                     card.profile(), price.amount(), reseller.commissionOn(price.amount()), reseller.billing(),
                     BigDecimal.ZERO, price.currency(), "", ""));
         }
-        return repository.append(events);
+        return logged(repository.append(events));
     }
 
     /** Takes back unsold cards from whoever has them (they can then be handed over again). */
@@ -206,7 +218,7 @@ public final class ResellerAccounts {
                         from.currency(), from.id(), note));
             }
         }
-        return repository.append(events);
+        return logged(repository.append(events));
     }
 
     /**
@@ -255,7 +267,7 @@ public final class ResellerAccounts {
         LedgerEvent payment = new LedgerEvent(id, Kind.PAYMENT, day.atTime(LocalDateTime.now(clock).toLocalTime()),
                 reseller.id(), "", "", "", BigDecimal.ZERO, BigDecimal.ZERO, reseller.billing(), amount, currency, "",
                 note);
-        return repository.append(List.of(payment)).stream().findFirst();
+        return logged(repository.append(List.of(payment))).stream().findFirst();
     }
 
     /**
@@ -275,7 +287,7 @@ public final class ResellerAccounts {
         LedgerEvent voided = new LedgerEvent("void-" + p.id(), Kind.PAYMENT_VOID, LocalDateTime.now(clock),
                 p.resellerId(), "", "", "", BigDecimal.ZERO, BigDecimal.ZERO, p.billing(), p.amount(), p.currency(),
                 p.id(), note);
-        return repository.append(List.of(voided)).stream().findFirst();
+        return logged(repository.append(List.of(voided))).stream().findFirst();
     }
 
     /** Figures of every point of sale, by name. */

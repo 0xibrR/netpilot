@@ -170,13 +170,25 @@ public class ResellersController implements Page {
 
     @Override
     public void shown() {
-        reload();
+        refreshFromRouter();
     }
+
+    /** Live figures while the page is open: new sales show up without pressing Refresh. */
+    @Override
+    public void tick() {
+        if (++ticks % 3 == 0 && !refreshing) {
+            refreshFromRouter(); // every 15 seconds, like the dashboard
+        }
+    }
+
+    private int ticks;
+    private boolean refreshing;
 
     @Override
     public void routerConnected(RouterClient routerClient, String name) {
         this.client = routerClient;
         updateRouterButtons();
+        refreshFromRouter();
     }
 
     @Override
@@ -194,7 +206,50 @@ public class ResellersController implements Page {
 
     @FXML
     private void onRefresh() {
-        reload();
+        refreshFromRouter();
+    }
+
+    /**
+     * Reads the router's cards first, so cards used since the last look are recorded as sales
+     * (once each, by the ledger's rules), then shows the figures. Without a router, or when the
+     * router cannot be read, the figures already in the ledger are shown.
+     */
+    private void refreshFromRouter() {
+        RouterClient target = client;
+        if (target == null) {
+            reload();
+            return;
+        }
+        refreshing = true;
+        String router = target.endpoint().address();
+        Task<Integer> task = new Task<>() {
+
+            @Override
+            protected Integer call() throws Exception {
+                List<RouterUser> users = target.hotspotUsers();
+                // a card on its first login is in the active list before its uptime reaches the user list
+                java.util.Set<String> online = target.activeSessions().stream()
+                        .map(org.netpilot.model.ActiveSession::user)
+                        .collect(java.util.stream.Collectors.toSet());
+                context.usageTracker().track(router, users, online, LocalDate.now());
+                return online.size();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            refreshing = false;
+            LOG.log(System.Logger.Level.DEBUG, "Points of sale synced with {0}: {1} card(s) online", router,
+                    task.getValue());
+            reload();
+        });
+        task.setOnFailed(e -> {
+            refreshing = false;
+            // the figures already in the ledger are still shown; the next poll tries again
+            LOG.log(System.Logger.Level.WARNING, "Points of sale sync with " + router + " failed", task.getException());
+            reload();
+        });
+        Thread thread = new Thread(task, "netpilot-resellers-sales");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /** Reloads every statement from the ledger and keeps the selected point of sale. */
@@ -305,24 +360,25 @@ public class ResellersController implements Page {
         if (target == null) {
             return;
         }
-        run(target::hotspotUsers, users -> {
-            Map<String, List<Card>> batches = unusedBatches(target, users);
-            if (batches.isEmpty()) {
-                Dialogs.info(window(), Messages.get("handover.title"), Messages.get("handover.noBatches"));
-                return;
-            }
-            List<String> labels = new ArrayList<>(batches.keySet());
-            ChoiceDialog<String> choose = new ChoiceDialog<>(labels.getFirst(), labels);
-            choose.initOwner(window());
-            choose.setTitle(NetPilotApp.NAME);
-            choose.setHeaderText(Messages.get("handover.chooseBatch"));
-            choose.setContentText(Messages.get("handover.batch"));
-            Styling.apply(choose.getDialogPane());
-            choose.showAndWait().ifPresent(label -> HandoverFlow.start(workspace, window(), batches.get(label),
-                    Optional.ofNullable(resellersTable.getSelectionModel().getSelectedItem())
-                            .map(Statement::reseller).orElse(null),
-                    this::reload));
-        });
+        run(() -> new RouterCards(target.hotspotUsers(), target.activeSessions().stream()
+                .map(org.netpilot.model.ActiveSession::user).collect(java.util.stream.Collectors.toSet())), read -> {
+                    Map<String, List<Card>> batches = unusedBatches(target, read.users(), read.online());
+                    if (batches.isEmpty()) {
+                        Dialogs.info(window(), Messages.get("handover.title"), Messages.get("handover.noBatches"));
+                        return;
+                    }
+                    List<String> labels = new ArrayList<>(batches.keySet());
+                    ChoiceDialog<String> choose = new ChoiceDialog<>(labels.getFirst(), labels);
+                    choose.initOwner(window());
+                    choose.setTitle(NetPilotApp.NAME);
+                    choose.setHeaderText(Messages.get("handover.chooseBatch"));
+                    choose.setContentText(Messages.get("handover.batch"));
+                    Styling.apply(choose.getDialogPane());
+                    choose.showAndWait().ifPresent(label -> HandoverFlow.start(workspace, window(), batches.get(label),
+                            Optional.ofNullable(resellersTable.getSelectionModel().getSelectedItem())
+                                    .map(Statement::reseller).orElse(null),
+                            this::reload));
+                });
     }
 
     /** Unsold cards of the selected point of sale go back (e.g. the shop returned them). */
@@ -357,12 +413,19 @@ public class ResellersController implements Page {
         });
     }
 
+    /** The router's users and the names logged in right now, read together. */
+    private record RouterCards(List<RouterUser> users, java.util.Set<String> online) {
+    }
+
     /** Unused NetPilot cards on the router, by batch, labelled with count and package. */
-    static Map<String, List<Card>> unusedBatches(RouterClient target, List<RouterUser> users) {
+    static Map<String, List<Card>> unusedBatches(RouterClient target, List<RouterUser> users,
+            java.util.Set<String> online) {
         String router = target.endpoint().address();
         Map<String, List<Card>> byBatch = new TreeMap<>(java.util.Comparator.reverseOrder());
         for (RouterUser u : users) {
-            if (!u.builtIn() && u.neverUsed() && !u.disabled() && BatchTag.parse(u.comment()).isPresent()) {
+            // a card logged in now is in use even before its uptime reaches the user list
+            if (!u.builtIn() && u.neverUsed() && !online.contains(u.name()) && !u.disabled()
+                    && BatchTag.parse(u.comment()).isPresent()) {
                 byBatch.computeIfAbsent(u.comment(), k -> new ArrayList<>()).add(new Card(router, u.name(),
                         u.profile()));
             }
