@@ -34,6 +34,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   profile-based names were removed; saved settings are carried over automatically
 
 ### Added
+- Quick sale on Home: one button per priced package (with the cards left) prints the receipt of the oldest
+  ready card. Direct sales have their own ledger entries (DIRECT_RESERVE, DIRECT_SALE, DIRECT_RELEASE), kept
+  apart from points of sale and their balances: the card is reserved before printing (never sold twice), the
+  sale is recorded once printed, and released if printing fails. A sale left unfinished by a crash or a failed
+  save stays pending with its card reserved, is settled from Home (or completes by itself once the card is
+  used) and is never recorded twice. Without a receipt printer the card is shown on screen. F2 repeats the last
+  package, only when no dialog is open and no text is being typed
 - Platform layer, ready for macOS: one place detects the system and processor (Intel and Apple Silicon
   Macs), `AppDirectories` gives each platform its own data, config, cache and log folders (Windows keeps
   `~/.netpilot`), `CredentialStore` keeps the remembered router password in the existing DPAPI file on

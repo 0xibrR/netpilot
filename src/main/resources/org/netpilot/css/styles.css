@@ -715,3 +715,9 @@
 .nav-sub:selected .icon {
     -fx-stroke: -np-chrome-text;
 }
+
+/* Quick sale buttons on Home: large enough to hit fast at the counter */
+.quick-sale-buttons .button {
+    -fx-font-size: 14px;
+    -fx-padding: 10 16 10 16;
+}

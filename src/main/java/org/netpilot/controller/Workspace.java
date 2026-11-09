@@ -3,7 +3,6 @@ package org.netpilot.controller;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -105,18 +104,8 @@ final class Workspace {
             return;
         }
         AppSettings s = settings;
-        Map<String, Optional<TimeLimit>> validity = router.lists()
-                .map(l -> l.profiles().stream()
-                        .collect(Collectors.toMap(HotspotProfile::name, HotspotProfile::validity, (a, b) -> a)))
-                .orElse(Map.of());
-        Optional<Path> logo = Optional.ofNullable(s.voucherTemplate().logo())
-                .map(p -> p.isAbsolute() ? p : AppPaths.dataDirectory().resolve(p));
         // drawing needs the JavaFX thread; printing then runs in the background
-        List<WritableImage> receipts = cards.stream()
-                .map(card -> ReceiptPrinter.render(ReceiptContent.of(card, s.voucherTemplate(),
-                        qrLink(s.loginUrl(), card), validity.getOrDefault(card.profile(), Optional.empty())),
-                        s.receipt(), logo))
-                .toList();
+        List<WritableImage> receipts = cards.stream().map(this::renderReceipt).toList();
         Task<Void> task = new Task<>() {
 
             @Override
@@ -137,6 +126,21 @@ final class Workspace {
         Thread thread = new Thread(task, "netpilot-receipts");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    /**
+     * One card's receipt as the receipt printer will print it, by the current card design and with
+     * its package's validity. Call on the JavaFX thread.
+     */
+    WritableImage renderReceipt(HotspotUser card) {
+        AppSettings s = settings;
+        Optional<TimeLimit> validity = router.lists()
+                .flatMap(l -> l.profiles().stream().filter(p -> p.name().equals(card.profile())).findFirst())
+                .flatMap(HotspotProfile::validity);
+        Optional<Path> logo = Optional.ofNullable(s.voucherTemplate().logo())
+                .map(p -> p.isAbsolute() ? p : AppPaths.dataDirectory().resolve(p));
+        return ReceiptPrinter.render(ReceiptContent.of(card, s.voucherTemplate(), qrLink(s.loginUrl(), card),
+                validity), s.receipt(), logo);
     }
 
     /** The QR auto-login link, or empty when the login address is not a valid http(s) URL. */

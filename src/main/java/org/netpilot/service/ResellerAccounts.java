@@ -128,8 +128,105 @@ public final class ResellerAccounts {
         }
     }
 
+    /** The points of sale; never the counter, whose direct sales are kept apart. */
     public List<Reseller> resellers() throws IOException {
-        return repository.resellers();
+        return repository.resellers().stream().filter(r -> !r.id().equals(COUNTER)).toList();
+    }
+
+    /** Who direct sales belong to in the ledger; not a point of sale, never in their lists or balances. */
+    public static final String COUNTER = "counter";
+
+    // ------------------------------------------------------------------ direct sales
+
+    /** Direct sales so far: how many and how much, overall and today. */
+    public record DirectSummary(int sold, BigDecimal total, int soldToday, BigDecimal totalToday, String currency) {
+    }
+
+    /**
+     * Reserves a card for a direct sale (before its receipt is printed). The card must be free:
+     * not with a point of sale and not already reserved or sold.
+     *
+     * @return the reservation, or empty when the card is taken
+     */
+    public Optional<LedgerEvent> reserveDirect(Card card, Money price) throws IOException {
+        Holding h = holdings(repository.ledger()).get(key(card.router(), card.name()));
+        if (h != null && (h.sold() || !h.returned())) {
+            return Optional.empty();
+        }
+        LedgerEvent reserve = new LedgerEvent(ids.get(), Kind.DIRECT_RESERVE, LocalDateTime.now(clock), COUNTER,
+                card.router(), card.name(), card.profile(), price.amount(), BigDecimal.ZERO,
+                Reseller.Billing.ON_HANDOVER, BigDecimal.ZERO, price.currency(), "", "");
+        return logged(repository.append(List.of(reserve))).stream().findFirst();
+    }
+
+    /**
+     * Completes a direct sale: the receipt was handed over and the price received. The id comes
+     * from the reservation, so repeating this (a retry after a crash) never records it twice.
+     *
+     * @return the sale, or empty when it was already completed or released
+     */
+    public Optional<LedgerEvent> completeDirect(LedgerEvent reserve, String note) throws IOException {
+        if (directOutcome(reserve).isPresent()) {
+            return Optional.empty();
+        }
+        LedgerEvent sale = new LedgerEvent("direct-sale-" + reserve.id(), Kind.DIRECT_SALE, LocalDateTime.now(clock),
+                COUNTER, reserve.router(), reserve.card(), reserve.profile(), reserve.price(), BigDecimal.ZERO,
+                reserve.billing(), reserve.price(), reserve.currency(), reserve.id(), note);
+        return logged(repository.append(List.of(sale))).stream().findFirst();
+    }
+
+    /** The direct sale did not happen: the card goes back to stock. Once per reservation. */
+    public Optional<LedgerEvent> releaseDirect(LedgerEvent reserve, String note) throws IOException {
+        if (directOutcome(reserve).isPresent()) {
+            return Optional.empty();
+        }
+        LedgerEvent release = new LedgerEvent("direct-release-" + reserve.id(), Kind.DIRECT_RELEASE,
+                LocalDateTime.now(clock), COUNTER, reserve.router(), reserve.card(), reserve.profile(), reserve.price(),
+                BigDecimal.ZERO, reserve.billing(), BigDecimal.ZERO, reserve.currency(), reserve.id(), note);
+        return logged(repository.append(List.of(release))).stream().findFirst();
+    }
+
+    /**
+     * Reservations that were neither completed nor released: the app stopped (or recording
+     * failed) after the receipt may have been printed. Their cards stay reserved until the user
+     * says whether the receipt was handed over.
+     */
+    public List<LedgerEvent> pendingDirect() throws IOException {
+        List<LedgerEvent> ledger = repository.ledger();
+        Set<String> settled = new HashSet<>();
+        ledger.stream().filter(e -> e.kind() == Kind.DIRECT_SALE || e.kind() == Kind.DIRECT_RELEASE)
+                .forEach(e -> settled.add(e.ref()));
+        return ledger.stream().filter(e -> e.kind() == Kind.DIRECT_RESERVE && !settled.contains(e.id())).toList();
+    }
+
+    public DirectSummary directSummary(LocalDate today) throws IOException {
+        int sold = 0;
+        int soldToday = 0;
+        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal totalToday = BigDecimal.ZERO;
+        String currency = "";
+        for (LedgerEvent e : repository.ledger()) {
+            if (e.kind() != Kind.DIRECT_SALE) {
+                continue;
+            }
+            sold++;
+            total = total.add(e.amount());
+            if (e.at().toLocalDate().equals(today)) {
+                soldToday++;
+                totalToday = totalToday.add(e.amount());
+            }
+            if (currency.isEmpty()) {
+                currency = e.currency();
+            }
+        }
+        return new DirectSummary(sold, total, soldToday, totalToday, currency);
+    }
+
+    private Optional<LedgerEvent> directOutcome(LedgerEvent reserve) throws IOException {
+        return repository.ledger().stream()
+                .filter(e -> (e.kind() == Kind.DIRECT_SALE || e.kind() == Kind.DIRECT_RELEASE)
+                        && e.ref().equals(reserve.id()))
+                .findFirst();
     }
 
     /** Adds a point of sale, or saves new settings for one (they apply to later handovers only). */
@@ -157,8 +254,9 @@ public final class ResellerAccounts {
         List<Card> noPrice = new ArrayList<>();
         for (Card card : cards) {
             Holding h = holdings.get(key(card.router(), card.name()));
-            if (h != null && h.sold()) {
-                sold.add(card);
+            boolean direct = h != null && h.handover().kind() == Kind.DIRECT_RESERVE && !h.returned();
+            if (h != null && (h.sold() || direct)) {
+                sold.add(card); // sold, or reserved for a direct sale: it never moves to a point of sale
             } else if (Money.parse(prices.getOrDefault(card.profile(), "")).isEmpty()) {
                 noPrice.add(card);
             } else if (h == null || h.returned()) {
@@ -241,6 +339,14 @@ public final class ResellerAccounts {
                 continue;
             }
             LedgerEvent from = h.handover();
+            if (from.kind() == Kind.DIRECT_RESERVE) {
+                // a pending direct sale whose card is in use: the receipt was clearly handed over
+                sales.add(new LedgerEvent("direct-sale-" + from.id(), Kind.DIRECT_SALE, LocalDateTime.now(clock),
+                        COUNTER, router, used.username(), from.profile(), from.price(), BigDecimal.ZERO,
+                        from.billing(), from.price(), from.currency(), from.id(),
+                        Messages.get("quickSale.autoCompleted")));
+                continue;
+            }
             LocalDateTime when = used.firstUsed()
                     .map(LocalDate::atStartOfDay)
                     .filter(day -> !day.isBefore(from.at().toLocalDate().atStartOfDay()))
@@ -294,7 +400,7 @@ public final class ResellerAccounts {
     public List<Statement> statements() throws IOException {
         List<LedgerEvent> ledger = repository.ledger();
         List<Statement> out = new ArrayList<>();
-        for (Reseller r : repository.resellers()) {
+        for (Reseller r : resellers()) {
             out.add(statement(r, ledger));
         }
         out.sort(java.util.Comparator.comparing(s -> s.reseller().name().toLowerCase(java.util.Locale.ROOT)));
@@ -371,14 +477,15 @@ public final class ResellerAccounts {
         for (LedgerEvent e : ledger) {
             String card = key(e.router(), e.card());
             switch (e.kind()) {
-                case HANDOVER -> {
+                case HANDOVER, DIRECT_RESERVE -> {
                     byCard.put(card, new Holding(e, false, false));
                     cardOfHandover.put(e.id(), card);
                 }
-                case RETURN, SALE -> {
+                case RETURN, SALE, DIRECT_RELEASE, DIRECT_SALE -> {
                     Holding h = byCard.get(cardOfHandover.getOrDefault(e.ref(), ""));
                     if (h != null && h.handover().id().equals(e.ref())) {
-                        byCard.put(card, e.kind() == Kind.RETURN
+                        boolean back = e.kind() == Kind.RETURN || e.kind() == Kind.DIRECT_RELEASE;
+                        byCard.put(card, back
                                 ? new Holding(h.handover(), true, h.sold())
                                 : new Holding(h.handover(), h.returned(), true));
                     }

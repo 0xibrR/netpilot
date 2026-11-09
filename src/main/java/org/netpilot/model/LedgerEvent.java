@@ -43,7 +43,16 @@ public record LedgerEvent(String id, Kind kind, LocalDateTime at, String reselle
         /** The point of sale paid an amount (any amount: partial payments are normal). */
         PAYMENT,
         /** A payment entered by mistake is cancelled; the payment itself stays in the ledger. */
-        PAYMENT_VOID
+        PAYMENT_VOID,
+        /**
+         * Direct sale, step 1: a card is reserved at the counter before its receipt is printed, so
+         * no other sale can take it. Not part of any point of sale's account.
+         */
+        DIRECT_RESERVE,
+        /** Direct sale completed: the customer got the receipt and paid {@code amount}. Once per reservation. */
+        DIRECT_SALE,
+        /** Direct sale did not happen: the reserved card goes back to stock, nothing is charged. */
+        DIRECT_RELEASE
     }
 
     public LedgerEvent {

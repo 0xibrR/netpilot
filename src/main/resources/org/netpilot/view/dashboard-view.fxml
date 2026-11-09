@@ -50,6 +50,25 @@
             <Label fx:id="routerDetails" styleClass="muted"/>
         </VBox>
 
+        <!-- one button per priced package: the oldest unused card is printed and recorded as sold -->
+        <VBox fx:id="quickSaleCard" styleClass="card" spacing="8" visible="false" managed="false">
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="%quickSale.title" styleClass="card-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="%quickSale.hint" styleClass="muted"/>
+            </HBox>
+            <FlowPane fx:id="quickSaleButtons" hgap="8" vgap="8" styleClass="quick-sale-buttons"/>
+            <Label fx:id="quickSaleEmpty" text="%quickSale.noPrices" styleClass="muted" wrapText="true"
+                   visible="false" managed="false"/>
+            <!-- sales left unfinished after a crash or a failed save: the user settles each one -->
+            <VBox fx:id="quickSalePending" spacing="6" styleClass="stock-card" visible="false" managed="false">
+                <padding>
+                    <Insets top="8" right="10" bottom="8" left="10"/>
+                </padding>
+            </VBox>
+            <Label fx:id="quickSaleToday" styleClass="muted"/>
+        </VBox>
+
         <FlowPane hgap="12" vgap="12">
             <VBox styleClass="stat-card" prefWidth="190">
                 <Label text="%dashboard.users" styleClass="stat-title"/>
