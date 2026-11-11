@@ -36,7 +36,7 @@ import org.netpilot.repository.AppPaths;
 public class NetPilotApp extends Application {
 
     public static final String NAME = "NetPilot";
-    public static final String VERSION = "1.2.3";
+    public static final String VERSION = "1.2.4";
     public static final String REPOSITORY_URL = "https://github.com/0xibrR/netpilot";
 
     private static final System.Logger LOG = System.getLogger(NetPilotApp.class.getName());

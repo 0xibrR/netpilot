@@ -119,7 +119,8 @@ final class UpdateFlow {
                 updateProgress(-1, 1);
                 Optional<String> backupProblem = Optional.empty();
                 try {
-                    workspace.context().backupService().createAutomatic(Path.of(backupFolder));
+                    Path backup = workspace.context().backupService().createAutomatic(Path.of(backupFolder));
+                    LOG.log(System.Logger.Level.INFO, "Backup before the update written to {0}", backup);
                 } catch (IOException | RuntimeException e) {
                     LOG.log(System.Logger.Level.WARNING, "Backup before the update failed", e);
                     backupProblem = Optional.of(String.valueOf(e.getMessage()));
@@ -135,28 +136,33 @@ final class UpdateFlow {
                 task.cancel(false);
             }
         });
-        task.setOnSucceeded(e -> {
-            progress.setResult(null);
-            progress.close();
-            confirmAndRun(workspace, release, task.getValue());
-        });
-        task.setOnFailed(e -> {
-            progress.setResult(null);
-            progress.close();
-            Throwable error = task.getException();
-            if (error instanceof CancellationException) {
-                return;
-            }
-            LOG.log(System.Logger.Level.WARNING, "Update download failed", error);
-            Dialogs.error(workspace.window(), Messages.get("update.failed"), String.valueOf(error.getMessage()));
-        });
+        // the outcome is only recorded here; the next window opens once this one has fully closed
+        // (a window opened while another modal one is closing stayed blank on Windows)
+        task.setOnSucceeded(e -> progress.close());
+        task.setOnFailed(e -> progress.close());
         Thread thread = new Thread(task, "netpilot-update");
         thread.setDaemon(true);
         thread.start();
         progress.showAndWait();
         if (task.isRunning()) {
             cancelled.set(true);
+            task.cancel(false);
+            return;
         }
+        Platform.runLater(() -> afterDownload(workspace, release, task));
+    }
+
+    private static void afterDownload(Workspace workspace, Release release, Task<Prepared> task) {
+        if (task.getState() == javafx.concurrent.Worker.State.SUCCEEDED) {
+            confirmAndRun(workspace, release, task.getValue());
+            return;
+        }
+        Throwable error = task.getException();
+        if (error == null || error instanceof CancellationException) {
+            return;
+        }
+        LOG.log(System.Logger.Level.WARNING, "Update download failed", error);
+        Dialogs.error(workspace.window(), Messages.get("update.failed"), String.valueOf(error.getMessage()));
     }
 
     private record Prepared(Path installer, Optional<String> backupProblem) {
@@ -165,7 +171,9 @@ final class UpdateFlow {
     private static void confirmAndRun(Workspace workspace, Release release, Prepared prepared) {
         String body = Messages.get("update.ready.body", release.version())
                 + prepared.backupProblem().map(p -> "\n\n" + Messages.get("update.ready.noBackup", p)).orElse("");
+        LOG.log(System.Logger.Level.INFO, "Update {0} ready; asking to install", release.version());
         if (!Dialogs.confirm(workspace.window(), Messages.get("update.ready.title"), body)) {
+            LOG.log(System.Logger.Level.INFO, "Update {0} not installed: declined", release.version());
             return; // the checked installer stays in the updates folder; the next offer downloads again
         }
         try {

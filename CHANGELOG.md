@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-11-11
+
+### Fixed
+- Update now: the "Ready to update" window opened blank, so the installer never started. It now opens only
+  after the download window has fully closed; each step of an update is also written to the log
+
 ## [1.2.3] - 2026-11-11
 
 ### Changed
