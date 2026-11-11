@@ -22,12 +22,12 @@
         </HBox>
         <HBox spacing="8" alignment="CENTER_LEFT">
             <Label text="%reports.period" styleClass="section-title"/>
-            <ComboBox fx:id="periodBox" prefWidth="160"/>
+            <ComboBox fx:id="periodBox" prefWidth="160" minWidth="120"/>
             <Region HBox.hgrow="ALWAYS"/>
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-            <Button fx:id="monthlyButton" text="%monthly.button" onAction="#onMonthly" styleClass="primary"/>
-            <Button fx:id="exportButton" text="%reports.export" onAction="#onExport"/>
-            <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+            <Button fx:id="monthlyButton" text="%monthly.button" onAction="#onMonthly" styleClass="primary" minWidth="-Infinity"/>
+            <Button fx:id="exportButton" text="%reports.export" onAction="#onExport" minWidth="-Infinity"/>
+            <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" minWidth="-Infinity"/>
             <padding>
                 <Insets top="8" right="12" bottom="0" left="12"/>
             </padding>

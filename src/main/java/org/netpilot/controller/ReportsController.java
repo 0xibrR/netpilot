@@ -146,6 +146,8 @@ public class ReportsController implements Page {
         exportButton.setDisable(true);
         monthlyButton.setDisable(true);
         setUpTables();
+        monthlyButton.setGraphic(Icons.of(Icons.LOG));
+        exportButton.setGraphic(Icons.of(Icons.DOWNLOAD));
     }
 
     /**
