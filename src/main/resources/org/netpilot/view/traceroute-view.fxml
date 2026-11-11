@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Traceroute page (developer tools). Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.TracerouteController"
+            styleClass="page">
+    <top>
+        <VBox spacing="12">
+            <padding>
+                <Insets top="16" right="20" bottom="8" left="20"/>
+            </padding>
+            <Label text="%trace.title" styleClass="page-title"/>
+            <Label text="%trace.help" styleClass="muted" wrapText="true"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%ping.address"/>
+                <TextField fx:id="addressField" promptText="%ping.address.prompt" prefColumnCount="22"
+                           onAction="#onStart"/>
+                <Button fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
+                <Button fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
+                <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                <Label fx:id="summaryLabel" styleClass="muted"/>
+            </HBox>
+            <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="hopsTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="hopColumn" text="#" prefWidth="50"/>
+                <TableColumn fx:id="hostColumn" text="%trace.column.host" prefWidth="200"/>
+                <TableColumn fx:id="lossColumn" text="%ping.loss" prefWidth="80"/>
+                <TableColumn fx:id="sentColumn" text="%ping.sent" prefWidth="70"/>
+                <TableColumn fx:id="lastColumn" text="%trace.column.last" prefWidth="95"/>
+                <TableColumn fx:id="averageColumn" text="%trace.column.average" prefWidth="95"/>
+                <TableColumn fx:id="bestColumn" text="%trace.column.best" prefWidth="95"/>
+                <TableColumn fx:id="worstColumn" text="%trace.column.worst" prefWidth="95"/>
+                <TableColumn fx:id="statusColumn" text="%ping.column.status" prefWidth="150"/>
+            </columns>
+            <placeholder>
+                <Label text="%trace.empty" styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="0" right="20" bottom="16" left="20"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+</BorderPane>

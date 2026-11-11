@@ -95,6 +95,28 @@ public interface RouterClient extends AutoCloseable {
      */
     org.netpilot.model.PingReply ping(String address, int seq) throws RouterException;
 
+    /**
+     * One ping probe with this TTL, for traceroute: the router where it runs out answers "TTL
+     * exceeded" ({@link org.netpilot.model.PingReply#ttlExceeded()}); with a TTL long enough the address
+     * itself answers.
+     *
+     * @param ttl 1 to 255
+     */
+    org.netpilot.model.PingReply probe(String address, int ttl) throws RouterException;
+
+    /** The router's DNS settings (read only). */
+    org.netpilot.model.DnsSettings dnsSettings() throws RouterException;
+
+    /**
+     * Has the router look a name up with its own DNS settings.
+     *
+     * @throws IllegalArgumentException when it is not a host name
+     */
+    org.netpilot.model.DnsAnswer resolve(String name) throws RouterException;
+
+    /** The router's log, oldest line first (read only). */
+    java.util.List<org.netpilot.model.LogEntry> log() throws RouterException;
+
     @Override
     void close();
 }

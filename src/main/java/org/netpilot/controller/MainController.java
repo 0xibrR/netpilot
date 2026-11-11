@@ -177,10 +177,17 @@ public class MainController implements RouterSession.Listener {
         menu = new SideMenu(sideMenu, this::show);
     }
 
+    /**
+     * Ctrl+1 … Ctrl+9: the main pages in menu order, with Settings always on 9. Pages added later
+     * (more developer tools) have no number, so the shortcuts people learned never move.
+     */
+    static final java.util.List<PageId> SHORTCUTS = java.util.List.of(PageId.DASHBOARD, PageId.GENERATE,
+            PageId.HOTSPOT, PageId.DESIGN, PageId.RESELLERS, PageId.REPORTS, PageId.HISTORY, PageId.PING,
+            PageId.SETTINGS);
+
     private void addShortcuts() {
-        PageId[] all = PageId.values();
-        for (int i = 0; i < all.length && i < 9; i++) {
-            PageId page = all[i];
+        for (int i = 0; i < SHORTCUTS.size(); i++) {
+            PageId page = SHORTCUTS.get(i);
             KeyCombination keys = new KeyCodeCombination(KeyCode.getKeyCode(String.valueOf(i + 1)),
                     KeyCombination.SHORTCUT_DOWN);
             root.getScene().getAccelerators().put(keys, () -> show(page));

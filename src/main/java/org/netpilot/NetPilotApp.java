@@ -167,6 +167,15 @@ public class NetPilotApp extends Application {
             if (type == PingController.class) {
                 return new PingController(context);
             }
+            if (type == org.netpilot.controller.TracerouteController.class) {
+                return new org.netpilot.controller.TracerouteController(context);
+            }
+            if (type == org.netpilot.controller.DnsController.class) {
+                return new org.netpilot.controller.DnsController(context);
+            }
+            if (type == org.netpilot.controller.RouterLogController.class) {
+                return new org.netpilot.controller.RouterLogController(context);
+            }
             if (type == ResellersController.class) {
                 return new ResellersController(context);
             }

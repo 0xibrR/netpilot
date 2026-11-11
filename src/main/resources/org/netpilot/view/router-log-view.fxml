@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Router log page (developer tools). Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.RouterLogController"
+            styleClass="page">
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="16" right="20" bottom="8" left="20"/>
+            </padding>
+            <Label text="%nav.ROUTER_LOG" styleClass="page-title"/>
+            <Label text="%log.help" styleClass="muted" wrapText="true"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <ComboBox fx:id="filterBox" prefWidth="190"/>
+                <TextField fx:id="searchField" promptText="%log.search" prefColumnCount="22"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                <Label fx:id="countLabel" styleClass="muted"/>
+                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="flat"/>
+                <Button fx:id="saveButton" text="%log.save" onAction="#onSave"/>
+            </HBox>
+            <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="logTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="timeColumn" text="%log.column.time" prefWidth="150" sortable="false"/>
+                <TableColumn fx:id="topicsColumn" text="%log.column.topics" prefWidth="170" sortable="false"/>
+                <TableColumn fx:id="messageColumn" text="%log.column.message" prefWidth="600" sortable="false"/>
+            </columns>
+            <placeholder>
+                <Label fx:id="placeholderLabel" text="%log.empty" styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="0" right="20" bottom="16" left="20"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+</BorderPane>

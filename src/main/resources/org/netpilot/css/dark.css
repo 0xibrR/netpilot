@@ -73,3 +73,11 @@
 .live-upload {
     -fx-text-fill: #3ccf9f;
 }
+
+.table-row-cell.log-error .table-cell {
+    -fx-text-fill: #ff7b72;
+}
+
+.table-row-cell.log-warning .table-cell {
+    -fx-text-fill: #e3b341;
+}

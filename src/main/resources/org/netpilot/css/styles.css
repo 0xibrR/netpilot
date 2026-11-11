@@ -800,3 +800,17 @@
     -fx-font-size: 14px;
     -fx-padding: 10 16 10 16;
 }
+
+/* Router log: errors red, warnings amber, so they stand out in a long log */
+.table-row-cell.log-error .table-cell {
+    -fx-text-fill: #c62828;
+}
+
+.table-row-cell.log-warning .table-cell {
+    -fx-text-fill: #b26a00;
+}
+
+.table-row-cell.log-error:selected .table-cell,
+.table-row-cell.log-warning:selected .table-cell {
+    -fx-text-fill: white;
+}

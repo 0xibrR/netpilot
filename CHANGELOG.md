@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Developer tools: Traceroute (each router on the way, 3 probes a step, live), DNS lookup (through the
+  router, following CNAMEs, with its DNS settings read only) and Router log (live, errors red and warnings
+  amber, filter, search, save to a file); Ctrl+1…Ctrl+9 keep their pages
 - Online now (Manage users): live status cards (online, CPU, memory, total download and upload), a chart of
   the last 5 minutes, and per-user package, time left, download and upload speed and data used; search by
   name, IP or MAC; refresh every second or every 2, 5 or 10 seconds, only while the tab is on screen; disconnecting asks first

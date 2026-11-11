@@ -17,6 +17,9 @@ enum PageId {
     REPORTS("reports-view.fxml", Icons.CHART, true),
     HISTORY("history-view.fxml", Icons.HISTORY, false),
     PING("ping-view.fxml", Icons.PULSE, true),
+    TRACEROUTE("traceroute-view.fxml", Icons.ROUTE, true),
+    DNS("dns-view.fxml", Icons.GLOBE, true),
+    ROUTER_LOG("router-log-view.fxml", Icons.LOG, true),
     SETTINGS("settings-view.fxml", Icons.SETTINGS, false);
 
     private final String view;

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- DNS lookup page (developer tools). Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.DnsController"
+            styleClass="page">
+    <top>
+        <VBox spacing="12">
+            <padding>
+                <Insets top="16" right="20" bottom="8" left="20"/>
+            </padding>
+            <Label text="%nav.DNS" styleClass="page-title"/>
+            <Label text="%dns.help" styleClass="muted" wrapText="true"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%dns.name"/>
+                <TextField fx:id="nameField" promptText="%dns.name.prompt" prefColumnCount="24" onAction="#onLookup"/>
+                <Button fx:id="lookupButton" text="%dns.lookup" onAction="#onLookup" styleClass="primary"/>
+                <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                <Label fx:id="resultLabel" styleClass="muted"/>
+            </HBox>
+            <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
+
+            <FlowPane hgap="12" vgap="12">
+                <VBox styleClass="stat-card, compact" prefWidth="260">
+                    <Label text="%dns.servers" styleClass="stat-title"/>
+                    <Label fx:id="serversValue" text="—" styleClass="monospace" wrapText="true"/>
+                </VBox>
+                <VBox styleClass="stat-card, compact" prefWidth="260">
+                    <Label text="%dns.dynamicServers" styleClass="stat-title"/>
+                    <Label fx:id="dynamicValue" text="—" styleClass="monospace" wrapText="true"/>
+                </VBox>
+                <VBox styleClass="stat-card, compact" prefWidth="260">
+                    <Label text="%dns.remoteRequests" styleClass="stat-title"/>
+                    <Label fx:id="remoteValue" text="—"/>
+                </VBox>
+                <Button fx:id="reloadButton" text="%button.refresh" onAction="#onReloadSettings" styleClass="flat"/>
+            </FlowPane>
+            <Label fx:id="settingsHint" styleClass="muted" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="recordsTable">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="nameColumn" text="%dns.column.name" prefWidth="220"/>
+                <TableColumn fx:id="typeColumn" text="%dns.column.type" prefWidth="80"/>
+                <TableColumn fx:id="dataColumn" text="%dns.column.data" prefWidth="260"/>
+                <TableColumn fx:id="ttlColumn" text="%dns.column.ttl" prefWidth="120"/>
+            </columns>
+            <placeholder>
+                <Label text="%dns.empty" styleClass="muted"/>
+            </placeholder>
+            <BorderPane.margin>
+                <Insets top="0" right="20" bottom="16" left="20"/>
+            </BorderPane.margin>
+        </TableView>
+    </center>
+</BorderPane>

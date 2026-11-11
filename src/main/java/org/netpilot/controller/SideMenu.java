@@ -52,9 +52,12 @@ final class SideMenu {
                     new Entry("nav.RESELLERS", PageId.RESELLERS, null),
                     new Entry("nav.cards.sales", PageId.REPORTS, null),
                     new Entry("nav.HISTORY", PageId.HISTORY, null))),
-            // diagnostics through the router; more tools (traceroute, DNS, bandwidth) join this group
+            // diagnostics through the router; more tools join this group
             new Group("nav.group.dev", Icons.TERMINAL, List.of(
-                    new Entry("nav.PING", PageId.PING, null))),
+                    new Entry("nav.PING", PageId.PING, null),
+                    new Entry("nav.TRACEROUTE", PageId.TRACEROUTE, null),
+                    new Entry("nav.DNS", PageId.DNS, null),
+                    new Entry("nav.ROUTER_LOG", PageId.ROUTER_LOG, null))),
             new Entry("nav.SETTINGS", PageId.SETTINGS, null));
 
     private final ToggleGroup toggles = new ToggleGroup();

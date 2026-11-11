@@ -32,9 +32,24 @@ public record PingReply(int seq, String host, Optional<Duration> time, int ttl, 
         status = status == null ? "" : status;
     }
 
-    /** Whether a reply came back. */
+    /** Whether the address itself replied (a router on the way saying "TTL exceeded" does not count). */
     public boolean answered() {
-        return time.isPresent();
+        return time.isPresent() && !ttlExceeded();
+    }
+
+    /**
+     * A router on the way dropped the probe because its TTL ran out and said so: that router is
+     * {@link #host()}. Traceroute is built on this.
+     */
+    public boolean ttlExceeded() {
+        String s = status.toLowerCase(Locale.ROOT);
+        return s.contains("ttl exceeded") || s.contains("time exceeded");
+    }
+
+    /** An IP address rather than a name. */
+    public static boolean isIpAddress(String value) {
+        String v = value == null ? "" : value.strip();
+        return IPV4.matcher(v).matches() || (v.contains(":") && IPV6.matcher(v).matches());
     }
 
     /**

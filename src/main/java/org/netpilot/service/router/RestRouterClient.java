@@ -17,9 +17,12 @@ import java.util.regex.Pattern;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
 import org.netpilot.model.CardValidity;
+import org.netpilot.model.DnsAnswer;
+import org.netpilot.model.DnsSettings;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.LogEntry;
 import org.netpilot.model.PingReply;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterEndpoint;
@@ -38,6 +41,8 @@ import tools.jackson.databind.node.ObjectNode;
  * RouterOS returns every value as a string, including numbers and booleans.
  */
 final class RestRouterClient implements RouterClient {
+
+    private static final System.Logger LOG = System.getLogger(RestRouterClient.class.getName());
 
     private static final String USERS = "/ip/hotspot/user";
     private static final String ACTIVE = "/ip/hotspot/active";
@@ -301,23 +306,122 @@ final class RestRouterClient implements RouterClient {
      */
     @Override
     public PingReply ping(String address, int seq) throws RouterException {
+        return pingOnce(address, seq, 0);
+    }
+
+    /**
+     * A ping with a short TTL: the router that drops it on the way answers "TTL exceeded", which
+     * tells who that router is. Sending TTL 1, 2, 3 … walks the path one router at a time.
+     */
+    @Override
+    public PingReply probe(String address, int ttl) throws RouterException {
+        if (ttl < 1 || ttl > 255) {
+            throw new IllegalArgumentException("TTL must be 1 to 255: " + ttl);
+        }
+        return pingOnce(address, ttl - 1, ttl);
+    }
+
+    /** @param ttl 0 for the router's default */
+    private PingReply pingOnce(String address, int seq, int ttl) throws RouterException {
         String target = PingReply.target(address);
         ObjectNode body = JSON.createObjectNode().put("address", target).put("count", "1");
+        if (ttl > 0) {
+            body.put("ttl", String.valueOf(ttl));
+        }
         JsonNode result = send("/ping", HttpRequest.newBuilder(URI.create(baseUri + "/ping"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(body))));
         JsonNode line = result.isArray() && !result.isEmpty() ? result.get(result.size() - 1) : result;
         boolean received = number(line, "received") > 0;
-        java.util.Optional<java.time.Duration> time = received
+        String status = text(line, "status");
+        boolean ttlExceeded = new PingReply(0, "", java.util.Optional.empty(), 0, 0, status).ttlExceeded();
+        java.util.Optional<java.time.Duration> time = received || ttlExceeded
                 ? PingReply.parseTime(text(line, "time"))
                 : java.util.Optional.empty();
-        String status = text(line, "status");
+        if (ttlExceeded && time.isEmpty()) {
+            time = java.util.Optional.of(java.time.Duration.ZERO); // answered, time not given
+        }
         if (!received && status.isEmpty()) {
             status = "timeout";
         }
         String host = text(line, "host");
         return new PingReply(seq, host.isEmpty() ? target : host, time, (int) number(line, "ttl"),
-                (int) number(line, "size"), received ? "" : status);
+                (int) number(line, "size"), received && !ttlExceeded ? "" : status);
+    }
+
+    @Override
+    public DnsSettings dnsSettings() throws RouterException {
+        JsonNode dns = get("/ip/dns", "servers,dynamic-servers,allow-remote-requests");
+        JsonNode item = dns.isArray() && !dns.isEmpty() ? dns.get(0) : dns;
+        return new DnsSettings(DnsSettings.split(text(item, "servers")),
+                DnsSettings.split(text(item, "dynamic-servers")), "true".equals(text(item, "allow-remote-requests")));
+    }
+
+    /**
+     * Has the router look the name up (a single ping to it: RouterOS resolves the name first, with
+     * its own DNS settings and cache), then reads what it learned from its DNS cache, following
+     * CNAMEs. Only uses commands the ping page already needs; no scripts run on the router.
+     */
+    @Override
+    public DnsAnswer resolve(String name) throws RouterException {
+        String question = DnsAnswer.validName(name);
+        PingReply reply = pingOnce(question, 0, 0);
+        List<DnsAnswer.Record> records = new ArrayList<>();
+        java.util.Set<String> asked = new java.util.HashSet<>();
+        java.util.ArrayDeque<String> names = new java.util.ArrayDeque<>(List.of(question));
+        while (!names.isEmpty() && asked.size() < 6) { // a CNAME chain, but never a loop
+            String current = names.removeFirst();
+            if (!asked.add(current.toLowerCase(java.util.Locale.ROOT))) {
+                continue;
+            }
+            for (DnsAnswer.Record record : cached(current)) {
+                records.add(record);
+                if (record.type().equals("CNAME")) {
+                    names.add(record.data());
+                }
+            }
+        }
+        boolean anyAddress = records.stream().anyMatch(DnsAnswer.Record::address);
+        if (!anyAddress && PingReply.isIpAddress(reply.host())) {
+            // the cache could not be read (or keeps only some types): the ping still shows the address
+            records.add(new DnsAnswer.Record(question, reply.host().contains(":") ? "AAAA" : "A", reply.host(),
+                    java.util.Optional.empty()));
+        }
+        return new DnsAnswer(question, records.stream().distinct().toList());
+    }
+
+    /** The router's DNS cache entries for one name; empty when the cache cannot be read. */
+    private List<DnsAnswer.Record> cached(String name) {
+        String query = "?name=" + java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8)
+                + "&.proplist=name,type,data,ttl";
+        for (String path : List.of("/ip/dns/cache/all", "/ip/dns/cache")) {
+            try {
+                JsonNode list = send(path, HttpRequest.newBuilder(URI.create(baseUri + path + query)).GET());
+                List<DnsAnswer.Record> found = new ArrayList<>();
+                for (JsonNode item : array(list, "DNS cache")) {
+                    String type = text(item, "type");
+                    found.add(new DnsAnswer.Record(text(item, "name"), type.isEmpty() ? "A" : type,
+                            text(item, "data"), RouterDuration.parse(text(item, "ttl"))));
+                }
+                return found;
+            } catch (RouterException e) {
+                LOG.log(System.Logger.Level.DEBUG, "DNS cache not read from {0}: {1}", path, e.getMessage());
+            }
+        }
+        return List.of();
+    }
+
+    @Override
+    public List<LogEntry> log() throws RouterException {
+        List<LogEntry> lines = new ArrayList<>();
+        for (JsonNode item : array(get("/log", ".id,time,topics,message"), "log")) {
+            String id = text(item, ".id");
+            if (!id.isEmpty()) {
+                lines.add(new LogEntry(id, text(item, "time"), LogEntry.topics(text(item, "topics")),
+                        text(item, "message")));
+            }
+        }
+        return List.copyOf(lines);
     }
 
     @Override
