@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-11-11
+
+### Changed
+- Release to confirm the whole update cycle from 1.2.4: download, checksum, backup, confirmation and install
+
 ## [1.2.4] - 2026-11-11
 
 ### Fixed
