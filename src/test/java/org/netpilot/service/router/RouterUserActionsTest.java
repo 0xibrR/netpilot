@@ -74,6 +74,24 @@ class RouterUserActionsTest {
     }
 
     @Test
+    void readsEachSessionsTrafficAndTimeLeft() throws Exception {
+        router.route("/rest/ip/hotspot/active", 200, "[{\".id\":\"*A\",\"user\":\"card1\",\"address\":\"10.5.50.9\","
+                + "\"mac-address\":\"AA:BB:CC:00:11:22\",\"uptime\":\"12m\",\"bytes-in\":\"52480\","
+                + "\"bytes-out\":\"3145728\",\"session-time-left\":\"47m30s\"},"
+                + "{\".id\":\"*B\",\"user\":\"open\",\"uptime\":\"1h\"}]");
+
+        List<ActiveSession> sessions = client.activeSessions();
+
+        ActiveSession card = sessions.getFirst();
+        assertEquals(52_480, card.bytesIn(), "uploaded");
+        assertEquals(3_145_728, card.bytesOut(), "downloaded");
+        assertEquals(Duration.ofMinutes(47).plusSeconds(30), card.timeLeft().orElseThrow());
+        ActiveSession open = sessions.get(1);
+        assertEquals(0, open.bytesIn());
+        assertTrue(open.timeLeft().isEmpty(), "no time limit on the card");
+    }
+
+    @Test
     void disablesAndEnablesUsers() throws Exception {
         router.addUser("a", "p", "1M", "", "", "0s", 0, 0, false);
         router.addUser("b", "p", "1M", "", "", "0s", 0, 0, false);

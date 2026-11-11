@@ -274,12 +274,49 @@
     -fx-font-weight: bold;
 }
 
+/* Smaller cards in one row, for pages where the table below needs the height */
+.stat-card.compact {
+    -fx-padding: 6 12 6 12;
+    -fx-spacing: 2;
+}
+
+.stat-card.compact .stat-value {
+    -fx-font-size: 17px;
+}
+
 .stat-money {
     -fx-text-fill: #1e7e34;
 }
 
 .chart-bar {
     -fx-bar-fill: -np-accent;
+}
+
+/* Online now: download in a fixed blue (not the accent, which may be grey), upload in teal, in the chart and in the figures above it */
+.live-chart .default-color0.chart-series-line {
+    -fx-stroke: #3b8eea;
+    -fx-stroke-width: 2px;
+}
+
+.live-chart .default-color1.chart-series-line {
+    -fx-stroke: #1fa37a;
+    -fx-stroke-width: 2px;
+}
+
+.live-chart .default-color0.chart-legend-item-symbol {
+    -fx-background-color: #3b8eea;
+}
+
+.live-chart .default-color1.chart-legend-item-symbol {
+    -fx-background-color: #1fa37a;
+}
+
+.live-download {
+    -fx-text-fill: #3b8eea;
+}
+
+.live-upload {
+    -fx-text-fill: #1fa37a;
 }
 
 /* ================================================================ WinBox-style main window */
@@ -448,6 +485,48 @@
 
 .tool-button .icon {
     -fx-stroke: -np-text;
+}
+
+/* A foldable section: a header line that opens and closes what is below it (the chart on the
+   online tab). The whole header is the button; the arrow says which way it goes. */
+.fold-section {
+    -fx-background-color: -np-card;
+    -fx-border-color: -np-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.fold-header {
+    -fx-padding: 7 12 7 12;
+    -fx-cursor: hand;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.fold-header:folded {
+    -fx-background-radius: 8;
+}
+
+.fold-header:hover {
+    -fx-background-color: -np-bg;
+}
+
+.fold-header:focused {
+    -fx-border-color: #3b8eea;
+    -fx-border-radius: 8;
+}
+
+.fold-title {
+    -fx-font-weight: bold;
+}
+
+.fold-figure {
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 0 10;
+}
+
+.fold-header .icon {
+    -fx-stroke: #3b8eea;
+    -fx-stroke-width: 2;
 }
 
 .button.flat {

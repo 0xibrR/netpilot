@@ -225,12 +225,15 @@ final class RestRouterClient implements RouterClient {
     @Override
     public List<ActiveSession> activeSessions() throws RouterException {
         List<ActiveSession> sessions = new ArrayList<>();
-        for (JsonNode item : array(get(ACTIVE, ".id,user,address,mac-address,uptime"), "active sessions")) {
+        JsonNode list = get(ACTIVE, ".id,user,address,mac-address,uptime,bytes-in,bytes-out,session-time-left");
+        for (JsonNode item : array(list, "active sessions")) {
             String id = text(item, ".id");
             String user = text(item, "user");
             if (ROUTER_ID.matcher(id).matches() && !user.isEmpty()) {
                 sessions.add(new ActiveSession(id, user, text(item, "address"), text(item, "mac-address"),
-                        RouterDuration.parse(text(item, "uptime")).orElse(Duration.ZERO)));
+                        RouterDuration.parse(text(item, "uptime")).orElse(Duration.ZERO),
+                        number(item, "bytes-in"), number(item, "bytes-out"),
+                        RouterDuration.parse(text(item, "session-time-left"))));
             }
         }
         return List.copyOf(sessions);

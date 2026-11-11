@@ -347,6 +347,13 @@ public class RouterUsersController {
         this.handover = action;
     }
 
+    /** Package (user profile) per user name, from the last list read; empty when not loaded yet. */
+    Map<String, String> profiles() {
+        Map<String, String> profiles = new java.util.HashMap<>();
+        users.forEach(u -> profiles.putIfAbsent(u.name(), u.profile()));
+        return profiles;
+    }
+
     @FXML
     private void onHandover() {
         handover.accept(selected());

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -27,13 +28,75 @@
     <Tab fx:id="activeTab" text="%hotspot.tab.active">
         <BorderPane>
             <top>
-                <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="6">
-                    <Button fx:id="refreshActiveButton" text="%button.refresh" onAction="#onRefreshActive" styleClass="tool-button"/>
-                    <Button fx:id="kickButton" text="%users.disconnect" onAction="#onDisconnectSessions" styleClass="tool-button, danger"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <ProgressIndicator fx:id="activeProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
-                    <Label fx:id="activeSummary" styleClass="muted"/>
-                </HBox>
+                <VBox>
+                    <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="6">
+                        <Button fx:id="refreshActiveButton" text="%button.refresh" onAction="#onRefreshActive" styleClass="tool-button"/>
+                        <Button fx:id="kickButton" text="%users.disconnect" onAction="#onDisconnectSessions" styleClass="tool-button, danger"/>
+                        <Separator orientation="VERTICAL"/>
+                        <TextField fx:id="activeSearch" promptText="%hotspot.live.search" prefColumnCount="18"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <ProgressIndicator fx:id="activeProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
+                        <Label text="%hotspot.live.refreshEvery" styleClass="muted"/>
+                        <ComboBox fx:id="intervalBox" prefWidth="120"/>
+                    </HBox>
+                    <Label fx:id="activeProblem" styleClass="status-error" wrapText="true" visible="false" managed="false">
+                        <padding>
+                            <Insets top="6" right="10" bottom="0" left="10"/>
+                        </padding>
+                    </Label>
+                    <!-- one compact row of figures, so the table keeps most of the height -->
+                    <HBox spacing="10">
+                        <VBox styleClass="stat-card, compact" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <Label text="%dashboard.online" styleClass="stat-title"/>
+                            <Label fx:id="onlineValue" text="—" styleClass="stat-value, stat-online"/>
+                        </VBox>
+                        <VBox styleClass="stat-card, compact" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <Label text="%hotspot.live.download" styleClass="stat-title"/>
+                            <Label fx:id="downloadValue" text="—" styleClass="stat-value, live-download"/>
+                        </VBox>
+                        <VBox styleClass="stat-card, compact" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <Label text="%hotspot.live.upload" styleClass="stat-title"/>
+                            <Label fx:id="uploadValue" text="—" styleClass="stat-value, live-upload"/>
+                        </VBox>
+                        <VBox styleClass="stat-card, compact" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <Label text="%hotspot.live.cpu" styleClass="stat-title"/>
+                            <Label fx:id="cpuValue" text="—" styleClass="stat-value"/>
+                        </VBox>
+                        <VBox styleClass="stat-card, compact" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <Label text="%hotspot.live.memory" styleClass="stat-title"/>
+                            <Label fx:id="memoryValue" text="—" styleClass="stat-value"/>
+                        </VBox>
+                        <padding>
+                            <Insets top="10" right="10" bottom="6" left="10"/>
+                        </padding>
+                    </HBox>
+                    <!-- the chart is a section with its own header: clicking the header folds it to one line -->
+                    <VBox styleClass="fold-section">
+                        <HBox fx:id="chartHeader" styleClass="fold-header" alignment="CENTER_LEFT" spacing="8"
+                              focusTraversable="true">
+                            <StackPane fx:id="chartIcon"/>
+                            <Label text="%hotspot.live.chartTitle" styleClass="fold-title"/>
+                            <Label fx:id="foldedDownload" styleClass="live-download, fold-figure"/>
+                            <Label fx:id="foldedUpload" styleClass="live-upload, fold-figure"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <StackPane fx:id="chevron"/>
+                        </HBox>
+                        <!-- time runs left to right in every language, like WinBox and most charts -->
+                        <LineChart fx:id="trafficChart" styleClass="live-chart" nodeOrientation="LEFT_TO_RIGHT"
+                                   createSymbols="false" animated="false" legendSide="RIGHT"
+                                   prefHeight="150" minHeight="150" maxHeight="150">
+                            <xAxis>
+                                <NumberAxis fx:id="timeAxis" autoRanging="false" lowerBound="-300" upperBound="0" tickUnit="60"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="%hotspot.live.unit" forceZeroInRange="true"/>
+                            </yAxis>
+                        </LineChart>
+                        <VBox.margin>
+                            <Insets top="0" right="10" bottom="8" left="10"/>
+                        </VBox.margin>
+                    </VBox>
+                </VBox>
             </top>
             <center>
                 <TableView fx:id="activeTable">
@@ -41,10 +104,16 @@
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
                     </columnResizePolicy>
                     <columns>
-                        <TableColumn fx:id="activeUserColumn" text="%column.username" prefWidth="170"/>
-                        <TableColumn fx:id="activeAddressColumn" text="%hotspot.column.address" prefWidth="140"/>
-                        <TableColumn fx:id="activeMacColumn" text="%hotspot.column.mac" prefWidth="160"/>
-                        <TableColumn fx:id="activeUptimeColumn" text="%hotspot.column.sessionTime" prefWidth="120"/>
+                        <TableColumn fx:id="activeUserColumn" text="%column.username" prefWidth="140"/>
+                        <TableColumn fx:id="activeProfileColumn" text="%column.profile" prefWidth="90"/>
+                        <TableColumn fx:id="activeAddressColumn" text="%hotspot.column.address" prefWidth="115"/>
+                        <TableColumn fx:id="activeMacColumn" text="%hotspot.column.mac" prefWidth="135"/>
+                        <TableColumn fx:id="activeUptimeColumn" text="%hotspot.column.sessionTime" prefWidth="95"/>
+                        <TableColumn fx:id="activeLeftColumn" text="%hotspot.column.timeLeft" prefWidth="95"/>
+                        <TableColumn fx:id="activeDownRateColumn" text="%hotspot.column.downRate" prefWidth="100"/>
+                        <TableColumn fx:id="activeUpRateColumn" text="%hotspot.column.upRate" prefWidth="100"/>
+                        <TableColumn fx:id="activeDownloadedColumn" text="%hotspot.column.downloaded" prefWidth="95"/>
+                        <TableColumn fx:id="activeUploadedColumn" text="%hotspot.column.uploaded" prefWidth="95"/>
                     </columns>
                     <placeholder>
                         <Label text="%hotspot.noActive" styleClass="muted"/>

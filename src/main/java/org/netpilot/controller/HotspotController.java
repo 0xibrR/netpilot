@@ -1,13 +1,33 @@
 package org.netpilot.controller;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
@@ -16,17 +36,26 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.util.StringConverter;
 import org.netpilot.AppContext;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
+import org.netpilot.model.DataSize;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
 import org.netpilot.model.RouterDuration;
+import org.netpilot.model.RouterResource;
 import org.netpilot.model.RouterUser;
 import org.netpilot.service.ResellerAccounts;
 import org.netpilot.service.router.RouterClient;
 import org.netpilot.service.router.RouterException;
 import org.netpilot.service.router.RouterUserActions.BulkResult;
+import org.netpilot.service.tools.LiveTraffic;
 
 /**
  * "Hotspot" page, with WinBox-like tabs: users (the {@link RouterUsersController} view), active
@@ -62,17 +91,70 @@ public class HotspotController implements Page {
     @FXML
     private ProgressIndicator activeProgress;
     @FXML
-    private Label activeSummary;
+    private TextField activeSearch;
+    @FXML
+    private ComboBox<Integer> intervalBox;
+    @FXML
+    private HBox chartHeader;
+    @FXML
+    private StackPane chartIcon;
+    @FXML
+    private StackPane chevron;
+    @FXML
+    private Label foldedDownload;
+    @FXML
+    private Label foldedUpload;
+
+    /** The chart section is open; kept while switching pages. */
+    private final BooleanProperty chartOpen = new SimpleBooleanProperty(true);
+    @FXML
+    private Label activeProblem;
+    @FXML
+    private Label onlineValue;
+    @FXML
+    private Label cpuValue;
+    @FXML
+    private Label memoryValue;
+    @FXML
+    private Label downloadValue;
+    @FXML
+    private Label uploadValue;
+    @FXML
+    private LineChart<Number, Number> trafficChart;
+    @FXML
+    private NumberAxis timeAxis;
     @FXML
     private TableView<ActiveSession> activeTable;
     @FXML
     private TableColumn<ActiveSession, String> activeUserColumn;
     @FXML
+    private TableColumn<ActiveSession, String> activeProfileColumn;
+    @FXML
     private TableColumn<ActiveSession, String> activeAddressColumn;
     @FXML
     private TableColumn<ActiveSession, String> activeMacColumn;
     @FXML
-    private TableColumn<ActiveSession, java.time.Duration> activeUptimeColumn;
+    private TableColumn<ActiveSession, Duration> activeUptimeColumn;
+    @FXML
+    private TableColumn<ActiveSession, String> activeLeftColumn;
+    @FXML
+    private TableColumn<ActiveSession, Long> activeDownRateColumn;
+    @FXML
+    private TableColumn<ActiveSession, Long> activeUpRateColumn;
+    @FXML
+    private TableColumn<ActiveSession, Long> activeDownloadedColumn;
+    @FXML
+    private TableColumn<ActiveSession, Long> activeUploadedColumn;
+
+    /** Every session read, before the search filter. */
+    private final ObservableList<ActiveSession> sessions = FXCollections.observableArrayList();
+    private final FilteredList<ActiveSession> shownSessions = new FilteredList<>(sessions);
+    private final LiveTraffic traffic = new LiveTraffic();
+    private LiveTraffic.Snapshot rates = new LiveTraffic.Snapshot(Map.of(), LiveTraffic.Rate.ZERO, List.of());
+    private Map<String, String> profiles = Map.of();
+    private final XYChart.Series<Number, Number> downloadSeries = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> uploadSeries = new XYChart.Series<>();
+    private final Timeline liveTimer = new Timeline();
 
     @FXML
     private TableView<HotspotProfile> profilesTable;
@@ -110,21 +192,7 @@ public class HotspotController implements Page {
 
     @FXML
     private void initialize() {
-        activeTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        activeUserColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().user()));
-        activeUserColumn.getStyleClass().add("monospace");
-        activeAddressColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().address()));
-        activeMacColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().macAddress()));
-        activeUptimeColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().uptime()));
-        activeUptimeColumn.setCellFactory(column -> new TableCell<>() {
-
-            @Override
-            protected void updateItem(java.time.Duration item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : RouterDuration.clock(item));
-            }
-        });
-        kickButton.disableProperty().bind(Bindings.isEmpty(activeTable.getSelectionModel().getSelectedItems()));
+        initActiveTab();
 
         profileNameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().name()));
         profileDownloadColumn
@@ -189,48 +257,313 @@ public class HotspotController implements Page {
         profilesTable.refresh();
     }
 
-    private boolean activeLive;
-
-    /** Every few seconds: users, online sessions (when that tab is open) and the profile lists. */
+    /** Every few seconds: users and the profile lists. The online tab has its own, faster timer. */
     @Override
     public void tick() {
+        if (client != null) {
+            usersController.liveRefresh(); // profiles and servers are refreshed for every page by the main window
+        }
+    }
+
+    // ------------------------------------------------------------------ online now (live)
+
+    /** One reading of the router for the online tab. */
+    private record LiveReading(List<ActiveSession> sessions, Optional<RouterResource> resource, Instant at) {
+    }
+
+    /** A reading is on its way; the next one waits for it, so a slow router never gets a queue. */
+    private boolean liveRunning;
+
+    /** CPU and memory change slowly: read every few seconds even when users refresh every second. */
+    static final Duration LOAD_EVERY = Duration.ofSeconds(4);
+
+    /** Written by the reading thread only. */
+    private volatile Instant lastLoadAt;
+
+    private boolean loadDue(Instant now) {
+        Instant last = lastLoadAt;
+        return last == null || Duration.between(last, now).compareTo(LOAD_EVERY) >= 0;
+    }
+
+    private void initActiveTab() {
+        SortedList<ActiveSession> sorted = new SortedList<>(shownSessions);
+        sorted.comparatorProperty().bind(activeTable.comparatorProperty());
+        activeTable.setItems(sorted);
+        activeTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        activeSearch.textProperty().addListener((obs, old, text) -> applySearch());
+
+        activeUserColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().user()));
+        activeUserColumn.getStyleClass().add("monospace");
+        activeProfileColumn.setCellValueFactory(
+                c -> new ReadOnlyStringWrapper(profiles.getOrDefault(c.getValue().user(), "")));
+        activeAddressColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().address()));
+        activeMacColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().macAddress()));
+        activeUptimeColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().uptime()));
+        activeUptimeColumn.setCellFactory(column -> new TableCell<>() {
+
+            @Override
+            protected void updateItem(Duration item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : RouterDuration.clock(item));
+            }
+        });
+        activeLeftColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().timeLeft()
+                .map(RouterDuration::clock)
+                .orElse(Messages.get("common.unlimited"))));
+        // speeds sort as numbers; -1 means "not measured yet" and shows as a dash
+        activeDownRateColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
+                rates.rateOf(c.getValue().routerId()).map(LiveTraffic.Rate::downloadBps).orElse(-1L)));
+        activeUpRateColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
+                rates.rateOf(c.getValue().routerId()).map(LiveTraffic.Rate::uploadBps).orElse(-1L)));
+        activeDownRateColumn.setCellFactory(column -> numberCell(v -> v < 0 ? "—" : LiveTraffic.format(v)));
+        activeUpRateColumn.setCellFactory(column -> numberCell(v -> v < 0 ? "—" : LiveTraffic.format(v)));
+        activeDownloadedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().bytesOut()));
+        activeUploadedColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().bytesIn()));
+        activeDownloadedColumn.setCellFactory(column -> numberCell(DataSize::format));
+        activeUploadedColumn.setCellFactory(column -> numberCell(DataSize::format));
+        kickButton.disableProperty().bind(Bindings.isEmpty(activeTable.getSelectionModel().getSelectedItems()));
+
+        downloadSeries.setName(Messages.get("hotspot.live.download"));
+        uploadSeries.setName(Messages.get("hotspot.live.upload"));
+        trafficChart.getData().setAll(List.of(downloadSeries, uploadSeries));
+        trafficChart.visibleProperty().bind(chartOpen);
+        trafficChart.managedProperty().bind(chartOpen);
+        chartIcon.getChildren().setAll(Icons.of(Icons.LINE_CHART));
+        chartOpen.addListener((obs, old, open) -> showFold(open));
+        chartHeader.setOnMouseClicked(e -> chartOpen.set(!chartOpen.get()));
+        chartHeader.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE) {
+                chartOpen.set(!chartOpen.get());
+                e.consume();
+            }
+        });
+        showFold(chartOpen.get());
+        timeAxis.setTickLabelFormatter(new StringConverter<>() {
+
+            @Override
+            public String toString(Number seconds) {
+                long minutes = Math.round(-seconds.doubleValue() / 60);
+                return minutes == 0
+                        ? Messages.get("hotspot.live.now")
+                        : Messages.get("hotspot.live.minutesAgo", minutes);
+            }
+
+            @Override
+            public Number fromString(String text) {
+                return 0;
+            }
+        });
+
+        intervalBox.getItems().setAll(INTERVALS);
+        intervalBox.setConverter(new StringConverter<>() {
+
+            @Override
+            public String toString(Integer seconds) {
+                if (seconds == null) {
+                    return "";
+                }
+                return seconds == 1
+                        ? Messages.get("hotspot.live.everySecond")
+                        : Messages.get("hotspot.live.seconds", seconds);
+            }
+
+            @Override
+            public Integer fromString(String text) {
+                return DEFAULT_INTERVAL;
+            }
+        });
+        intervalBox.setValue(DEFAULT_INTERVAL);
+        intervalBox.valueProperty().addListener((obs, old, seconds) -> scheduleLive());
+        scheduleLive();
+    }
+
+    /**
+     * Open: the chart below the header and an up arrow (click folds it). Folded: one line with the
+     * current speeds and a down arrow, so the key figure stays in sight while the table gets the room.
+     */
+    private void showFold(boolean open) {
+        chevron.getChildren().setAll(Icons.of(open ? Icons.CHEVRON_UP : Icons.CHEVRON_DOWN));
+        for (Label figure : List.of(foldedDownload, foldedUpload)) {
+            figure.setVisible(!open);
+            figure.setManaged(!open);
+        }
+        Tooltip.install(chartHeader,
+                new Tooltip(Messages.get(open ? "hotspot.live.hideChart" : "hotspot.live.showChart")));
+        chartHeader.pseudoClassStateChanged(FOLDED, !open);
+    }
+
+    private static final PseudoClass FOLDED = PseudoClass.getPseudoClass("folded");
+
+    private static <T> TableCell<T, Long> numberCell(java.util.function.LongFunction<String> format) {
+        return new TableCell<>() {
+
+            @Override
+            protected void updateItem(Long item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : format.apply(item));
+            }
+        };
+    }
+
+    /** Refresh choices for the online tab, in seconds. */
+    static final List<Integer> INTERVALS = List.of(1, 2, 5, 10);
+    static final int DEFAULT_INTERVAL = 5;
+
+    private void scheduleLive() {
+        int seconds = intervalBox.getValue() == null ? DEFAULT_INTERVAL : intervalBox.getValue();
+        liveTimer.stop();
+        liveTimer.getKeyFrames().setAll(new KeyFrame(javafx.util.Duration.seconds(seconds), e -> liveTick()));
+        liveTimer.setCycleCount(Animation.INDEFINITE);
+        if (client != null) {
+            liveTimer.play();
+        }
+    }
+
+    /**
+     * Reads the router only while someone can see the online tab: this page shown, that tab
+     * selected and the window not minimised. Otherwise the timer fires but sends nothing.
+     */
+    private void liveTick() {
+        if (client != null && !liveRunning && onScreen()) {
+            readLive(false);
+        }
+    }
+
+    private boolean onScreen() {
+        if (tabs.getSelectionModel().getSelectedItem() != activeTab || activeTable.getScene() == null
+                || !(activeTable.getScene().getWindow() instanceof javafx.stage.Stage stage) || stage.isIconified()
+                || !stage.isShowing()) {
+            return false;
+        }
+        for (javafx.scene.Node node = activeTable; node != null; node = node.getParent()) {
+            if (!node.isVisible()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Reads the online sessions and the router's load in the background.
+     *
+     * @param busyIndicator show the spinner (a Refresh press) rather than updating quietly
+     */
+    private void readLive(boolean busyIndicator) {
         RouterClient target = client;
-        if (target == null) {
+        if (target == null || liveRunning) {
             return;
         }
-        usersController.liveRefresh(); // profiles and servers are refreshed for every page by the main window
-        if (tabs.getSelectionModel().getSelectedItem() == activeTab && !activeLive) {
-            activeLive = true;
-            Task<List<ActiveSession>> task = new Task<>() {
+        liveRunning = true;
+        Task<LiveReading> task = new Task<>() {
 
-                @Override
-                protected List<ActiveSession> call() throws Exception {
-                    return target.activeSessions();
+            @Override
+            protected LiveReading call() throws Exception {
+                List<ActiveSession> read = target.activeSessions();
+                Instant at = Instant.now(); // the counters' moment, not the moment the UI gets them
+                Optional<RouterResource> load;
+                try {
+                    load = loadDue(at) ? Optional.of(target.resource()) : Optional.empty();
+                    load.ifPresent(l -> lastLoadAt = at);
+                } catch (RouterException e) {
+                    LOG.log(System.Logger.Level.DEBUG, "Router load not read", e);
+                    load = Optional.empty(); // the users matter more than the load figures
                 }
-            };
-            task.setOnSucceeded(e -> {
-                activeLive = false;
-                if (client == target && !task.getValue().equals(activeTable.getItems())) {
-                    Set<String> selected = activeTable.getSelectionModel().getSelectedItems().stream()
-                            .map(ActiveSession::routerId).collect(java.util.stream.Collectors.toSet());
-                    activeTable.getItems().setAll(task.getValue());
-                    activeTable.getItems().stream().filter(s -> selected.contains(s.routerId()))
-                            .forEach(s -> activeTable.getSelectionModel().select(s));
-                    activeSummary.setText(Messages.get("hotspot.activeCount", task.getValue().size()));
-                }
-            });
-            task.setOnFailed(e -> activeLive = false);
-            Thread thread = new Thread(task, "netpilot-active-live");
-            thread.setDaemon(true);
-            thread.start();
+                return new LiveReading(read, load, at);
+            }
+        };
+        if (busyIndicator) {
+            task.setOnRunning(e -> setBusy(true));
         }
+        task.setOnSucceeded(e -> {
+            liveRunning = false;
+            setBusy(false);
+            if (client == target) {
+                showLive(task.getValue());
+            }
+        });
+        task.setOnFailed(e -> {
+            liveRunning = false;
+            setBusy(false);
+            Throwable error = task.getException();
+            LOG.log(error instanceof RouterException ? System.Logger.Level.WARNING : System.Logger.Level.ERROR,
+                    "Reading the online users failed", error);
+            if (client == target) {
+                activeProblem.setText(Messages.get("hotspot.live.failed", String.valueOf(error.getMessage())));
+                activeProblem.setVisible(true);
+                activeProblem.setManaged(true);
+            }
+        });
+        Thread thread = new Thread(task, "netpilot-online");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void showLive(LiveReading reading) {
+        activeLoaded = true;
+        activeProblem.setVisible(false);
+        activeProblem.setManaged(false);
+        rates = traffic.update(reading.sessions(), reading.at());
+        profiles = usersController.profiles();
+
+        Set<String> selected = activeTable.getSelectionModel().getSelectedItems().stream()
+                .map(ActiveSession::routerId).collect(Collectors.toSet());
+        sessions.setAll(reading.sessions());
+        activeTable.getSelectionModel().clearSelection();
+        activeTable.getItems().stream().filter(s -> selected.contains(s.routerId()))
+                .forEach(s -> activeTable.getSelectionModel().select(s));
+        activeTable.refresh(); // speeds and packages are read through the cells
+
+        onlineValue.setText(String.valueOf(reading.sessions().size()));
+        downloadValue.setText(LiveTraffic.format(rates.total().downloadBps()));
+        uploadValue.setText(LiveTraffic.format(rates.total().uploadBps()));
+        foldedDownload.setText("↓ " + downloadValue.getText());
+        foldedUpload.setText("↑ " + uploadValue.getText());
+        reading.resource().ifPresent(load -> {
+            cpuValue.setText(load.cpuLoad() + "%");
+            memoryValue.setText(load.totalMemory() <= 0 ? "—" : load.usedMemory() * 100 / load.totalMemory() + "%");
+        });
+        showChart(reading.at());
+    }
+
+    private void showChart(Instant now) {
+        List<XYChart.Data<Number, Number>> down = new java.util.ArrayList<>();
+        List<XYChart.Data<Number, Number>> up = new java.util.ArrayList<>();
+        for (LiveTraffic.Point point : rates.history()) {
+            double secondsAgo = -Duration.between(point.at(), now).toMillis() / 1000.0;
+            down.add(new XYChart.Data<>(secondsAgo, point.total().downloadBps() / 1_000_000.0));
+            up.add(new XYChart.Data<>(secondsAgo, point.total().uploadBps() / 1_000_000.0));
+        }
+        downloadSeries.getData().setAll(down);
+        uploadSeries.getData().setAll(up);
+    }
+
+    private void applySearch() {
+        String query = activeSearch.getText() == null ? "" : activeSearch.getText().strip().toLowerCase(Locale.ROOT);
+        shownSessions.setPredicate(query.isEmpty() ? null : s -> s.matches(query));
+    }
+
+    private void clearLive() {
+        lastLoadAt = null;
+        foldedDownload.setText("");
+        foldedUpload.setText("");
+        traffic.reset();
+        rates = new LiveTraffic.Snapshot(Map.of(), LiveTraffic.Rate.ZERO, List.of());
+        sessions.clear();
+        downloadSeries.getData().clear();
+        uploadSeries.getData().clear();
+        for (Label value : List.of(onlineValue, cpuValue, memoryValue, downloadValue, uploadValue)) {
+            value.setText("—");
+        }
+        activeProblem.setVisible(false);
+        activeProblem.setManaged(false);
     }
 
     @Override
     public void routerConnected(RouterClient routerClient, String name) {
         this.client = routerClient;
         activeLoaded = false;
-        activeTable.getItems().clear();
+        clearLive();
+        scheduleLive();
         usersController.start(routerClient, name, workspace::printVouchers, workspace::printReceipts,
                 workspace::checkStock);
         String routerKey = routerClient.endpoint().address();
@@ -254,8 +587,9 @@ public class HotspotController implements Page {
     @Override
     public void routerDisconnected() {
         client = null;
+        liveTimer.stop();
         usersController.stop();
-        activeTable.getItems().clear();
+        clearLive();
         profilesTable.getItems().clear();
         serversTable.getItems().clear();
     }
@@ -364,15 +698,7 @@ public class HotspotController implements Page {
 
     @FXML
     private void onRefreshActive() {
-        RouterClient target = client;
-        if (target == null) {
-            return;
-        }
-        run(target::activeSessions, sessions -> {
-            activeLoaded = true;
-            activeTable.getItems().setAll(sessions);
-            activeSummary.setText(Messages.get("hotspot.activeCount", sessions.size()));
-        });
+        readLive(true);
     }
 
     @FXML
@@ -380,6 +706,12 @@ public class HotspotController implements Page {
         RouterClient target = client;
         List<ActiveSession> selected = List.copyOf(activeTable.getSelectionModel().getSelectedItems());
         if (target == null || selected.isEmpty()) {
+            return;
+        }
+        String names = selected.stream().map(ActiveSession::user).limit(10).collect(Collectors.joining(", "))
+                + (selected.size() > 10 ? ", …" : "");
+        if (!Dialogs.confirm(workspace.window(), Messages.get("hotspot.disconnect.title", selected.size()),
+                Messages.get("hotspot.disconnect.body") + "\n\n" + names)) {
             return;
         }
         run(() -> context.routerUserActions().disconnect(target, selected), (BulkResult result) -> {

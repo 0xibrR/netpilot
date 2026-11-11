@@ -43,6 +43,9 @@ final class Icons {
     static final String SEND = "M10 14L21 3 M21 3l-6.5 18a.6.6 0 0 1-1 0L10 14l-7-3.5a.6.6 0 0 1 0-1z";
     static final String DOWNLOAD = "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2 M7 11l5 5 5-5 M12 4v12";
     static final String FOLDER = "M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2";
+    static final String LINE_CHART = "M3 3v18h18 M7 15l4-4 3 3 6-6";
+    static final String CHEVRON_UP = "M6 15l6-6 6 6";
+    static final String CHEVRON_DOWN = "M6 9l6 6 6-6";
 
     private Icons() {
     }

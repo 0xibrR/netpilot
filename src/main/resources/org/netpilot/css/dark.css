@@ -61,3 +61,15 @@
 .text-field, .password-field, .text-area, .combo-box-base .text-field, .spinner .text-field {
     -fx-prompt-text-fill: #b8c1cd;
 }
+
+.live-chart .default-color1.chart-series-line {
+    -fx-stroke: #3ccf9f;
+}
+
+.live-chart .default-color1.chart-legend-item-symbol {
+    -fx-background-color: #3ccf9f;
+}
+
+.live-upload {
+    -fx-text-fill: #3ccf9f;
+}
