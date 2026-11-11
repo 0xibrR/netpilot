@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-11
+
+### Changed
+- First release delivered by NetPilot's own update check: 1.2.0 finds it on Home and installs it after you confirm
+
 ## [1.2.0] - 2026-11-11
 
 ### Added
