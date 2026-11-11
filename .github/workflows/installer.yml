@@ -41,7 +41,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          version=$(./mvnw -q -B -ntp help:evaluate -Dexpression=installer.version -DforceStdout)
+          version=$(./mvnw -q -B -ntp -Pinstaller help:evaluate -Dexpression=installer.version -DforceStdout)
           tag="${GITHUB_REF_NAME#v}"
           app=$(sed -n 's/.*String VERSION = "\(.*\)";.*/\1/p' src/main/java/org/netpilot/NetPilotApp.java)
           echo "tag=$tag installer=$version app=$app"
