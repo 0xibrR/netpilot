@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Monthly PDF report (Earnings and sales): pick any month with records and the parts to include; A4, right to
+  left in Arabic, with the month summary and the change from last month, sales by day, best-selling packages,
+  each point of sale for the month (frozen prices and commissions, balance at month end), direct sales,
+  batches and notes; same figures as the page, written atomically
 - Developer tools: Traceroute (each router on the way, 3 probes a step, live), DNS lookup (through the
   router, following CNAMEs, with its DNS settings read only) and Router log (live, errors red and warnings
   amber, filter, search, save to a file); Ctrl+1…Ctrl+9 keep their pages

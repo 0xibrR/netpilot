@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -405,6 +406,104 @@ public final class ResellerAccounts {
         }
         out.sort(java.util.Comparator.comparing(s -> s.reseller().name().toLowerCase(java.util.Locale.ROOT)));
         return out;
+    }
+
+    /**
+     * One point of sale in one month.
+     *
+     * @param month what happened in the month: cards given and sold, sales value, commission,
+     *              charges and payments of that month only
+     * @param atEnd the account as it stood at the end of the month: what it owed, or its credit
+     */
+    public record MonthStatement(Reseller reseller, Statement month, Statement atEnd) {
+
+        /** Nothing happened in the month and nothing was owed: not worth a line in a report. */
+        public boolean quiet() {
+            return month.events().isEmpty() && atEnd.owes().signum() == 0;
+        }
+    }
+
+    /** Direct sales at the counter in one month. */
+    public record DirectMonth(int sold, BigDecimal total, String currency) {
+
+        public String format() {
+            return new Money(total, currency).format();
+        }
+    }
+
+    /**
+     * Every point of sale's figures for one month, by name. Built from the same ledger and the same
+     * calculation as {@link #statements()}: the account up to the end of the month minus the account
+     * up to its start. Prices and commissions are the ones frozen in each handover, so later
+     * changes do not alter past months. A payment cancelled later is left out of every month,
+     * since it was entered by mistake.
+     */
+    public List<MonthStatement> monthStatements(YearMonth month) throws IOException {
+        List<LedgerEvent> ledger = withoutVoidedPayments(repository.ledger());
+        LocalDateTime start = month.atDay(1).atStartOfDay();
+        LocalDateTime end = month.plusMonths(1).atDay(1).atStartOfDay();
+        List<MonthStatement> out = new ArrayList<>();
+        for (Reseller r : resellers()) {
+            Statement before = statement(r, until(ledger, start));
+            Statement atEnd = statement(r, until(ledger, end));
+            List<LedgerEvent> inMonth = atEnd.events().stream()
+                    .filter(e -> !e.at().isBefore(start) && e.at().isBefore(end))
+                    .toList();
+            MonthStatement line = new MonthStatement(r, difference(atEnd, before, inMonth), atEnd);
+            if (!line.quiet()) {
+                out.add(line);
+            }
+        }
+        out.sort(java.util.Comparator.comparing(s -> s.reseller().name().toLowerCase(java.util.Locale.ROOT)));
+        return out;
+    }
+
+    /** Direct sales completed in one month. */
+    public DirectMonth directMonth(YearMonth month) throws IOException {
+        int sold = 0;
+        BigDecimal total = BigDecimal.ZERO;
+        String currency = "";
+        for (LedgerEvent e : repository.ledger()) {
+            if (e.kind() == Kind.DIRECT_SALE && YearMonth.from(e.at()).equals(month)) {
+                sold++;
+                total = total.add(e.amount());
+                if (currency.isEmpty()) {
+                    currency = e.currency();
+                }
+            }
+        }
+        return new DirectMonth(sold, total, currency);
+    }
+
+    /** The months that have anything in the ledger (handovers, sales, payments, direct sales). */
+    public Set<YearMonth> ledgerMonths() throws IOException {
+        Set<YearMonth> months = new java.util.TreeSet<>();
+        repository.ledger().forEach(e -> months.add(YearMonth.from(e.at())));
+        return months;
+    }
+
+    /** Payments cancelled at any time, and their cancellations, are taken out. */
+    private static List<LedgerEvent> withoutVoidedPayments(List<LedgerEvent> ledger) {
+        Set<String> voided = new HashSet<>();
+        ledger.stream().filter(e -> e.kind() == Kind.PAYMENT_VOID).forEach(e -> voided.add(e.ref()));
+        return ledger.stream()
+                .filter(e -> e.kind() != Kind.PAYMENT_VOID)
+                .filter(e -> !(e.kind() == Kind.PAYMENT && voided.contains(e.id())))
+                .toList();
+    }
+
+    private static List<LedgerEvent> until(List<LedgerEvent> ledger, LocalDateTime end) {
+        return ledger.stream().filter(e -> e.at().isBefore(end)).toList();
+    }
+
+    private static Statement difference(Statement after, Statement before, List<LedgerEvent> events) {
+        BigDecimal charges = after.charges().subtract(before.charges());
+        BigDecimal paid = after.paid().subtract(before.paid());
+        int given = after.given() - before.given();
+        int sold = after.sold() - before.sold();
+        return new Statement(after.reseller(), given, sold, given - sold,
+                after.salesValue().subtract(before.salesValue()), after.commission().subtract(before.commission()),
+                charges, paid, charges.subtract(paid), after.currency(), events);
     }
 
     /** Which point of sale has each card now (unsold or sold), by router and card name. */

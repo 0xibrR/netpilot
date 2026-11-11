@@ -30,6 +30,8 @@ import org.netpilot.model.RouterUser;
 import org.netpilot.model.SalesReport;
 import org.netpilot.model.UsageRecord;
 import org.netpilot.model.VoucherTemplate;
+import org.netpilot.service.MonthlyReport;
+import org.netpilot.service.MonthlyReportPdf;
 import org.netpilot.service.ReportService;
 import org.netpilot.service.router.RouterClient;
 
@@ -50,6 +52,7 @@ public class ReportsController implements Page {
 
     private RouterClient client;
     private Supplier<VoucherTemplate> template;
+    private String routerName = "";
     private List<RouterUser> users = List.of();
     private List<UsageRecord> history = List.of();
     private SalesReport report;
@@ -60,6 +63,8 @@ public class ReportsController implements Page {
     private ProgressIndicator progressIndicator;
     @FXML
     private Button exportButton;
+    @FXML
+    private Button monthlyButton;
     @FXML
     private Button refreshButton;
     @FXML
@@ -130,6 +135,7 @@ public class ReportsController implements Page {
     public void routerDisconnected() {
         client = null;
         exportButton.setDisable(true);
+        monthlyButton.setDisable(true);
     }
 
     @FXML
@@ -138,6 +144,7 @@ public class ReportsController implements Page {
         periodBox.setValue(ReportPeriod.LAST_30_DAYS);
         periodBox.valueProperty().addListener((obs, old, value) -> rebuild());
         exportButton.setDisable(true);
+        monthlyButton.setDisable(true);
         setUpTables();
     }
 
@@ -147,6 +154,7 @@ public class ReportsController implements Page {
     public void start(RouterClient routerClient, String routerName, Supplier<VoucherTemplate> voucherTemplate) {
         this.client = routerClient;
         this.template = voucherTemplate;
+        this.routerName = routerName == null ? "" : routerName;
         onRefresh();
     }
 
@@ -206,6 +214,79 @@ public class ReportsController implements Page {
         }
     }
 
+    /**
+     * Monthly PDF report: pick a month and its parts, choose where to save, and the PDF is made in
+     * the background from the same figures this page shows, then opened.
+     */
+    @FXML
+    private void onMonthly() {
+        if (client == null || template == null) {
+            return;
+        }
+        String routerKey = client.endpoint().address();
+        List<java.time.YearMonth> months;
+        try {
+            months = MonthlyReport.months(routerKey, history, users, context.resellerAccounts().ledgerMonths(),
+                    LocalDate.now());
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.ERROR, "Cannot read the points-of-sale ledger", e);
+            Dialogs.error(stage(), Messages.get("monthly.failed", ""), e.getMessage());
+            return;
+        }
+        MonthlyReportDialog.show(stage(), months).ifPresent(choice -> {
+            MonthlyReport monthly;
+            try {
+                monthly = MonthlyReport.build(choice.month(), routerKey, routerName, users, history, template.get(),
+                        context.resellerAccounts(), choice.sections(), context.reportService(),
+                        java.time.LocalDateTime.now());
+            } catch (IOException | RuntimeException e) {
+                LOG.log(System.Logger.Level.ERROR, "Monthly report failed", e);
+                Dialogs.error(stage(), Messages.get("monthly.failed", e.getMessage()), "");
+                return;
+            }
+            if (monthly.empty()) {
+                Dialogs.info(stage(), Messages.get("monthly.dialog.title"),
+                        Messages.get("monthly.empty", MonthlyReportPdf.monthName(monthly)));
+                return;
+            }
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle(Messages.get("monthly.dialog.title"));
+            chooser.setInitialFileName("netpilot-report-" + choice.month() + ".pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            File file = chooser.showSaveDialog(stage());
+            if (file != null) {
+                writeMonthly(monthly, file.toPath());
+            }
+        });
+    }
+
+    private void writeMonthly(MonthlyReport monthly, java.nio.file.Path file) {
+        MonthlyReportPdf pdf = new MonthlyReportPdf(org.netpilot.NetPilotApp.VERSION);
+        Task<Void> task = new Task<>() {
+
+            @Override
+            protected Void call() throws Exception {
+                pdf.write(monthly, file);
+                return null;
+            }
+        };
+        task.setOnRunning(e -> setBusy(true));
+        task.setOnSucceeded(e -> {
+            setBusy(false);
+            workspace.toast("✓ " + Messages.get("monthly.saved", file.getFileName()));
+            context.hostServices().showDocument(file.toUri().toString());
+        });
+        task.setOnFailed(e -> {
+            setBusy(false);
+            LOG.log(System.Logger.Level.ERROR, "Writing the monthly report failed", task.getException());
+            Dialogs.error(stage(), Messages.get("monthly.failed", String.valueOf(task.getException().getMessage())),
+                    "");
+        });
+        Thread thread = new Thread(task, "netpilot-monthly-report");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     // ------------------------------------------------------------------ showing the report
 
     private void rebuild() {
@@ -226,6 +307,7 @@ public class ReportsController implements Page {
         warningsLabel.setVisible(!report.warnings().isEmpty());
         warningsLabel.setManaged(!report.warnings().isEmpty());
         exportButton.setDisable(false);
+        monthlyButton.setDisable(false);
     }
 
     /** The last 30 days of the period, one bar per day (empty days included so gaps show). */

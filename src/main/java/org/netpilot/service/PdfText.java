@@ -147,6 +147,44 @@ final class PdfText {
         return ltrFont.getWidthPoint(text, style.size());
     }
 
+    /** The font as Java's text engine sees it, for {@link #printedWidth}; loaded when first needed. */
+    private java.awt.Font shapingFont;
+
+    /**
+     * Width in points of the line as it is printed: Arabic letters joined, each direction run
+     * shaped by Java's text engine with the font's own tables, as LayoutProcessor draws it. OpenPDF
+     * aligns by {@link #width} (unjoined letters, wider), so right-aligned or centred Arabic would
+     * stop short of the edge; placing lines by this width puts them where they belong.
+     */
+    synchronized float printedWidth(String text, Style style) {
+        if (text.isBlank()) {
+            return 0;
+        }
+        if (shapingFont == null) {
+            try (InputStream in = PdfText.class.getResourceAsStream(FONT_RESOURCE)) {
+                if (in == null) {
+                    return width(text, style);
+                }
+                shapingFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, in);
+            } catch (IOException | java.awt.FontFormatException e) {
+                return width(text, style); // unknown: the safe, wider measure
+            }
+        }
+        java.awt.Font font = shapingFont.deriveFont(style.size());
+        java.awt.font.FontRenderContext context = new java.awt.font.FontRenderContext(null, true, true);
+        char[] chars = text.toCharArray();
+        Bidi bidi = new Bidi(text, Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
+        double total = 0;
+        for (int run = 0; run < bidi.getRunCount(); run++) {
+            int flags = (bidi.getRunLevel(run) & 1) == 1
+                    ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT
+                    : java.awt.Font.LAYOUT_LEFT_TO_RIGHT;
+            total += font.layoutGlyphVector(context, chars, bidi.getRunStart(run), bidi.getRunLimit(run), flags)
+                    .getLogicalBounds().getWidth();
+        }
+        return (float) total;
+    }
+
     /**
      * Builds one line from segments, laid out right-to-left when it starts with Arabic.
      */
