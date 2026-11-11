@@ -5,7 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-11
+
 ### Added
+- Updates: once a day NetPilot checks GitHub for a newer release and offers it on Home (What's new, Update now,
+  Later, Skip this version); the installer is downloaded, checked against the release's SHA-256 list, a backup
+  is taken, and it runs only after you confirm. Settings › Updates turns the daily check off or checks now.
+  Releases are published by GitHub Actions when a version tag (v1.2.0) is pushed
 - Monthly PDF report (Earnings and sales): pick any month with records and the parts to include; A4, right to
   left in Arabic, with the month summary and the change from last month, sales by day, best-selling packages,
   each point of sale for the month (frozen prices and commissions, balance at month end), direct sales,

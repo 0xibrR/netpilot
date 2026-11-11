@@ -29,6 +29,16 @@ public final class AppPaths {
         return dataDirectory().resolve("credentials");
     }
 
+    /** The update check's own settings (automatic check, last check, skipped version). */
+    public static Path updateFile() {
+        return dataDirectory().resolve("update.properties");
+    }
+
+    /** Where downloaded updates wait to be installed. */
+    public static Path updateDownloads() {
+        return dataDirectory().resolve("updates");
+    }
+
     public static Path historyFile() {
         return dataDirectory().resolve("history.csv");
     }

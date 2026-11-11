@@ -1,11 +1,14 @@
-# Builds the Windows installer (NetPilot-<version>.exe) and the portable zip on every push to master.
-# Download them from the run's "Artifacts" section on the repository's Actions page.
+# Builds the Windows installer (NetPilot-<version>.exe) and the portable zip.
+#  - On every push to master: a test build; download it from the run's "Artifacts" section.
+#  - On a version tag (v1.2.0): the same build, published as a GitHub Release with SHA256SUMS and the
+#    CHANGELOG section as its notes. NetPilot's update check reads the latest release.
 # The WiX Toolset that jpackage needs for the .exe is installed here, so no one needs it locally.
 name: Windows installer
 
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 permissions:
@@ -20,6 +23,8 @@ jobs:
     name: Build installer
     runs-on: windows-latest
     timeout-minutes: 30
+    permissions:
+      contents: write # only used by the release step, which runs for version tags
 
     steps:
       - name: Check out code
@@ -31,6 +36,19 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+
+      - name: Check the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version=$(./mvnw -q -B -ntp help:evaluate -Dexpression=installer.version -DforceStdout)
+          tag="${GITHUB_REF_NAME#v}"
+          app=$(sed -n 's/.*String VERSION = "\(.*\)";.*/\1/p' src/main/java/org/netpilot/NetPilotApp.java)
+          echo "tag=$tag installer=$version app=$app"
+          if [ "$tag" != "$version" ] || [ "$tag" != "$app" ]; then
+            echo "::error::Tag v$tag does not match the project version (installer $version, app $app)."
+            exit 1
+          fi
 
       - name: Install WiX Toolset
         shell: pwsh
@@ -53,3 +71,23 @@ jobs:
             target/installer/*.zip
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cd target/installer
+          sha256sum NetPilot-*.exe NetPilot-*.zip > SHA256SUMS
+          cat SHA256SUMS
+          # the notes are this version's CHANGELOG section, without its heading
+          awk -v v="$version" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && index($0, "## [") == 1 { exit }
+            on { print }
+          ' ../../CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "NetPilot $version" > notes.md; fi
+          gh release create "$GITHUB_REF_NAME" --title "NetPilot $version" --notes-file notes.md \
+            NetPilot-*.exe NetPilot-*.zip SHA256SUMS

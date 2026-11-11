@@ -814,3 +814,16 @@
 .table-row-cell.log-warning:selected .table-cell {
     -fx-text-fill: white;
 }
+
+/* Home: a newer NetPilot is available */
+.update-banner {
+    -fx-background-color: derive(-np-card, -3%);
+    -fx-border-color: #3b8eea;
+    -fx-border-width: 0 0 0 4;
+    -fx-background-radius: 6;
+    -fx-padding: 10 12 10 12;
+}
+
+.update-title {
+    -fx-font-weight: bold;
+}

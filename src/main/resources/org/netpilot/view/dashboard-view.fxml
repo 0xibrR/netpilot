@@ -20,6 +20,16 @@
             <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
         </HBox>
 
+        <!-- a newer NetPilot is published: shown by the daily update check -->
+        <HBox fx:id="updateBanner" styleClass="update-banner" spacing="8" alignment="CENTER_LEFT"
+              visible="false" managed="false">
+            <Label fx:id="updateLabel" styleClass="update-title" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+            <Button text="%update.whatsNewButton" onAction="#onUpdateDetails" minWidth="-Infinity"/>
+            <Button text="%update.now" onAction="#onUpdateNow" styleClass="primary" minWidth="-Infinity"/>
+            <Button text="%update.later" onAction="#onUpdateLater" styleClass="flat" minWidth="-Infinity"/>
+            <Button text="%update.skip" onAction="#onUpdateSkip" styleClass="flat" minWidth="-Infinity"/>
+        </HBox>
+
         <VBox fx:id="offlineCard" styleClass="card, welcome-card" spacing="12">
             <Label text="%dashboard.welcome" styleClass="card-title"/>
             <Label text="%dashboard.offline" styleClass="muted" wrapText="true"/>

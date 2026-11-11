@@ -70,6 +70,17 @@
         </VBox>
 
         <VBox styleClass="card" spacing="10">
+            <Label text="%update.settings.title" styleClass="card-title"/>
+            <CheckBox fx:id="autoUpdateCheck" text="%update.settings.auto" wrapText="true"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="checkUpdateButton" text="%update.settings.checkNow" onAction="#onCheckUpdate"
+                        minWidth="-Infinity"/>
+                <ProgressIndicator fx:id="updateProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
+                <Label fx:id="updateStatusLabel" styleClass="muted" wrapText="true"/>
+            </HBox>
+        </VBox>
+
+        <VBox styleClass="card" spacing="10">
             <Label text="%menu.help.about" styleClass="card-title"/>
             <Label fx:id="aboutLabel" wrapText="true"/>
             <HBox spacing="8">

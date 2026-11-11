@@ -89,6 +89,100 @@ public class DashboardController implements Page {
         designQuick.setGraphic(Icons.of(Icons.PALETTE));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
         showOffline();
+        // the daily update check, a little after start so it never slows the window down
+        javafx.animation.PauseTransition wait = new javafx.animation.PauseTransition(UPDATE_CHECK_DELAY);
+        wait.setOnFinished(e -> checkForUpdate());
+        wait.play();
+    }
+
+    // ------------------------------------------------------------------ update banner
+
+    private static final javafx.util.Duration UPDATE_CHECK_DELAY = javafx.util.Duration.seconds(8);
+
+    @FXML
+    private javafx.scene.layout.HBox updateBanner;
+    @FXML
+    private Label updateLabel;
+
+    /** The release the banner offers. */
+    private org.netpilot.service.update.Release offered;
+
+    /**
+     * Once a day (when turned on in Settings): asks GitHub for a newer release and shows the banner
+     * unless the user skipped that version. No internet or no answer: nothing shows, the next day
+     * tries again.
+     */
+    private void checkForUpdate() {
+        java.nio.file.Path file = org.netpilot.repository.AppPaths.updateFile();
+        org.netpilot.service.update.UpdatePreferences preferences = org.netpilot.service.update.UpdatePreferences
+                .load(file);
+        LocalDate today = LocalDate.now();
+        if (!preferences.due(today)) {
+            return;
+        }
+        org.netpilot.service.update.UpdateChecker checker = org.netpilot.service.update.UpdateChecker
+                .gitHub(org.netpilot.NetPilotApp.VERSION);
+        Task<java.util.Optional<org.netpilot.service.update.Release>> task = new Task<>() {
+
+            @Override
+            protected java.util.Optional<org.netpilot.service.update.Release> call() throws Exception {
+                return checker.newer();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            UpdateFlow.savePreferences(preferences.checked(today));
+            task.getValue().filter(preferences::remind).ifPresent(this::showUpdate);
+        });
+        task.setOnFailed(e -> LOG.log(System.Logger.Level.INFO, "Update check skipped: {0}",
+                String.valueOf(task.getException().getMessage())));
+        Thread thread = new Thread(task, "netpilot-update-check");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void showUpdate(org.netpilot.service.update.Release release) {
+        offered = release;
+        updateLabel.setText(Messages.get("update.banner", release.version()));
+        updateBanner.setVisible(true);
+        updateBanner.setManaged(true);
+    }
+
+    private void hideUpdate() {
+        updateBanner.setVisible(false);
+        updateBanner.setManaged(false);
+    }
+
+    @FXML
+    private void onUpdateDetails() {
+        if (offered != null) {
+            org.netpilot.service.update.Release release = offered;
+            switch (UpdateFlow.ask(workspace, release)) {
+                case UPDATE -> UpdateFlow.install(workspace, release);
+                case SKIP -> onUpdateSkip();
+                case LATER -> hideUpdate();
+            }
+        }
+    }
+
+    @FXML
+    private void onUpdateNow() {
+        if (offered != null) {
+            UpdateFlow.install(workspace, offered);
+        }
+    }
+
+    @FXML
+    private void onUpdateLater() {
+        hideUpdate(); // the next daily check offers it again
+    }
+
+    @FXML
+    private void onUpdateSkip() {
+        if (offered != null) {
+            UpdateFlow.savePreferences(org.netpilot.service.update.UpdatePreferences
+                    .load(org.netpilot.repository.AppPaths.updateFile()).skip(offered));
+        }
+        hideUpdate();
     }
 
     @Override

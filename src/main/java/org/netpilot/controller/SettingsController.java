@@ -214,9 +214,82 @@ public class SettingsController implements Page {
             showCleanup(workspace.settings().cleanup());
             lowStockSpinner.getValueFactory().setValue(workspace.settings().lowStockBelow());
             showBackup();
+            showUpdates();
         } finally {
             loading = false;
         }
+    }
+
+    // ------------------------------------------------------------------ updates
+
+    @FXML
+    private javafx.scene.control.CheckBox autoUpdateCheck;
+    @FXML
+    private javafx.scene.control.Button checkUpdateButton;
+    @FXML
+    private javafx.scene.control.ProgressIndicator updateProgress;
+    @FXML
+    private Label updateStatusLabel;
+    private boolean updateWired;
+
+    private void showUpdates() {
+        org.netpilot.service.update.UpdatePreferences preferences = org.netpilot.service.update.UpdatePreferences
+                .load(org.netpilot.repository.AppPaths.updateFile());
+        autoUpdateCheck.setSelected(preferences.automatic());
+        updateStatusLabel.setText(preferences.lastCheck()
+                .map(day -> Messages.get("update.settings.lastCheck", day))
+                .orElse(Messages.get("update.settings.never")));
+        if (!updateWired) {
+            updateWired = true;
+            autoUpdateCheck.selectedProperty().addListener((obs, old, on) -> {
+                if (!loading) {
+                    UpdateFlow.savePreferences(org.netpilot.service.update.UpdatePreferences
+                            .load(org.netpilot.repository.AppPaths.updateFile()).withAutomatic(on));
+                }
+            });
+        }
+    }
+
+    /** Checks now, whatever the daily setting or a skipped version says. */
+    @FXML
+    private void onCheckUpdate() {
+        org.netpilot.service.update.UpdateChecker checker = org.netpilot.service.update.UpdateChecker
+                .gitHub(NetPilotApp.VERSION);
+        javafx.concurrent.Task<java.util.Optional<org.netpilot.service.update.Release>> task = new javafx.concurrent.Task<>() {
+
+            @Override
+            protected java.util.Optional<org.netpilot.service.update.Release> call() throws Exception {
+                return checker.newer();
+            }
+        };
+        task.setOnRunning(e -> updateBusy(true));
+        task.setOnSucceeded(e -> {
+            updateBusy(false);
+            java.time.LocalDate today = java.time.LocalDate.now();
+            UpdateFlow.savePreferences(org.netpilot.service.update.UpdatePreferences
+                    .load(org.netpilot.repository.AppPaths.updateFile()).checked(today));
+            if (task.getValue().isPresent()) {
+                updateStatusLabel.setText(Messages.get("update.settings.found", task.getValue().get().version()));
+                UpdateFlow.offer(workspace, task.getValue().get());
+            } else {
+                updateStatusLabel.setText(Messages.get("update.settings.latest", NetPilotApp.VERSION));
+            }
+        });
+        task.setOnFailed(e -> {
+            updateBusy(false);
+            updateStatusLabel.setText(Messages.get("update.settings.failed"));
+            System.getLogger(SettingsController.class.getName()).log(System.Logger.Level.WARNING,
+                    "Update check failed", task.getException());
+        });
+        Thread thread = new Thread(task, "netpilot-update-check");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void updateBusy(boolean busy) {
+        checkUpdateButton.setDisable(busy);
+        updateProgress.setVisible(busy);
+        updateProgress.setManaged(busy);
     }
 
     @FXML
