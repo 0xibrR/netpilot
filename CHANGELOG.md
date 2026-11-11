@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-11
+
+### Fixed
+- Update now recognises a NetPilot installed by the installer: Windows records it in the machine's part of the
+  registry, which the check did not read, so every copy was taken for the portable one and only the download
+  page opened. The check now reads all three places and compares the install folder with the running program
+
 ## [1.2.1] - 2026-11-11
 
 ### Changed

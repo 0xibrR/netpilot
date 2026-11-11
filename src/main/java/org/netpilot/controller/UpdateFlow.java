@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -19,7 +18,7 @@ import javafx.scene.layout.VBox;
 import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
 import org.netpilot.model.DataSize;
-import org.netpilot.platform.PlatformInfo;
+import org.netpilot.platform.WindowsInstall;
 import org.netpilot.repository.AppPaths;
 import org.netpilot.service.update.Release;
 import org.netpilot.service.update.UpdateChecker;
@@ -180,27 +179,11 @@ final class UpdateFlow {
     }
 
     /**
-     * This NetPilot was installed by the installer (Windows, run from its own launcher, listed in
-     * the user's installed programs), so the new installer replaces it in place. The portable
-     * copy and runs from the IDE are not.
+     * This NetPilot was installed by the installer, so the new installer replaces it in place. The
+     * portable copy and runs from the IDE are not. See {@link WindowsInstall}.
      */
     static boolean installedCopy() {
-        if (PlatformInfo.current().os() != PlatformInfo.OperatingSystem.WINDOWS
-                || System.getProperty("jpackage.app-path") == null) {
-            return false;
-        }
-        try {
-            Process reg = new ProcessBuilder("reg", "query",
-                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "/s", "/f", NetPilotApp.NAME,
-                    "/d", "/e").redirectErrorStream(true).start();
-            reg.getInputStream().readAllBytes();
-            return reg.waitFor(5, TimeUnit.SECONDS) && reg.exitValue() == 0;
-        } catch (IOException e) {
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
+        return WindowsInstall.installed(NetPilotApp.NAME, System.getProperty("jpackage.app-path"));
     }
 
     static void savePreferences(UpdatePreferences preferences) {
