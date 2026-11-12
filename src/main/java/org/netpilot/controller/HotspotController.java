@@ -568,6 +568,8 @@ public class HotspotController implements Page {
                 workspace::checkStock);
         String routerKey = routerClient.endpoint().address();
         usersController.setHandover(selected -> handOver(routerKey, selected));
+        usersController.setCustomerActions(card -> linkCustomer(routerKey, card),
+                card -> sendToCustomer(routerClient, routerKey, card));
         if (tabs.getSelectionModel().getSelectedItem() == activeTab) {
             onRefreshActive();
         }
@@ -611,6 +613,58 @@ public class HotspotController implements Page {
         }
         HandoverFlow.start(workspace, workspace.window(), unused, null, () -> {
         });
+    }
+
+    // ------------------------------------------------------------------ customers (WhatsApp)
+
+    /** Links, changes or removes the customer's number of one card. */
+    private void linkCustomer(String routerKey, RouterUser card) {
+        java.util.Optional<org.netpilot.model.Customer> current;
+        try {
+            current = context.customerRepository().find(routerKey, card.name());
+        } catch (java.io.IOException e) {
+            Dialogs.error(workspace.window(), Messages.get("notify.saveFailed"), String.valueOf(e.getMessage()));
+            return;
+        }
+        CustomerContact.ask(workspace, card.name(), current).ifPresent(answer -> {
+            if (answer instanceof CustomerContact.Number n) {
+                if (CustomerContact.link(workspace, routerKey, card.name(), n.phone())) {
+                    workspace.toast("✓ " + Messages.get("notify.linked", card.name()));
+                }
+            } else {
+                CustomerContact.unlink(workspace, routerKey, card.name());
+                workspace.toast("✓ " + Messages.get("notify.unlinked", card.name()));
+            }
+        });
+    }
+
+    /**
+     * Opens WhatsApp with the card's details for its customer; asks for (and links) a number first
+     * when the card has none. The password is read from the router just for the message.
+     */
+    private void sendToCustomer(RouterClient target, String routerKey, RouterUser card) {
+        java.util.Optional<String> phone;
+        try {
+            phone = context.customerRepository().find(routerKey, card.name())
+                    .map(org.netpilot.model.Customer::phone);
+        } catch (java.io.IOException e) {
+            Dialogs.error(workspace.window(), Messages.get("notify.saveFailed"), String.valueOf(e.getMessage()));
+            return;
+        }
+        if (phone.isEmpty()) {
+            phone = CustomerContact.ask(workspace, card.name(), java.util.Optional.empty())
+                    .filter(CustomerContact.Number.class::isInstance)
+                    .map(a -> ((CustomerContact.Number) a).phone())
+                    .filter(p -> CustomerContact.link(workspace, routerKey, card.name(), p));
+        }
+        phone.ifPresent(number -> run(() -> context.routerUserActions().voucherUsers(target, List.of(card)),
+                users -> {
+                    if (users.isEmpty()) {
+                        Dialogs.error(workspace.window(), Messages.get("notify.cardGone"), card.name());
+                    } else {
+                        CustomerContact.sendCard(workspace, users.getFirst(), number);
+                    }
+                }));
     }
 
     /** {@code 1000M} → {@code 1000 Mbps}; empty → unlimited. */

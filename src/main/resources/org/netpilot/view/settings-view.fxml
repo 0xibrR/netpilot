@@ -70,6 +70,26 @@
         </VBox>
 
         <VBox styleClass="card" spacing="10">
+            <Label text="%notify.settings.title" styleClass="card-title"/>
+            <Label text="%notify.settings.help" styleClass="muted" wrapText="true"/>
+            <!-- one setting per row, each label in full; the country code is chosen next to each number -->
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="%notify.settings.remind" minWidth="-Infinity"/>
+                <Spinner fx:id="remindSpinner" editable="true" prefWidth="90" minWidth="90"/>
+                <Label text="%notify.settings.hours" minWidth="-Infinity"/>
+            </HBox>
+            <Label text="%notify.settings.remindHint" styleClass="muted" wrapText="true"/>
+            <Label text="%notify.settings.cardText" styleClass="section-title" wrapText="true"/>
+            <TextArea fx:id="cardTemplateArea" prefRowCount="6" wrapText="true"/>
+            <Label text="%notify.settings.reminderText" styleClass="section-title" wrapText="true"/>
+            <TextArea fx:id="reminderTemplateArea" prefRowCount="4" wrapText="true"/>
+            <Label fx:id="fieldsLabel" styleClass="muted" wrapText="true"/>
+            <HBox>
+                <Button text="%notify.settings.defaults" onAction="#onDefaultTemplates" minWidth="-Infinity"/>
+            </HBox>
+        </VBox>
+
+        <VBox styleClass="card" spacing="10">
             <Label text="%update.settings.title" styleClass="card-title"/>
             <CheckBox fx:id="autoUpdateCheck" text="%update.settings.auto" wrapText="true"/>
             <HBox spacing="8" alignment="CENTER_LEFT">

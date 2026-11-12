@@ -58,6 +58,11 @@ public final class AppPaths {
         return dataDirectory().resolve("reseller-ledger.csv");
     }
 
+    /** Customers' phone numbers linked to cards, for WhatsApp messages; kept on this computer only. */
+    public static Path customersFile() {
+        return dataDirectory().resolve("customers.csv");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         return AppDirectories.current().documents();

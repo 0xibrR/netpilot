@@ -74,7 +74,7 @@ public final class BackupService {
     static final String JOURNAL = "restore.journal";
 
     private static final Pattern DATA_FILE = Pattern.compile(
-            "settings\\.properties|history\\.csv|usage\\.csv|resellers\\.csv|reseller-ledger\\.csv"
+            "settings\\.properties|history\\.csv|usage\\.csv|resellers\\.csv|reseller-ledger\\.csv|customers\\.csv"
                     + "|voucher-(logo|background)\\.(png|jpg)");
     private static final byte[] MAGIC = "NPBK-AES1".getBytes(StandardCharsets.US_ASCII);
     private static final int ITERATIONS = 310_000;

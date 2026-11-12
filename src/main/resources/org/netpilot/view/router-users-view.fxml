@@ -24,6 +24,9 @@
                 <Button fx:id="receiptButton" text="%users.receipt" onAction="#onPrintReceipt" styleClass="tool-button"/>
                 <Button fx:id="handoverButton" text="%users.handover" onAction="#onHandover" styleClass="tool-button"/>
                 <Separator orientation="VERTICAL"/>
+                <Button fx:id="customerButton" text="%notify.users.link" onAction="#onLinkCustomer" styleClass="tool-button"/>
+                <Button fx:id="whatsAppButton" text="%notify.users.send" onAction="#onSendToCustomer" styleClass="tool-button"/>
+                <Separator orientation="VERTICAL"/>
                 <Button text="%users.selectAll" onAction="#onSelectAll" styleClass="tool-button"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="16" prefHeight="16"/>

@@ -166,6 +166,70 @@ public class SettingsController implements Page {
         cleanupCheck.selectedProperty().addListener((obs, old, on) -> saveCleanup());
         autoBackupCheck.selectedProperty().addListener((obs, old, on) -> saveAutoBackup(on));
         cleanupTimeBox.valueProperty().addListener((obs, old, time) -> saveCleanup());
+        initNotifications();
+    }
+
+    // ------------------------------------------------------------------ customer messages
+
+    @FXML
+    private javafx.scene.control.Spinner<Integer> remindSpinner;
+    @FXML
+    private javafx.scene.control.TextArea cardTemplateArea;
+    @FXML
+    private javafx.scene.control.TextArea reminderTemplateArea;
+    @FXML
+    private Label fieldsLabel;
+
+    private void initNotifications() {
+        remindSpinner.setValueFactory(new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(1,
+                org.netpilot.model.NotificationSettings.MAX_HOURS,
+                org.netpilot.model.NotificationSettings.DEFAULT_HOURS));
+        remindSpinner.focusedProperty().addListener((obs, was, focused) -> {
+            if (!focused) {
+                remindSpinner.increment(0);
+            }
+        });
+        remindSpinner.valueProperty().addListener((obs, old, hours) -> saveNotifications());
+        // the texts are saved when leaving the field, not on every key
+        for (javafx.scene.control.TextInputControl input : java.util.List.of(cardTemplateArea,
+                reminderTemplateArea)) {
+            input.focusedProperty().addListener((obs, was, focused) -> {
+                if (!focused) {
+                    saveNotifications();
+                }
+            });
+        }
+        // the built-in texts show as hints, so an empty field visibly means "use this"
+        cardTemplateArea.setPromptText(Messages.get("notify.template.card", ""));
+        fieldsLabel.setText(Messages.get("notify.settings.fields", ""));
+        reminderTemplateArea.setPromptText(Messages.get("notify.template.reminder", ""));
+    }
+
+    private void showNotifications() {
+        org.netpilot.model.NotificationSettings n = workspace.settings().notifications();
+        remindSpinner.getValueFactory().setValue(n.remindHours());
+        cardTemplateArea.setText(n.cardTemplate());
+        reminderTemplateArea.setText(n.reminderTemplate());
+    }
+
+    private void saveNotifications() {
+        if (loading || workspace == null) {
+            return;
+        }
+        String code = workspace.settings().notifications().countryCode(); // chosen next to each number
+        org.netpilot.model.NotificationSettings n = new org.netpilot.model.NotificationSettings(code,
+                cardTemplateArea.getText(), reminderTemplateArea.getText(),
+                remindSpinner.getValue() == null
+                        ? org.netpilot.model.NotificationSettings.DEFAULT_HOURS
+                        : remindSpinner.getValue());
+        workspace.updateSettings(s -> s.withNotifications(n));
+    }
+
+    @FXML
+    private void onDefaultTemplates() {
+        cardTemplateArea.clear();
+        reminderTemplateArea.clear();
+        saveNotifications();
     }
 
     /** The automatic clean-up applies at once, like the appearance. */
@@ -215,6 +279,7 @@ public class SettingsController implements Page {
             lowStockSpinner.getValueFactory().setValue(workspace.settings().lowStockBelow());
             showBackup();
             showUpdates();
+            showNotifications();
         } finally {
             loading = false;
         }

@@ -152,6 +152,37 @@ public class RouterUsersController {
     };
     @FXML
     private Button deleteExpiredButton;
+    @FXML
+    private Button customerButton;
+    @FXML
+    private Button whatsAppButton;
+    /** Links a customer's number to the selected card (set by the Hotspot page). */
+    private Consumer<RouterUser> linkCustomer = card -> {
+    };
+    /** Sends the selected card's details to its customer by WhatsApp (set by the Hotspot page). */
+    private Consumer<RouterUser> sendToCustomer = card -> {
+    };
+
+    void setCustomerActions(Consumer<RouterUser> link, Consumer<RouterUser> send) {
+        this.linkCustomer = link;
+        this.sendToCustomer = send;
+    }
+
+    @FXML
+    private void onLinkCustomer() {
+        List<RouterUser> one = selected();
+        if (one.size() == 1) {
+            linkCustomer.accept(one.getFirst());
+        }
+    }
+
+    @FXML
+    private void onSendToCustomer() {
+        List<RouterUser> one = selected();
+        if (one.size() == 1) {
+            sendToCustomer.accept(one.getFirst());
+        }
+    }
 
     public RouterUsersController(AppContext context) {
         this.context = context;
@@ -179,6 +210,13 @@ public class RouterUsersController {
         }
         refreshButton.disableProperty().bind(busy);
         deleteExpiredButton.disableProperty().bind(busy);
+        // a customer's number belongs to one card: both actions need exactly one card selected
+        var notOneCard = Bindings.createBooleanBinding(() -> selected().size() != 1,
+                usersTable.getSelectionModel().getSelectedItems());
+        customerButton.disableProperty().bind(notOneCard.or(busy));
+        whatsAppButton.disableProperty().bind(notOneCard.or(busy));
+        customerButton.setGraphic(Icons.of(Icons.USERS));
+        whatsAppButton.setGraphic(Icons.of(Icons.SEND));
         usersTable.getSelectionModel().getSelectedItems()
                 .addListener((ListChangeListener<TreeItem<Row>>) c -> updateSummary());
         enableButton.setGraphic(Icons.of(Icons.CHECK));

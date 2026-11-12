@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Added
+- Customer messages by WhatsApp: link a customer's number to a card (quick sale, or Manage users ‹ Customer
+  number) and NetPilot opens WhatsApp on their chat with the card's details written in; Home lists the customers
+  whose card ends soon or has little time or data left, with one reminder each. Texts, country code and when
+  to remind are set in Settings; numbers stay on this computer and are part of backups
+
 ## [1.2.5] - 2026-11-11
 
 ### Changed

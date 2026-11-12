@@ -146,7 +146,12 @@ public class SettingsRepository {
                 loadCleanup(p, d.cleanup()),
                 intValue(p, "alert.lowStockBelow", d.lowStockBelow()),
                 new org.netpilot.model.BackupSettings(booleanValue(p, "backup.automatic", false),
-                        p.getProperty("backup.folder", ""), lastBackup(p)));
+                        p.getProperty("backup.folder", ""), lastBackup(p)),
+                new org.netpilot.model.NotificationSettings(
+                        p.getProperty("notify.countryCode", d.notifications().countryCode()),
+                        p.getProperty("notify.cardTemplate", ""),
+                        p.getProperty("notify.reminderTemplate", ""),
+                        intValue(p, "notify.remindHours", d.notifications().remindHours())));
     }
 
     private static CleanupSettings loadCleanup(Properties p, CleanupSettings d) {
@@ -349,6 +354,10 @@ public class SettingsRepository {
         p.setProperty("backup.automatic", String.valueOf(settings.backup().enabled()));
         p.setProperty("backup.folder", settings.backup().folder());
         p.setProperty("backup.last", settings.backup().lastRun().map(java.time.LocalDateTime::toString).orElse(""));
+        p.setProperty("notify.countryCode", settings.notifications().countryCode());
+        p.setProperty("notify.cardTemplate", settings.notifications().cardTemplate());
+        p.setProperty("notify.reminderTemplate", settings.notifications().reminderTemplate());
+        p.setProperty("notify.remindHours", String.valueOf(settings.notifications().remindHours()));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

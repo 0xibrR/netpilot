@@ -44,7 +44,8 @@ public class QrCodeService {
         }
     }
 
-    private static boolean isValidLoginUrl(String loginUrl) {
+    /** Whether {@code loginUrl} is an absolute http(s) URL with a host. */
+    public static boolean isValidLoginUrl(String loginUrl) {
         if (loginUrl == null || loginUrl.isBlank()) {
             return false;
         }

@@ -175,6 +175,13 @@ public class GenerateController implements Page {
     private void initialize() {
         setUpSpinner(countSpinner, 1, GenerationSettings.MAX_COUNT);
         setUpLengthAndPasswordLists();
+        // the login link is also used by WhatsApp messages and receipts: saved when leaving the field
+        loginUrlField.focusedProperty().addListener((obs, was, focused) -> {
+            if (!focused) {
+                saveLoginUrl();
+            }
+        });
+        loginUrlField.setOnAction(e -> saveLoginUrl());
         for (TextField affix : List.of(prefixField, suffixField)) {
             affix.setTextFormatter(new TextFormatter<>(change -> change.getControlNewText()
                     .matches("[A-Za-z0-9]{0," + GenerationSettings.MAX_AFFIX + "}") ? change : null));
@@ -509,6 +516,19 @@ public class GenerateController implements Page {
         workspace.updateSettings(
                 s -> s.withForm(generation, loginUrlField.getText(), perRowSpinner.getValue(),
                         Path.of(outputDirField.getText())));
+    }
+
+    /**
+     * Saves only the login link, as soon as it is typed: other pages (WhatsApp messages, receipts)
+     * use it without waiting for a batch. A link that is not a valid http(s) address is not saved.
+     */
+    private void saveLoginUrl() {
+        String url = loginUrlField.getText() == null ? "" : loginUrlField.getText().strip();
+        if (workspace == null || url.equals(workspace.settings().loginUrl())
+                || (!url.isEmpty() && !QrCodeService.isValidLoginUrl(url))) {
+            return;
+        }
+        workspace.updateSettings(s -> s.withForm(s.generation(), url, s.vouchersPerRow(), s.outputDirectory()));
     }
 
     /** The shared settings with this page's current fields. */

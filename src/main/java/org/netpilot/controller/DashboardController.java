@@ -88,6 +88,7 @@ public class DashboardController implements Page {
         reportsQuick.setGraphic(Icons.of(Icons.CHART));
         designQuick.setGraphic(Icons.of(Icons.PALETTE));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
+        CountryBox.setUpRemembering(quickSaleCountry, shared);
         showOffline();
         // the daily update check, a little after start so it never slows the window down
         javafx.animation.PauseTransition wait = new javafx.animation.PauseTransition(UPDATE_CHECK_DELAY);
@@ -227,7 +228,60 @@ public class DashboardController implements Page {
     /** Snapshot of one refresh; {@code holders} are the cards points of sale have. */
     private record Figures(List<RouterUser> users, Set<String> online, SalesReport report,
             java.util.Map<String, String> holders, List<QuickSale.Reservation> pending,
-            org.netpilot.service.ResellerAccounts.DirectSummary direct) {
+            org.netpilot.service.ResellerAccounts.DirectSummary direct,
+            List<org.netpilot.service.Reminders.Due> reminders) {
+    }
+
+    /** Customers to remind, read with the other figures; the router's expiry times only when needed. */
+    private List<org.netpilot.service.Reminders.Due> reminders(RouterClient target, String router,
+            List<RouterUser> users) throws java.io.IOException {
+        java.util.Map<String, org.netpilot.model.Customer> customers = context.customerRepository().all();
+        if (customers.isEmpty()) {
+            return List.of();
+        }
+        java.util.Map<String, String> expiries;
+        try {
+            expiries = target.cardExpiries();
+        } catch (org.netpilot.service.router.RouterException e) {
+            LOG.log(System.Logger.Level.DEBUG, "Card expiry times not read", e);
+            expiries = java.util.Map.of(); // time and data reminders still work
+        }
+        return org.netpilot.service.Reminders.due(router, users, expiries, customers, java.time.LocalDateTime.now(),
+                workspace.settings().notifications().remindHours());
+    }
+
+    @FXML
+    private VBox remindersCard;
+    @FXML
+    private Label remindersTitle;
+    @FXML
+    private VBox reminderRows;
+
+    private void showReminders(List<org.netpilot.service.Reminders.Due> due) {
+        reminderRows.getChildren().clear();
+        remindersCard.setVisible(!due.isEmpty());
+        remindersCard.setManaged(!due.isEmpty());
+        remindersTitle.setText(Messages.get("notify.reminders.title", due.size()));
+        for (org.netpilot.service.Reminders.Due d : due) {
+            Label text = new Label(d.customer().card() + "  ·  " + d.customer().displayPhone() + "  ·  "
+                    + CustomerContact.describe(d));
+            text.setWrapText(true);
+            javafx.scene.layout.Region gap = new javafx.scene.layout.Region();
+            javafx.scene.layout.HBox.setHgrow(gap, javafx.scene.layout.Priority.ALWAYS);
+            Button send = new Button(Messages.get("notify.reminders.send"), Icons.of(Icons.SEND));
+            send.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+            send.setOnAction(e -> {
+                CustomerContact.sendReminder(workspace, d);
+                reminderRows.getChildren().remove(send.getParent());
+                int left = reminderRows.getChildren().size();
+                remindersTitle.setText(Messages.get("notify.reminders.title", left));
+                remindersCard.setVisible(left > 0);
+                remindersCard.setManaged(left > 0);
+            });
+            javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, text, gap, send);
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            reminderRows.getChildren().add(row);
+        }
     }
 
     @FXML
@@ -249,7 +303,7 @@ public class DashboardController implements Page {
                         workspace.settings().voucherTemplate(), ReportPeriod.THIS_MONTH, LocalDate.now());
                 QuickSale sales = new QuickSale(context.resellerAccounts());
                 return new Figures(users, online, report, context.resellerAccounts().holders(), sales.pending(),
-                        sales.summary(LocalDate.now()));
+                        sales.summary(LocalDate.now()), reminders(target, router, users));
             }
         };
         setBusy(true);
@@ -279,6 +333,7 @@ public class DashboardController implements Page {
         potentialValue.setText(figures.report().potential().format());
         showStock(workspace.checkStock(figures.users()));
         showQuickSale(figures);
+        showReminders(figures.reminders());
     }
 
     // ------------------------------------------------------------------ quick sale
@@ -290,6 +345,14 @@ public class DashboardController implements Page {
     @FXML
     private Label quickSaleEmpty;
     private boolean selling;
+
+    @FXML
+    private javafx.scene.control.TextField quickSalePhone;
+    @FXML
+    private javafx.scene.control.ComboBox<org.netpilot.model.CallingCodes.Entry> quickSaleCountry;
+
+    /** The customer's number for the sale in progress, when one was typed. */
+    private java.util.Optional<String> salePhone = java.util.Optional.empty();
     private String lastProfile;
     private boolean f2Registered;
     /** The reservation of the sale being finished now, so it is not shown as unfinished meanwhile. */
@@ -437,6 +500,17 @@ public class DashboardController implements Page {
         if (target == null || selling) {
             return;
         }
+        // a number typed for this sale is checked first: a wrong one stops before a card is taken
+        String typed = quickSalePhone.getText() == null ? "" : quickSalePhone.getText().strip();
+        java.util.Optional<String> phone = org.netpilot.model.PhoneNumber.normalize(typed,
+                CountryBox.code(quickSaleCountry, workspace.settings().notifications().countryCode()));
+        if (!typed.isEmpty() && phone.isEmpty()) {
+            Dialogs.error(workspace.window(), Messages.get("notify.phone.invalidTitle"),
+                    Messages.get("notify.phone.invalid"));
+            quickSalePhone.requestFocus();
+            return;
+        }
+        salePhone = phone;
         selling = true;
         lastProfile = profile;
         String router = target.endpoint().address();
@@ -536,7 +610,15 @@ public class DashboardController implements Page {
             LOG.log(System.Logger.Level.INFO, "Quick sale: card {0} ({1})", sold.card().username(),
                     sold.card().profile());
             workspace.toast("✓ " + Messages.get("quickSale.sold", sold.card().profile(), sold.card().username()));
+            salePhone.ifPresent(phone -> {
+                String router = client == null ? "" : client.endpoint().address();
+                if (!router.isEmpty() && CustomerContact.link(workspace, router, sold.card().username(), phone)) {
+                    CustomerContact.sendCard(workspace, sold.card(), phone);
+                }
+                quickSalePhone.clear();
+            });
         }
+        salePhone = java.util.Optional.empty();
         onRefresh();
     }
 

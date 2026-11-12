@@ -67,6 +67,13 @@
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label text="%quickSale.hint" styleClass="muted"/>
             </HBox>
+            <!-- optional: the card's details go to this number by WhatsApp after the sale -->
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="%notify.quick.phone"/>
+                <ComboBox fx:id="quickSaleCountry" prefWidth="190"/>
+                <TextField fx:id="quickSalePhone" promptText="%notify.phone.prompt" prefColumnCount="14"/>
+                <Label text="%notify.quick.hint" styleClass="muted" wrapText="true"/>
+            </HBox>
             <FlowPane fx:id="quickSaleButtons" hgap="8" vgap="8" styleClass="quick-sale-buttons"/>
             <Label fx:id="quickSaleEmpty" text="%quickSale.noPrices" styleClass="muted" wrapText="true"
                    visible="false" managed="false"/>
@@ -77,6 +84,12 @@
                 </padding>
             </VBox>
             <Label fx:id="quickSaleToday" styleClass="muted"/>
+        </VBox>
+
+        <!-- customers whose card ends soon: one WhatsApp reminder each -->
+        <VBox fx:id="remindersCard" styleClass="card, stock-card" spacing="8" visible="false" managed="false">
+            <Label fx:id="remindersTitle" styleClass="card-title"/>
+            <VBox fx:id="reminderRows" spacing="6"/>
         </VBox>
 
         <FlowPane hgap="12" vgap="12">
