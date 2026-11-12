@@ -116,6 +116,9 @@ public final class MonthlyReportPdf {
             if (report.includes(MonthlyReport.Section.BATCHES)) {
                 batches(document, report.sales());
             }
+            if (report.showsBranches()) {
+                branches(document, report.branches());
+            }
             if (report.includes(MonthlyReport.Section.NOTES)) {
                 notes(document, report);
             }
@@ -333,6 +336,27 @@ public final class MonthlyReportPdf {
             paragraph(document, Messages.get("monthly.direct", direct.sold(), direct.format()),
                     new PdfText.Style(9.5f, TEXT), 6);
         }
+    }
+
+    /** Every branch's month side by side, and the total; stock is each branch's last reading. */
+    private void branches(Document document, BranchReport all) throws DocumentException {
+        heading(document, Messages.get("monthly.section.branches"));
+        List<List<String>> rows = new ArrayList<>();
+        for (BranchReport.Line line : all.lines()) {
+            rows.add(branchRow(line.name(), line));
+        }
+        rows.add(branchRow(Messages.get("reports.allBranches"), all.total()));
+        document.add(table(new float[]{3, 1.3f, 2.2f, 2.6f, 2.2f},
+                List.of(Messages.get("reports.column.branch"), Messages.get("report.column.sold"),
+                        Messages.get("report.column.revenue"), Messages.get("reports.column.stock"),
+                        Messages.get("reports.column.readAt")),
+                rows, 0));
+    }
+
+    private static List<String> branchRow(String name, BranchReport.Line line) {
+        return List.of(name, String.valueOf(line.sold()), line.revenue().format(),
+                line.stock().map(s -> Messages.get("reports.stockValue", s.unused(), s.value().format())).orElse("—"),
+                line.stock().map(s -> CREATED.format(s.at())).orElse(Messages.get("reports.neverRead")));
     }
 
     private void batches(Document document, SalesReport sales) throws DocumentException {

@@ -23,6 +23,8 @@
         <HBox spacing="8" alignment="CENTER_LEFT">
             <Label text="%reports.period" styleClass="section-title"/>
             <ComboBox fx:id="periodBox" prefWidth="160" minWidth="120"/>
+            <Label text="%reports.branch" styleClass="section-title" minWidth="-Infinity"/>
+            <ComboBox fx:id="scopeBox" prefWidth="170" minWidth="120"/>
             <Region HBox.hgrow="ALWAYS"/>
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
             <Button fx:id="monthlyButton" text="%monthly.button" onAction="#onMonthly" styleClass="primary" minWidth="-Infinity"/>
@@ -73,8 +75,8 @@
                 </yAxis>
             </BarChart>
 
-            <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
-                <Tab text="%reports.byBatch">
+            <TabPane fx:id="reportTabs" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                <Tab fx:id="batchTab" text="%reports.byBatch">
                     <TableView fx:id="batchTable">
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
@@ -108,6 +110,24 @@
                         </columns>
                         <placeholder>
                             <Label text="%reports.noProfiles" styleClass="muted"/>
+                        </placeholder>
+                    </TableView>
+                </Tab>
+                <!-- every branch side by side, from the sales kept on this computer -->
+                <Tab fx:id="branchTab" text="%reports.byBranch">
+                    <TableView fx:id="branchTable">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+                        </columnResizePolicy>
+                        <columns>
+                            <TableColumn fx:id="branchNameColumn" text="%reports.column.branch" prefWidth="200"/>
+                            <TableColumn fx:id="branchSoldColumn" text="%report.column.sold" prefWidth="80"/>
+                            <TableColumn fx:id="branchRevenueColumn" text="%report.column.revenue" prefWidth="130"/>
+                            <TableColumn fx:id="branchStockColumn" text="%reports.column.stock" prefWidth="170"/>
+                            <TableColumn fx:id="branchReadColumn" text="%reports.column.readAt" prefWidth="150"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="%reports.noBranches" styleClass="muted"/>
                         </placeholder>
                     </TableView>
                 </Tab>

@@ -178,8 +178,35 @@ final class RouterSession {
         if (!settings.autoConnect() || client != null) {
             return;
         }
+        connectQuietly(endpoint, settings, report, () -> {
+        });
+    }
+
+    /**
+     * Switches to another router (a branch): disconnects from the current one and connects to
+     * {@code endpoint} with its remembered password. Without a remembered password, or when the
+     * quiet connection fails (a changed certificate, a wrong password), {@code needsDialog} runs so
+     * the Connect dialog can ask.
+     */
+    void switchTo(RouterEndpoint endpoint, RouterSettings settings, java.util.function.Consumer<String> report,
+            Runnable needsDialog) {
+        if (client != null && client.endpoint().equals(endpoint)) {
+            return; // already there
+        }
+        if (context.passwordVault().load(endpoint).isEmpty()) {
+            needsDialog.run();
+            return;
+        }
+        disconnect();
+        connectQuietly(endpoint, settings, report, needsDialog);
+    }
+
+    /** Connects in the background with the remembered password; problems are reported, then {@code failed} runs. */
+    private void connectQuietly(RouterEndpoint endpoint, RouterSettings settings,
+            java.util.function.Consumer<String> report, Runnable failed) {
         Optional<char[]> password = context.passwordVault().load(endpoint);
         if (password.isEmpty()) {
+            failed.run();
             return;
         }
         String trusted = settings.trustedFingerprint(endpoint).orElse(null);
@@ -204,6 +231,7 @@ final class RouterSession {
             LOG.log(System.Logger.Level.WARNING, "Automatic connection to {0} failed: {1}", endpoint.address(),
                     task.getException().getMessage());
             report.accept(Messages.get("router.autoConnect.failed", String.valueOf(task.getException().getMessage())));
+            failed.run();
         });
         Thread thread = new Thread(task, "netpilot-auto-connect");
         thread.setDaemon(true);
@@ -313,14 +341,38 @@ final class RouterSession {
         refresh();
     }
 
+    /** The branch a router address belongs to, for its name and colour in the top bar. */
+    private java.util.function.Function<String, Optional<org.netpilot.model.Branch>> branches = address -> Optional
+            .empty();
+
+    void setBranches(java.util.function.Function<String, Optional<org.netpilot.model.Branch>> lookup) {
+        this.branches = lookup;
+        showState();
+    }
+
+    /** Shows the state again, e.g. after the branch was renamed. */
+    void showBranch() {
+        showState();
+    }
+
     private void showState() {
         statusLabel.getStyleClass().removeAll("router-connected", "router-disconnected");
+        statusLabel.setGraphic(null);
         if (client == null) {
             statusLabel.setText("● " + Messages.get("router.notConnected"));
             statusLabel.getStyleClass().add("router-disconnected");
-        } else {
-            statusLabel.setText("● " + displayName());
-            statusLabel.getStyleClass().add("router-connected");
+            return;
         }
+        statusLabel.getStyleClass().add("router-connected");
+        Optional<org.netpilot.model.Branch> branch = branches.apply(client.endpoint().address());
+        if (branch.isEmpty()) {
+            statusLabel.setText("● " + displayName());
+            return;
+        }
+        // the branch's own colour and name, so it is clear which branch the pages work on
+        javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(5,
+                javafx.scene.paint.Color.web(branch.get().color()));
+        statusLabel.setGraphic(dot);
+        statusLabel.setText(branch.get().name() + "  ·  " + displayName());
     }
 }

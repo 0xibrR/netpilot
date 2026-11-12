@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Branches: several routers by name and colour; switch between them from the Router menu (at once with a
+  remembered password), manage them in Router › Manage branches. Earnings and sales shows every branch side by
+  side and, with "All branches", their sales together; stock shows each branch's last reading. The monthly PDF
+  can add the branches side by side. Each branch's records stay apart; passwords stay in the encrypted store
 - Customer messages by WhatsApp: link a customer's number to a card (quick sale, or Manage users ‹ Customer
   number) and NetPilot opens WhatsApp on their chat with the card's details written in; Home lists the customers
   whose card ends soon or has little time or data left, with one reminder each. Texts, country code and when

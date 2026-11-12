@@ -287,7 +287,47 @@ public class SettingsRepository {
                 }
             }
         }
-        return new RouterSettings(endpoint, trusted, booleanValue(p, "router.autoConnect", defaults.autoConnect()));
+        return new RouterSettings(endpoint, trusted, booleanValue(p, "router.autoConnect", defaults.autoConnect()),
+                loadBranches(p));
+    }
+
+    private static final String BRANCH_PREFIX = "router.branch.";
+
+    /** {@code router.branch.<n>.id/name/host/port/https/username/color}, in their order; bad ones are skipped. */
+    private static java.util.List<org.netpilot.model.Branch> loadBranches(Properties p) {
+        java.util.List<org.netpilot.model.Branch> branches = new java.util.ArrayList<>();
+        for (int n = 0; n < 100; n++) {
+            String key = BRANCH_PREFIX + n + ".";
+            String id = p.getProperty(key + "id");
+            if (id == null) {
+                break;
+            }
+            try {
+                RouterEndpoint endpoint = new RouterEndpoint(p.getProperty(key + "host", ""),
+                        intValue(p, key + "port", RouterEndpoint.DEFAULT_HTTP_PORT),
+                        Boolean.parseBoolean(p.getProperty(key + "https", "false")),
+                        p.getProperty(key + "username", ""));
+                branches.add(new org.netpilot.model.Branch(id, p.getProperty(key + "name", ""), endpoint,
+                        p.getProperty(key + "color", "")));
+            } catch (IllegalArgumentException e) {
+                LOG.log(System.Logger.Level.WARNING, "Skipping unreadable branch {0}: {1}", n, e.getMessage());
+            }
+        }
+        return branches;
+    }
+
+    private static void saveBranches(Properties p, java.util.List<org.netpilot.model.Branch> branches) {
+        for (int n = 0; n < branches.size(); n++) {
+            org.netpilot.model.Branch b = branches.get(n);
+            String key = BRANCH_PREFIX + n + ".";
+            p.setProperty(key + "id", b.id());
+            p.setProperty(key + "name", b.name());
+            p.setProperty(key + "host", b.endpoint().host());
+            p.setProperty(key + "port", String.valueOf(b.endpoint().port()));
+            p.setProperty(key + "https", String.valueOf(b.endpoint().https()));
+            p.setProperty(key + "username", b.endpoint().username());
+            p.setProperty(key + "color", b.color());
+        }
     }
 
     public void save(AppSettings settings) throws IOException {
@@ -317,6 +357,7 @@ public class SettingsRepository {
         p.setProperty("router.autoConnect", String.valueOf(settings.router().autoConnect()));
         settings.router().trustedFingerprints()
                 .forEach((address, fingerprint) -> p.setProperty(TRUST_PREFIX + address, fingerprint));
+        saveBranches(p, settings.router().branches());
 
         VoucherTemplate t = settings.voucherTemplate();
         p.setProperty("voucher.networkName", t.networkName());

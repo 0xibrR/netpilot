@@ -37,7 +37,7 @@ import org.netpilot.model.VoucherTemplate;
  */
 public record MonthlyReport(YearMonth month, String network, String router, LocalDateTime created, SalesReport sales,
         SalesReport previous, List<ResellerAccounts.MonthStatement> resellers, ResellerAccounts.DirectMonth direct,
-        Set<Section> sections) {
+        Set<Section> sections, BranchReport branches) {
 
     /** The parts of the report; each can be left out. */
     public enum Section {
@@ -46,6 +46,7 @@ public record MonthlyReport(YearMonth month, String network, String router, Loca
         PACKAGES,
         RESELLERS,
         BATCHES,
+        BRANCHES,
         NOTES
     }
 
@@ -55,6 +56,22 @@ public record MonthlyReport(YearMonth month, String network, String router, Loca
         router = router == null ? "" : router.strip();
         resellers = List.copyOf(resellers);
         sections = Set.copyOf(sections);
+        branches = branches == null
+                ? new BranchReport(List.of(), new BranchReport.Line("", "", "", 0, sales.revenue(), Optional.empty()),
+                        List.of(), new java.util.TreeMap<>())
+                : branches;
+    }
+
+    /** A report without the branches part. */
+    public MonthlyReport(YearMonth month, String network, String router, LocalDateTime created, SalesReport sales,
+            SalesReport previous, List<ResellerAccounts.MonthStatement> resellers, ResellerAccounts.DirectMonth direct,
+            Set<Section> sections) {
+        this(month, network, router, created, sales, previous, resellers, direct, sections, null);
+    }
+
+    /** The branches part is shown only when there are two or more branches to compare. */
+    public boolean showsBranches() {
+        return includes(Section.BRANCHES) && branches.lines().size() > 1;
     }
 
     public boolean includes(Section section) {
@@ -102,6 +119,22 @@ public record MonthlyReport(YearMonth month, String network, String router, Loca
                 before.atEndOfMonth());
         return new MonthlyReport(month, template.networkName(), routerName, now, sales, previous,
                 accounts.monthStatements(month), accounts.directMonth(month), sections);
+    }
+
+    /**
+     * The report with every branch's month side by side as well (the branches part): each branch
+     * from the sales kept on this computer, its stock from its last reading.
+     */
+    public static MonthlyReport build(YearMonth month, String routerKey, String routerName, List<RouterUser> users,
+            List<UsageRecord> history, VoucherTemplate template, ResellerAccounts accounts, Set<Section> sections,
+            ReportService reports, LocalDateTime now, List<org.netpilot.model.Branch> branchList,
+            java.util.Map<String, org.netpilot.repository.StockReadings.Reading> stock) throws IOException {
+        MonthlyReport one = build(month, routerKey, routerName, users, history, template, accounts, sections, reports,
+                now);
+        BranchReport branches = BranchReport.build(reports, history, branchList, stock, template,
+                ReportPeriod.THIS_MONTH, lastDay(month, now.toLocalDate()));
+        return new MonthlyReport(one.month(), one.network(), one.router(), one.created(), one.sales(), one.previous(),
+                one.resellers(), one.direct(), one.sections(), branches);
     }
 
     /**

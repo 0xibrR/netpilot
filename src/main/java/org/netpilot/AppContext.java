@@ -44,6 +44,7 @@ public record AppContext(
         UsageTracker usageTracker,
         org.netpilot.service.BackupService backupService,
         org.netpilot.repository.CustomerRepository customerRepository,
+        org.netpilot.repository.StockReadings stockReadings,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -80,6 +81,7 @@ public record AppContext(
                 new org.netpilot.service.BackupService(AppPaths.dataDirectory(), Clock.systemDefaultZone(),
                         NetPilotApp.VERSION),
                 new org.netpilot.repository.CustomerRepository(AppPaths.customersFile()),
+                new org.netpilot.repository.StockReadings(AppPaths.stockReadingsFile()),
                 hostServices);
     }
 }

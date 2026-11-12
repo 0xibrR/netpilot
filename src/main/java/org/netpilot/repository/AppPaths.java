@@ -63,6 +63,11 @@ public final class AppPaths {
         return dataDirectory().resolve("customers.csv");
     }
 
+    /** Each branch's last stock reading, for the all-branches report. */
+    public static Path stockReadingsFile() {
+        return dataDirectory().resolve("branch-stock.properties");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         return AppDirectories.current().documents();

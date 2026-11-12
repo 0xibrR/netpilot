@@ -827,3 +827,16 @@
 .update-title {
     -fx-font-weight: bold;
 }
+
+/* Branch colour choice: a round swatch, ringed when chosen */
+.toggle-button.color-dot {
+    -fx-background-color: transparent;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-padding: 3;
+}
+
+.toggle-button.color-dot:selected {
+    -fx-border-color: -np-text;
+    -fx-border-width: 2;
+}

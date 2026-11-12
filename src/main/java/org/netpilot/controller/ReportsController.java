@@ -146,6 +146,7 @@ public class ReportsController implements Page {
         exportButton.setDisable(true);
         monthlyButton.setDisable(true);
         setUpTables();
+        setUpBranches();
         monthlyButton.setGraphic(Icons.of(Icons.LOG));
         exportButton.setGraphic(Icons.of(Icons.DOWNLOAD));
     }
@@ -240,7 +241,8 @@ public class ReportsController implements Page {
             try {
                 monthly = MonthlyReport.build(choice.month(), routerKey, routerName, users, history, template.get(),
                         context.resellerAccounts(), choice.sections(), context.reportService(),
-                        java.time.LocalDateTime.now());
+                        java.time.LocalDateTime.now(), workspace.settings().router().branches(),
+                        context.stockReadings().all());
             } catch (IOException | RuntimeException e) {
                 LOG.log(System.Logger.Level.ERROR, "Monthly report failed", e);
                 Dialogs.error(stage(), Messages.get("monthly.failed", e.getMessage()), "");
@@ -310,18 +312,124 @@ public class ReportsController implements Page {
         warningsLabel.setManaged(!report.warnings().isEmpty());
         exportButton.setDisable(false);
         monthlyButton.setDisable(false);
+        showBranches();
+    }
+
+    // ------------------------------------------------------------------ branches
+
+    /** Which sales the page shows: the connected branch's, or every branch's together. */
+    enum Scope {
+        CURRENT,
+        ALL
+    }
+
+    @FXML
+    private ComboBox<Scope> scopeBox;
+    @FXML
+    private javafx.scene.control.TabPane reportTabs;
+    @FXML
+    private javafx.scene.control.Tab batchTab;
+    @FXML
+    private javafx.scene.control.Tab branchTab;
+    @FXML
+    private TableView<org.netpilot.service.BranchReport.Line> branchTable;
+    @FXML
+    private TableColumn<org.netpilot.service.BranchReport.Line, String> branchNameColumn;
+    @FXML
+    private TableColumn<org.netpilot.service.BranchReport.Line, Integer> branchSoldColumn;
+    @FXML
+    private TableColumn<org.netpilot.service.BranchReport.Line, Money> branchRevenueColumn;
+    @FXML
+    private TableColumn<org.netpilot.service.BranchReport.Line, String> branchStockColumn;
+    @FXML
+    private TableColumn<org.netpilot.service.BranchReport.Line, String> branchReadColumn;
+
+    private void setUpBranches() {
+        scopeBox.getItems().setAll(Scope.values());
+        scopeBox.setConverter(new javafx.util.StringConverter<>() {
+
+            @Override
+            public String toString(Scope scope) {
+                return scope == null ? "" : Messages.get("reports.scope." + scope.name());
+            }
+
+            @Override
+            public Scope fromString(String text) {
+                return Scope.CURRENT;
+            }
+        });
+        scopeBox.setValue(Scope.CURRENT);
+        scopeBox.valueProperty().addListener((obs, old, scope) -> rebuild());
+        branchNameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().name()));
+        branchNameColumn.setCellFactory(column -> new javafx.scene.control.TableCell<>() {
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                org.netpilot.service.BranchReport.Line line = empty ? null : getTableRow().getItem();
+                setText(empty || item == null ? null : item);
+                setGraphic(line == null || line.color().isEmpty()
+                        ? null
+                        : new javafx.scene.shape.Circle(5, javafx.scene.paint.Color.web(line.color())));
+            }
+        });
+        branchSoldColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().sold()));
+        branchRevenueColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().revenue()));
+        branchRevenueColumn.setCellFactory(column -> formatted(Money::format));
+        branchRevenueColumn.setComparator(java.util.Comparator.comparing(Money::amount));
+        branchStockColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().stock()
+                .map(s -> Messages.get("reports.stockValue", s.unused(), s.value().format()))
+                .orElse("—")));
+        branchReadColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().stock()
+                .map(s -> BATCH_TIME.format(s.at()))
+                .orElse(Messages.get("reports.neverRead"))));
+    }
+
+    /**
+     * The branches tab, always; and with "All branches" the figures, chart and packages of every
+     * branch together. Stock in that view is each branch's last reading.
+     */
+    private void showBranches() {
+        org.netpilot.service.BranchReport all = org.netpilot.service.BranchReport.build(context.reportService(),
+                history, workspace.settings().router().branches(), context.stockReadings().all(), template.get(),
+                periodBox.getValue(), LocalDate.now());
+        java.util.List<org.netpilot.service.BranchReport.Line> rows = new java.util.ArrayList<>(all.lines());
+        if (rows.size() > 1) {
+            rows.add(new org.netpilot.service.BranchReport.Line("", Messages.get("reports.allBranches"), "",
+                    all.total().sold(), all.total().revenue(), all.total().stock()));
+        }
+        branchTable.getItems().setAll(rows);
+        boolean together = scopeBox.getValue() == Scope.ALL;
+        batchTab.setDisable(together); // batches belong to one router's cards
+        exportButton.setDisable(together);
+        if (!together) {
+            return;
+        }
+        revenueLabel.setText(all.total().revenue().format());
+        soldLabel.setText(String.valueOf(all.total().sold()));
+        potentialLabel.setText(all.total().stock().map(s -> s.value().format()).orElse("—"));
+        unusedLabel.setText(all.total().stock().map(s -> String.valueOf(s.unused())).orElse("—"));
+        createdLabel.setText("—");
+        profileTable.getItems().setAll(all.profiles());
+        showChart(periodBox.getValue(), all.daily());
+        if (reportTabs.getSelectionModel().getSelectedItem() == batchTab) {
+            reportTabs.getSelectionModel().select(branchTab);
+        }
+    }
+
+    private void showChart(SalesReport sales) {
+        showChart(sales.period(), sales.dailyRevenue());
     }
 
     /** The last 30 days of the period, one bar per day (empty days included so gaps show). */
-    private void showChart(SalesReport sales) {
+    private void showChart(ReportPeriod period, Map<LocalDate, Money> daily) {
         LocalDate today = LocalDate.now();
-        LocalDate end = sales.period().to(today);
+        LocalDate end = period.to(today);
         LocalDate start = end.minusDays(CHART_DAYS - 1L);
-        if (sales.period() != ReportPeriod.ALL && sales.period().from(today).isAfter(start)) {
-            start = sales.period().from(today);
+        if (period != ReportPeriod.ALL && period.from(today).isAfter(start)) {
+            start = period.from(today);
         }
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        Map<LocalDate, Money> daily = sales.dailyRevenue();
         for (LocalDate day = start; !day.isAfter(end); day = day.plusDays(1)) {
             Money money = daily.get(day);
             series.getData().add(new XYChart.Data<>(DAY.format(day), money == null ? 0 : money.amount()));

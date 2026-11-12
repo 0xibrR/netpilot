@@ -128,6 +128,8 @@ public class MainController implements RouterSession.Listener {
         reloadItem.disableProperty().bind(router.connectedProperty().not());
         disconnectItem.disableProperty().bind(router.connectedProperty().not());
         routerMenu.setGraphic(Icons.of(Icons.ROUTER));
+        router.setBranches(address -> workspace.settings().router().branchAt(address));
+        buildRouterMenu();
         themeButton.setGraphic(Icons.of(Icons.MOON));
         versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
         clockLabel.setGraphic(Icons.of(Icons.CLOCK));
@@ -262,8 +264,81 @@ public class MainController implements RouterSession.Listener {
         router.disconnect();
     }
 
+    // ------------------------------------------------------------------ branches
+
+    /** The menu's own items (Connect, Reload, Disconnect), kept below the branch list. */
+    private java.util.List<javafx.scene.control.MenuItem> fixedRouterItems;
+
+    /**
+     * The Router menu: one line per branch (the connected one ticked), "Manage branches…", then
+     * Connect, Reload and Disconnect.
+     */
+    private void buildRouterMenu() {
+        if (fixedRouterItems == null) {
+            fixedRouterItems = java.util.List.copyOf(routerMenu.getItems());
+        }
+        java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>();
+        String connectedAt = router.client().map(c -> c.endpoint().address()).orElse("");
+        for (org.netpilot.model.Branch branch : workspace.settings().router().branches()) {
+            javafx.scene.control.CheckMenuItem item = new javafx.scene.control.CheckMenuItem(branch.name());
+            item.setSelected(branch.address().equals(connectedAt));
+            item.setGraphic(new javafx.scene.shape.Circle(5, javafx.scene.paint.Color.web(branch.color())));
+            item.setOnAction(e -> {
+                item.setSelected(branch.address().equals(connectedAt)); // the tick follows the connection
+                switchTo(branch);
+            });
+            items.add(item);
+        }
+        javafx.scene.control.MenuItem manage = new javafx.scene.control.MenuItem(Messages.get("branch.manage"));
+        manage.setOnAction(e -> onManageBranches());
+        items.add(manage);
+        items.add(new javafx.scene.control.SeparatorMenuItem());
+        items.addAll(fixedRouterItems);
+        routerMenu.getItems().setAll(items);
+    }
+
+    /** Connects to a branch: at once with its remembered password, else through the Connect dialog. */
+    private void switchTo(org.netpilot.model.Branch branch) {
+        router.switchTo(branch.endpoint(), workspace.settings().router(), workspace::toast, () -> {
+            org.netpilot.model.RouterSettings prefilled = workspace.settings().router()
+                    .withLastEndpoint(branch.endpoint());
+            router.showConnectDialog(prefilled)
+                    .ifPresent(routerSettings -> workspace.updateSettings(s -> s.withRouter(routerSettings)));
+        });
+    }
+
+    private void onManageBranches() {
+        BranchesWindow.show(workspace, () -> {
+            buildRouterMenu();
+            router.showBranch();
+        });
+    }
+
+    /**
+     * A router connected for the first time becomes a branch, named after the router itself, so
+     * the current router is in the list without typing it in again.
+     */
+    private void rememberBranch(RouterClient client) {
+        org.netpilot.model.RouterSettings settings = workspace.settings().router();
+        String address = client.endpoint().address();
+        if (settings.branchAt(address).isPresent()) {
+            workspace.updateSettings(s -> s.withRouter(s.router().withLastEndpoint(client.endpoint())));
+            return;
+        }
+        String name = router.info().map(i -> i.identity().isEmpty() ? i.boardName() : i.identity())
+                .filter(n -> !n.isBlank()).orElse(client.endpoint().host());
+        java.util.List<String> colors = org.netpilot.model.Branch.COLORS;
+        org.netpilot.model.Branch branch = new org.netpilot.model.Branch(java.util.UUID.randomUUID().toString(), name,
+                client.endpoint(), colors.get(settings.branches().size() % colors.size()));
+        workspace.updateSettings(s -> s.withRouter(s.router().withBranch(branch).withLastEndpoint(client.endpoint())));
+        LOG.log(System.Logger.Level.INFO, "New branch {0} for {1}", name, address);
+    }
+
     @Override
     public void routerConnected(RouterClient client, String name) {
+        rememberBranch(client);
+        buildRouterMenu();
+        router.showBranch();
         pages.values().forEach(p -> p.controller().routerConnected(client, name));
         startLiveTimers();
         if (current != null && current.needsRouter()) {
@@ -278,6 +353,7 @@ public class MainController implements RouterSession.Listener {
 
     @Override
     public void routerDisconnected() {
+        buildRouterMenu();
         resourcePoller.stop();
         liveUpdates.stop();
         liveLabel.setVisible(false);

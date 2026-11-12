@@ -301,6 +301,9 @@ public class DashboardController implements Page {
                 List<UsageRecord> history = context.usageTracker().track(router, users, online, LocalDate.now());
                 SalesReport report = context.reportService().build(router, users, history,
                         workspace.settings().voucherTemplate(), ReportPeriod.THIS_MONTH, LocalDate.now());
+                // this branch's stock, for the all-branches report when it is not connected
+                context.stockReadings().save(router, new org.netpilot.repository.StockReadings.Reading(
+                        java.time.LocalDateTime.now(), report.unused(), report.potential()));
                 QuickSale sales = new QuickSale(context.resellerAccounts());
                 return new Figures(users, online, report, context.resellerAccounts().holders(), sales.pending(),
                         sales.summary(LocalDate.now()), reminders(target, router, users));
