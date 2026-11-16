@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-16
+
 ### Added
 - Excel export (.xlsx, no extra library): Earnings and sales (summary, batches, packages, daily revenue and
   the branches side by side), a point of sale's statement and movements, all points of sale on one sheet, and
