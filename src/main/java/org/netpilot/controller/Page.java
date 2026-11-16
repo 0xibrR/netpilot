@@ -24,4 +24,11 @@ interface Page extends RouterSession.Listener {
      */
     default void tick() {
     }
+
+    /**
+     * The owner or the cashier is now using NetPilot (app protection): show or hide what this role
+     * may use. Hiding is only for clarity; each action checks the role again when it runs.
+     */
+    default void roleChanged(org.netpilot.model.Role role) {
+    }
 }

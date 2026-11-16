@@ -73,6 +73,11 @@ public final class AppPaths {
         return dataDirectory().resolve("alerts.csv");
     }
 
+    /** App protection: PIN fingerprints and wrong-try counts; never part of a backup. */
+    public static Path securityFile() {
+        return dataDirectory().resolve("security.properties");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         return AppDirectories.current().documents();

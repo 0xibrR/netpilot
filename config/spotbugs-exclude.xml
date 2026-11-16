@@ -19,6 +19,8 @@
             <Class name="org.netpilot.service.ExportService"/>
             <!-- holds the shared sales repository and router actions, like ExportService -->
             <Class name="org.netpilot.service.ExpiredCleanup"/>
+            <!-- holds the one shared PIN store; every page must see the same protection state -->
+            <Class name="org.netpilot.service.AccessControl"/>
             <!-- hold the platform's shared credential store / Keychain access, which must not be copied -->
             <Class name="org.netpilot.repository.PasswordVault"/>
             <Class name="org.netpilot.platform.KeychainCredentialStore"/>

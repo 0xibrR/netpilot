@@ -31,7 +31,7 @@
         </VBox>
     </top>
     <center>
-        <SplitPane orientation="VERTICAL" dividerPositions="0.45">
+        <SplitPane fx:id="split" orientation="VERTICAL" dividerPositions="0.45">
             <TableView fx:id="resellersTable">
                 <columnResizePolicy>
                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
@@ -51,7 +51,7 @@
                     <Label text="%reseller.empty" styleClass="muted" wrapText="true"/>
                 </placeholder>
             </TableView>
-            <VBox spacing="6">
+            <VBox fx:id="historyPane" spacing="6">
                 <padding>
                     <Insets top="8" right="0" bottom="0" left="0"/>
                 </padding>

@@ -41,6 +41,8 @@ import org.netpilot.model.BatchTag;
 import org.netpilot.model.LedgerEvent;
 import org.netpilot.model.Money;
 import org.netpilot.model.Reseller;
+import org.netpilot.model.Role;
+import org.netpilot.model.Role.Permission;
 import org.netpilot.model.RouterUser;
 import org.netpilot.service.Csv;
 import org.netpilot.service.ReportService;
@@ -115,9 +117,43 @@ public class ResellersController implements Page {
     private TableColumn<LedgerEvent, String> amountColumn;
     @FXML
     private TableColumn<LedgerEvent, String> noteColumn;
+    @FXML
+    private javafx.scene.control.SplitPane split;
+    @FXML
+    private javafx.scene.layout.VBox historyPane;
 
     public ResellersController(AppContext context) {
         this.context = context;
+    }
+
+    /** Whether the full accounts are shown (the owner) or only each balance (the cashier). */
+    private boolean fullAccounts() {
+        return workspace == null || workspace.can(Permission.MANAGE_RESELLERS);
+    }
+
+    /**
+     * The cashier takes payments and sees each point of sale's current balance only: no
+     * statement or history, no handing over, editing or cancelling.
+     */
+    @Override
+    public void roleChanged(Role role) {
+        boolean full = role.can(Permission.MANAGE_RESELLERS);
+        for (TableColumn<Statement, String> c : List.of(givenColumn, soldColumn, leftColumn, valueColumn,
+                commissionColumn, paidColumn)) {
+            c.setVisible(full);
+        }
+        for (Button b : List.of(addButton, editButton, handoverButton, returnButton, voidButton, exportButton)) {
+            b.setVisible(full);
+            b.setManaged(full);
+        }
+        if (full && !split.getItems().contains(historyPane)) {
+            split.getItems().add(historyPane);
+            split.setDividerPositions(0.45);
+        } else if (!full) {
+            split.getItems().remove(historyPane);
+            eventsTable.getItems().clear(); // not even kept out of sight
+        }
+        showHistory(resellersTable.getSelectionModel().getSelectedItem());
     }
 
     @FXML
@@ -266,7 +302,7 @@ public class ResellersController implements Page {
     }
 
     private void showHistory(Statement statement) {
-        if (statement == null) {
+        if (statement == null || !fullAccounts()) {
             historyTitle.setText(Messages.get("reseller.history"));
             eventsTable.getItems().clear();
             return;
@@ -289,11 +325,17 @@ public class ResellersController implements Page {
 
     @FXML
     private void onAdd() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         editor(null).ifPresent(this::save);
     }
 
     @FXML
     private void onEdit() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         Statement selected = resellersTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             editor(selected.reseller()).ifPresent(this::save);
@@ -356,6 +398,9 @@ public class ResellersController implements Page {
     /** Picks a batch of unused NetPilot cards from the router and hands it over. */
     @FXML
     private void onHandover() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         RouterClient target = client;
         if (target == null) {
             return;
@@ -384,6 +429,9 @@ public class ResellersController implements Page {
     /** Unsold cards of the selected point of sale go back (e.g. the shop returned them). */
     @FXML
     private void onReturn() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         Statement selected = resellersTable.getSelectionModel().getSelectedItem();
         RouterClient target = client;
         if (selected == null || target == null) {
@@ -441,6 +489,9 @@ public class ResellersController implements Page {
     /** Records money the point of sale paid; any amount, so partial payments are normal. */
     @FXML
     private void onPayment() {
+        if (!workspace.allowed(Permission.RESELLER_PAYMENT)) {
+            return;
+        }
         Statement selected = resellersTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             return;
@@ -453,6 +504,7 @@ public class ResellersController implements Page {
                 ? c
                 : null));
         DatePicker day = new DatePicker(LocalDate.now());
+        day.setDisable(!fullAccounts()); // the cashier records today's payments only
         TextField note = new TextField();
         note.setPromptText(Messages.get("payment.note.prompt"));
         Label owes = new Label(selected.credit().signum() > 0
@@ -476,17 +528,36 @@ public class ResellersController implements Page {
             }
             return new BigDecimal(amount.getText());
         }).ifPresent(value -> run(() -> context.resellerAccounts().pay(paymentId, selected.reseller(), value,
-                currency, day.getValue() == null ? LocalDate.now() : day.getValue(), note.getText()), saved -> {
+                currency, day.getValue() == null || !fullAccounts() ? LocalDate.now() : day.getValue(),
+                note.getText()), saved -> {
                     if (saved.isPresent()) {
                         workspace.toast("✓ " + Messages.get("payment.saved", new Money(value, currency).format()));
+                        printReceipt(selected.reseller(), saved.get(), new Money(value, currency));
                     }
                     reload();
                 }));
     }
 
+    /** Every payment gets a receipt, with the balance left after it. */
+    private void printReceipt(Reseller reseller, LedgerEvent payment, Money amount) {
+        run(() -> context.resellerAccounts().statements(), statements -> statements.stream()
+                .filter(s -> s.reseller().id().equals(reseller.id())).findFirst()
+                .ifPresent(after -> PaymentReceipt.deliver(workspace, PaymentReceipt.content(
+                        workspace.settings().voucherTemplate().networkName(), reseller.name(), amount.format(),
+                        after.credit().signum() > 0
+                                ? Messages.get("payment.receipt.credit")
+                                : Messages.get("payment.receipt.owes"),
+                        after.format(after.credit().signum() > 0 ? after.credit() : after.due()),
+                        payment.id(), payment.at(), payment.note(),
+                        Messages.get(workspace.role() == Role.OWNER ? "role.owner" : "role.cashier")))));
+    }
+
     /** A payment entered by mistake is cancelled by a new entry; the payment stays in the history. */
     @FXML
     private void onVoid() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         LedgerEvent event = eventsTable.getSelectionModel().getSelectedItem();
         if (event == null) {
             return;
@@ -513,6 +584,9 @@ public class ResellersController implements Page {
     /** The selected point of sale's statement and full history as CSV (opens in Excel). */
     @FXML
     private void onExport() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         Statement s = resellersTable.getSelectionModel().getSelectedItem();
         if (s == null) {
             return;

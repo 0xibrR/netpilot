@@ -197,6 +197,9 @@ public class ReportsController implements Page {
 
     @FXML
     private void onExport() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.REPORTS)) {
+            return;
+        }
         if (report == null) {
             return;
         }
@@ -223,6 +226,9 @@ public class ReportsController implements Page {
      */
     @FXML
     private void onMonthly() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.REPORTS)) {
+            return;
+        }
         if (client == null || template == null) {
             return;
         }

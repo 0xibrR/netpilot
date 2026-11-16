@@ -59,6 +59,39 @@ final class Workspace {
         return context;
     }
 
+    private java.util.function.BooleanSupplier locked = () -> false;
+
+    /** Tells whether the lock screen is up (set by the main window). */
+    void setLockState(java.util.function.BooleanSupplier lockState) {
+        this.locked = lockState;
+    }
+
+    /** Who is using NetPilot now (the owner unless app protection is on). */
+    org.netpilot.model.Role role() {
+        return context.access().role();
+    }
+
+    boolean can(org.netpilot.model.Role.Permission permission) {
+        return context.access().can(permission);
+    }
+
+    /**
+     * Checked at the start of every privileged action, whatever opened it (a button, a shortcut,
+     * another page). When the current role may not do it, says so and returns false.
+     */
+    boolean allowed(org.netpilot.model.Role.Permission permission) {
+        if (locked.getAsBoolean()) {
+            return false; // nothing runs behind the lock screen, whatever triggered it
+        }
+        try {
+            context.access().require(permission);
+            return true;
+        } catch (SecurityException e) {
+            toast("🔒 " + Messages.get("access.ownerOnly"));
+            return false;
+        }
+    }
+
     RouterSession router() {
         return router;
     }
@@ -92,6 +125,9 @@ final class Workspace {
 
     /** Exports PDF/CSV/RSC for these users (done by the Generate page). */
     void printVouchers(List<HotspotUser> users) {
+        if (!allowed(org.netpilot.model.Role.Permission.REPRINT_CARDS)) {
+            return;
+        }
         printer.accept(users);
     }
 
@@ -100,7 +136,7 @@ final class Workspace {
      * The A4 PDF ({@link #printVouchers}) stays available next to it.
      */
     void printReceipts(List<HotspotUser> cards) {
-        if (cards.isEmpty()) {
+        if (cards.isEmpty() || !allowed(org.netpilot.model.Role.Permission.REPRINT_CARDS)) {
             return;
         }
         AppSettings s = settings;

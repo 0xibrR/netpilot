@@ -242,6 +242,9 @@ final class AlertCenter {
     }
 
     private void openList() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.ALERTS)) {
+            return;
+        }
         unread = 0;
         showCount();
         AlertsWindow.show(workspace, log.all());

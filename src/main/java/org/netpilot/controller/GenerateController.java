@@ -324,6 +324,9 @@ public class GenerateController implements Page {
     /** Creates the previewed users on the connected router, then offers Print and Undo. */
     @FXML
     private void onSendToRouter() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.CREATE_BATCHES)) {
+            return;
+        }
         Optional<RouterClient> client = router.client();
         if (client.isEmpty() || users.isEmpty()) {
             return;
@@ -404,6 +407,9 @@ public class GenerateController implements Page {
 
     @FXML
     private void onGenerate() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.CREATE_BATCHES)) {
+            return;
+        }
         GenerationSettings settings = readGenerationSettings();
         List<String> errors = settings.validate();
         if (!errors.isEmpty()) {
@@ -421,6 +427,9 @@ public class GenerateController implements Page {
 
     @FXML
     private void onExport() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.REPRINT_CARDS)) {
+            return;
+        }
         exportUsers(List.copyOf(users));
     }
 

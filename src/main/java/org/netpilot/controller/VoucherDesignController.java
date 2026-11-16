@@ -397,6 +397,9 @@ public class VoucherDesignController implements Page {
 
     @FXML
     private void onTestPrint() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.CARD_DESIGN)) {
+            return;
+        }
         VoucherTemplate template = currentTemplate();
         List<String> problems = template.validate();
         if (!problems.isEmpty()) {
@@ -436,6 +439,9 @@ public class VoucherDesignController implements Page {
 
     @FXML
     private void onSave() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.CARD_DESIGN)) {
+            return;
+        }
         VoucherTemplate template = currentTemplate();
         List<String> problems = template.validate();
         if (!problems.isEmpty()) {
@@ -452,6 +458,9 @@ public class VoucherDesignController implements Page {
     /** Prints one sample receipt with the settings on screen (saved or not). */
     @FXML
     private void onTestReceipt() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.CARD_DESIGN)) {
+            return;
+        }
         VoucherTemplate template = currentTemplate();
         ReceiptSettings receipt = currentReceipt();
         List<javafx.scene.image.WritableImage> sample = List.of(sampleReceipt(template, receipt));

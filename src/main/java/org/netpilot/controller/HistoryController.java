@@ -78,6 +78,9 @@ public class HistoryController implements Page {
 
     @FXML
     private void onClear() {
+        if (!context.access().can(org.netpilot.model.Role.Permission.REPORTS)) {
+            return;
+        }
         if (!Dialogs.confirm(stage(), Messages.get("history.clear.title"), Messages.get("history.clear.body"))) {
             return;
         }

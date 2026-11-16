@@ -96,6 +96,30 @@ public class DashboardController implements Page {
         wait.play();
     }
 
+    /**
+     * The cashier sees the cards, who is online and the quick sale; earnings and the shortcuts to
+     * owner pages are hidden.
+     */
+    @Override
+    public void roleChanged(org.netpilot.model.Role role) {
+        boolean money = role.can(org.netpilot.model.Role.Permission.REPORTS);
+        for (Label value : List.of(revenueValue, potentialValue)) {
+            value.getParent().setVisible(money);
+            value.getParent().setManaged(money);
+        }
+        show(generateQuick, role.can(org.netpilot.model.Role.Permission.CREATE_BATCHES));
+        show(reportsQuick, money);
+        show(designQuick, role.can(org.netpilot.model.Role.Permission.CARD_DESIGN));
+        if (client != null) {
+            onRefresh(); // redraws the stock lines with or without "Create cards"
+        }
+    }
+
+    private static void show(javafx.scene.Node node, boolean visible) {
+        node.setVisible(visible);
+        node.setManaged(visible);
+    }
+
     // ------------------------------------------------------------------ update banner
 
     private static final javafx.util.Duration UPDATE_CHECK_DELAY = javafx.util.Duration.seconds(8);
@@ -379,11 +403,12 @@ public class DashboardController implements Page {
                 return; // a card without a readable price cannot be sold here
             }
             int left = stock.getOrDefault(profile, 0);
+            // none ready: one card is created on the router and sold in the same step
             Button sell = new Button(left == 0
-                    ? Messages.get("quickSale.soldOut", profile, priceText)
+                    ? Messages.get("quickSale.createAndSell", profile, priceText)
                     : Messages.get("quickSale.button", profile, priceText, left), Icons.of(Icons.TICKET));
             sell.getStyleClass().add(profile.equals(lastProfile) ? "primary" : "quick-sale");
-            sell.setDisable(left == 0 || selling);
+            sell.setDisable(selling);
             sell.setOnAction(e -> sell(profile));
             quickSaleButtons.getChildren().add(sell);
         });
@@ -500,7 +525,7 @@ public class DashboardController implements Page {
      */
     private void sell(String profile) {
         RouterClient target = client;
-        if (target == null || selling) {
+        if (target == null || selling || !workspace.allowed(org.netpilot.model.Role.Permission.QUICK_SALE)) {
             return;
         }
         // a number typed for this sale is checked first: a wrong one stops before a card is taken
@@ -518,6 +543,7 @@ public class DashboardController implements Page {
         lastProfile = profile;
         String router = target.endpoint().address();
         java.util.Map<String, String> prices = workspace.settings().voucherTemplate().prices();
+        org.netpilot.model.GenerationSettings saved = workspace.settings().generation();
         QuickSale sale = new QuickSale(context.resellerAccounts());
         Task<Taken> take = new Task<>() {
 
@@ -526,8 +552,9 @@ public class DashboardController implements Page {
                 List<RouterUser> users = target.hotspotUsers();
                 Set<String> online = target.activeSessions().stream().map(ActiveSession::user)
                         .collect(Collectors.toSet());
-                RouterUser card = QuickSale.pick(router, users, online, context.resellerAccounts().holders(),
-                        profile).orElseThrow(() -> new IllegalStateException(Messages.get("quickSale.none", profile)));
+                java.util.Optional<RouterUser> ready = QuickSale.pick(router, users, online,
+                        context.resellerAccounts().holders(), profile);
+                RouterUser card = ready.isPresent() ? ready.get() : createOne(target, saved, profile, users);
                 QuickSale.Reservation reserved = sale.reserve(new org.netpilot.service.ResellerAccounts.Card(router,
                         card.name(), card.profile()), prices)
                         .orElseThrow(() -> new IllegalStateException(Messages.get("quickSale.taken")));
@@ -548,6 +575,29 @@ public class DashboardController implements Page {
         Thread thread = new Thread(take, "netpilot-quick-sale");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    /**
+     * No card of this package is ready: creates exactly one on the router (with the code rules of
+     * Create cards and the limits of the package's latest cards), to be sold at once. Runs in the
+     * background.
+     */
+    private RouterUser createOne(RouterClient target, org.netpilot.model.GenerationSettings saved, String profile,
+            List<RouterUser> users) throws Exception {
+        org.netpilot.model.GenerationSettings one = QuickSale.oneCard(saved, profile, users);
+        List<org.netpilot.model.HotspotUser> generated = context.userGenerator().generate(one);
+        org.netpilot.model.UploadReport report = context.routerUploadService().upload(target, generated, one,
+                (done, total, name) -> {
+                }, () -> false);
+        if (report.created().isEmpty()) {
+            String reason = report.failed().stream().map(org.netpilot.model.UploadReport.Failure::reason).findFirst()
+                    .or(report::stopReason).orElse("");
+            throw new IllegalStateException(Messages.get("quickSale.createFailed", profile, reason));
+        }
+        String name = report.created().getFirst().user().username();
+        LOG.log(System.Logger.Level.INFO, "Quick sale: created card {0} ({1})", name, profile);
+        return target.hotspotUsers().stream().filter(u -> u.name().equals(name)).findFirst()
+                .orElseThrow(() -> new IllegalStateException(Messages.get("quickSale.taken")));
     }
 
     /** Prints the receipt (or shows it when no receipt printer is chosen), then settles the sale. */
@@ -636,10 +686,13 @@ public class DashboardController implements Page {
             text.getStyleClass().add("stock-text");
             javafx.scene.layout.Region gap = new javafx.scene.layout.Region();
             javafx.scene.layout.HBox.setHgrow(gap, javafx.scene.layout.Priority.ALWAYS);
-            Button create = new Button(Messages.get("nav.GENERATE"), Icons.of(Icons.TICKET));
-            create.setOnAction(
-                    e -> workspace.show(PageId.GENERATE, GenerateController.PROFILE_SECTION + item.profile()));
-            javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, text, gap, create);
+            javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, text, gap);
+            if (workspace.can(org.netpilot.model.Role.Permission.CREATE_BATCHES)) {
+                Button create = new Button(Messages.get("nav.GENERATE"), Icons.of(Icons.TICKET));
+                create.setOnAction(
+                        e -> workspace.show(PageId.GENERATE, GenerateController.PROFILE_SECTION + item.profile()));
+                row.getChildren().add(create);
+            }
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             stockRows.getChildren().add(row);
         }

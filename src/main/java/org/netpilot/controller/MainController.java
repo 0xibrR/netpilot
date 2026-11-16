@@ -71,6 +71,10 @@ public class MainController implements RouterSession.Listener {
     private Button alertsButton;
     private AlertCenter alerts;
     @FXML
+    private MenuButton roleButton;
+    private AppLock lock;
+    private final java.util.function.Consumer<org.netpilot.model.Role> roleListener = this::roleChanged;
+    @FXML
     private MenuItem reloadItem;
     @FXML
     private MenuItem disconnectItem;
@@ -146,9 +150,14 @@ public class MainController implements RouterSession.Listener {
         showResources(null);
 
         buildSideMenu();
+        lock = new AppLock(workspace, root, roleButton);
+        workspace.setLockState(lock::locked);
+        context.access().addListener(roleListener);
+        applyRole();
         load(PageId.GENERATE); // always loaded: other pages print vouchers through it
         show(session.startPage()); // the dashboard at start, the same page after a language switch
-        if (session.firstAutoConnect()) {
+        boolean atLaunch = session.firstAutoConnect();
+        if (atLaunch) {
             router.autoConnect(workspace.settings().router(), workspace::toast);
         } else if (router.client().isPresent()) {
             startLiveTimers();
@@ -156,8 +165,30 @@ public class MainController implements RouterSession.Listener {
         root.sceneProperty().addListener((obs, old, scene) -> {
             if (scene != null) {
                 addShortcuts();
+                lock.start(scene, atLaunch);
             }
         });
+    }
+
+    // ------------------------------------------------------------------ app protection
+
+    /** The owner or the cashier now uses NetPilot: menu, top bar and every page follow. */
+    private void roleChanged(org.netpilot.model.Role role) {
+        applyRole();
+        pages.values().forEach(p -> p.controller().roleChanged(role));
+        if (current != null && !current.openFor(role)) {
+            show(PageId.DASHBOARD);
+        }
+    }
+
+    private void applyRole() {
+        org.netpilot.model.Role role = workspace.role();
+        menu.restrict(page -> page.openFor(role));
+        boolean alertsAllowed = role.can(org.netpilot.model.Role.Permission.ALERTS);
+        alertsButton.setVisible(alertsAllowed);
+        alertsButton.setManaged(alertsAllowed);
+        lock.refresh();
+        buildRouterMenu();
     }
 
     /** Saves page state and ends the router session; called when the app closes. */
@@ -169,6 +200,8 @@ public class MainController implements RouterSession.Listener {
 
     /** Stops timers and saves page state, but keeps the router connected (language switch). */
     public void detach() {
+        context.access().removeListener(roleListener);
+        lock.stop();
         alerts.stop();
         resourcePoller.stop();
         liveUpdates.stop();
@@ -195,6 +228,7 @@ public class MainController implements RouterSession.Listener {
             PageId.SETTINGS);
 
     private void addShortcuts() {
+        keepConnectShortcut();
         for (int i = 0; i < SHORTCUTS.size(); i++) {
             PageId page = SHORTCUTS.get(i);
             KeyCombination keys = new KeyCodeCombination(KeyCode.getKeyCode(String.valueOf(i + 1)),
@@ -209,6 +243,24 @@ public class MainController implements RouterSession.Listener {
 
     /** Opens a page, and optionally one part of it (e.g. a tab of the Hotspot page). */
     private void show(PageId page, String section) {
+        if (lock != null && lock.locked()) {
+            return;
+        }
+        if (!page.openFor(workspace.role())) {
+            // a shortcut, a button on another page or an old link: refused here, whatever asked
+            LOG.log(System.Logger.Level.WARNING, "Blocked page {0} for the {1}", page, workspace.role());
+            workspace.toast("🔒 " + Messages.get("access.ownerOnly"));
+            if (current != null && current.openFor(workspace.role())) {
+                menu.select(current, null);
+                return;
+            }
+            showAllowed(PageId.DASHBOARD, null);
+            return;
+        }
+        showAllowed(page, section);
+    }
+
+    private void showAllowed(PageId page, String section) {
         current = page;
         menu.select(page, section);
         boolean blocked = page.needsRouter() && router.client().isEmpty();
@@ -237,6 +289,7 @@ public class MainController implements RouterSession.Listener {
             LoadedPage loaded = new LoadedPage(view, controller);
             pages.put(page, loaded);
             controller.attach(workspace);
+            controller.roleChanged(workspace.role());
             // catch up with a router that connected before this page existed
             router.client().ifPresent(client -> controller.routerConnected(client, router.displayName()));
             router.lists().ifPresent(controller::routerListsLoaded);
@@ -252,6 +305,9 @@ public class MainController implements RouterSession.Listener {
 
     @FXML
     private void onConnectRouter() {
+        if (lock != null && lock.locked()) {
+            return;
+        }
         router.showConnectDialog(workspace.settings().router())
                 .ifPresent(routerSettings -> workspace.updateSettings(s -> s.withRouter(routerSettings)));
     }
@@ -269,6 +325,20 @@ public class MainController implements RouterSession.Listener {
     @FXML
     private void onDisconnectRouter() {
         router.disconnect();
+    }
+
+    private static final KeyCombination CONNECT_KEYS = new KeyCodeCombination(KeyCode.R,
+            KeyCombination.SHORTCUT_DOWN);
+
+    /**
+     * Ctrl+R opens Connect. JavaFX drops a menu item's shortcut when the menu is rebuilt (after each
+     * connection or role change), so the window keeps its own; never while the lock screen is up.
+     */
+    private void keepConnectShortcut() {
+        javafx.scene.Scene scene = root.getScene();
+        if (scene != null && (lock == null || !lock.locked())) {
+            scene.getAccelerators().put(CONNECT_KEYS, this::onConnectRouter);
+        }
     }
 
     // ------------------------------------------------------------------ branches
@@ -296,12 +366,15 @@ public class MainController implements RouterSession.Listener {
             });
             items.add(item);
         }
-        javafx.scene.control.MenuItem manage = new javafx.scene.control.MenuItem(Messages.get("branch.manage"));
-        manage.setOnAction(e -> onManageBranches());
-        items.add(manage);
+        if (workspace.can(org.netpilot.model.Role.Permission.MANAGE_BRANCHES)) {
+            javafx.scene.control.MenuItem manage = new javafx.scene.control.MenuItem(Messages.get("branch.manage"));
+            manage.setOnAction(e -> onManageBranches());
+            items.add(manage);
+        }
         items.add(new javafx.scene.control.SeparatorMenuItem());
         items.addAll(fixedRouterItems);
         routerMenu.getItems().setAll(items);
+        keepConnectShortcut();
     }
 
     /** Connects to a branch: at once with its remembered password, else through the Connect dialog. */
@@ -315,6 +388,9 @@ public class MainController implements RouterSession.Listener {
     }
 
     private void onManageBranches() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.MANAGE_BRANCHES)) {
+            return;
+        }
         BranchesWindow.show(workspace, () -> {
             buildRouterMenu();
             router.showBranch();

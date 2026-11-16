@@ -63,11 +63,17 @@ public class SettingsController implements Page {
 
     @FXML
     private void onBackupNow() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.SETTINGS)) {
+            return;
+        }
         backups.backUpNow();
     }
 
     @FXML
     private void onRestore() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.SETTINGS)) {
+            return;
+        }
         backups.restore();
     }
 
@@ -174,6 +180,8 @@ public class SettingsController implements Page {
 
     @FXML
     private javafx.scene.layout.VBox alertsBox;
+    @FXML
+    private javafx.scene.layout.VBox protectionBox;
     private final java.util.Map<org.netpilot.model.Alert.Kind, javafx.scene.control.CheckBox> alertChecks = new java.util.EnumMap<>(
             org.netpilot.model.Alert.Kind.class);
     private javafx.scene.control.Spinner<Integer> cpuSpinner;
@@ -327,6 +335,9 @@ public class SettingsController implements Page {
 
     @FXML
     private void onDefaultTemplates() {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.SETTINGS)) {
+            return;
+        }
         cardTemplateArea.clear();
         reminderTemplateArea.clear();
         saveNotifications();
@@ -360,6 +371,7 @@ public class SettingsController implements Page {
     public void attach(Workspace shared) {
         this.workspace = shared;
         this.backups = new BackupActions(shared, this::showBackup);
+        new ProtectionSettings(shared, protectionBox).show();
         shown();
     }
 

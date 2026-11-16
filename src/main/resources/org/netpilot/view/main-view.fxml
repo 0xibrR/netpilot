@@ -30,6 +30,8 @@
                 </items>
             </MenuButton>
             <Region HBox.hgrow="ALWAYS"/>
+            <!-- app protection: who is using NetPilot (owner or cashier); hidden when protection is off -->
+            <MenuButton fx:id="roleButton" styleClass="chrome-button, role-chip" visible="false" managed="false"/>
             <!-- router alerts: the number of new ones; click for the list -->
             <Button fx:id="alertsButton" styleClass="chrome-button, alert-bell">
                 <tooltip>

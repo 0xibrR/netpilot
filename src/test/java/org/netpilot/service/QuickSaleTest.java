@@ -161,6 +161,35 @@ class QuickSaleTest {
     }
 
     @Test
+    void oneCardForAPackageWithoutStockTakesTheLimitsOfItsLatestCards() {
+        org.netpilot.model.GenerationSettings saved = new org.netpilot.model.GenerationSettings(50,
+                org.netpilot.model.CodeFormat.DIGITS, "PS", "", 8, org.netpilot.model.PasswordStyle.NONE, 4, "", "1M",
+                "hs1", "1h", 0);
+        List<RouterUser> users = List.of(
+                new RouterUser("*1", "a", "2M", "hs2", Duration.ofHours(1), "3h", 0, 0, false, OLD, 0),
+                new RouterUser("*2", "b", "2M", "hs3", Duration.ZERO, "6h", 0, 0, false, NEW, 5_000_000L),
+                new RouterUser("*3", "c", "2M", "", Duration.ZERO, "9h", 0, 0, false, "", 0));
+
+        org.netpilot.model.GenerationSettings two = QuickSale.oneCard(saved, "2M", users);
+        assertEquals(1, two.count());
+        assertEquals("2M", two.profile());
+        assertEquals("PS", two.prefix(), "the code rules of Create cards");
+        assertEquals("hs3", two.server(), "the newest NetPilot batch, not a hand-made card");
+        assertEquals("6h", two.limitUptime());
+        assertEquals(5_000_000L, two.limitBytes());
+
+        org.netpilot.model.GenerationSettings first = QuickSale.oneCard(saved, "1M", List.of());
+        assertEquals("1h", first.limitUptime(), "no card yet: the saved form, which was for this package");
+        assertEquals("hs1", first.server());
+        assertEquals("", QuickSale.oneCard(saved, "5M", List.of()).limitUptime(),
+                "another package: its own limits on the router");
+
+        List<RouterUser> odd = List.of(new RouterUser("*4", "d", "5M", "all", Duration.ZERO, "1 day", 0, 0, false,
+                NEW, 0));
+        assertEquals("", QuickSale.oneCard(saved, "5M", odd).limitUptime(), "a limit the form would refuse");
+    }
+
+    @Test
     void aPackageWithoutAPriceCannotBeSold() throws Exception {
         assertEquals(Optional.empty(), sale.reserve(new Card(ROUTER, "old-1", "1M"), Map.of()));
         assertTrue(repository.ledger().isEmpty());

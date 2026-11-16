@@ -45,6 +45,7 @@ public record AppContext(
         org.netpilot.service.BackupService backupService,
         org.netpilot.repository.CustomerRepository customerRepository,
         org.netpilot.repository.StockReadings stockReadings,
+        org.netpilot.service.AccessControl access,
         HostServices hostServices) {
 
     public static AppContext create(HostServices hostServices) {
@@ -82,6 +83,8 @@ public record AppContext(
                         NetPilotApp.VERSION),
                 new org.netpilot.repository.CustomerRepository(AppPaths.customersFile()),
                 new org.netpilot.repository.StockReadings(AppPaths.stockReadingsFile()),
+                new org.netpilot.service.AccessControl(new org.netpilot.service.PinVault(AppPaths.securityFile(),
+                        Clock.systemDefaultZone())),
                 hostServices);
     }
 }

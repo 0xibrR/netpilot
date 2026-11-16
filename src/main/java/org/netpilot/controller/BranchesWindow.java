@@ -43,6 +43,9 @@ final class BranchesWindow {
 
     /** @param changed runs after any change, so the top bar shows it */
     static void show(Workspace workspace, Runnable changed) {
+        if (!workspace.allowed(org.netpilot.model.Role.Permission.MANAGE_BRANCHES)) {
+            return;
+        }
         ListView<Branch> list = new ListView<>();
         list.setPrefSize(440, 260);
         list.setPlaceholder(new Label(Messages.get("branch.empty")));

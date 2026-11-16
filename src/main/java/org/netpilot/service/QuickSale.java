@@ -70,6 +70,33 @@ public final class QuickSale {
                         .orElse(LocalDateTime.MAX)).thenComparing(RouterUser::name));
     }
 
+    /**
+     * How to create one card of this package when none is ready: the code rules saved in Create
+     * cards, and the server and limits of the package's latest NetPilot card (else of the saved form
+     * when it was for this package, else none: the package's own limits apply).
+     */
+    public static org.netpilot.model.GenerationSettings oneCard(org.netpilot.model.GenerationSettings saved,
+            String profile, List<RouterUser> users) {
+        Optional<RouterUser> latest = users.stream()
+                .filter(u -> u.profile().equals(profile) && !u.builtIn() && BatchTag.parse(u.comment()).isPresent())
+                .max(Comparator.comparing((RouterUser u) -> BatchTag.parse(u.comment()).map(BatchTag::created)
+                        .orElse(LocalDateTime.MIN)));
+        boolean sameForm = saved.profile().equals(profile);
+        String server = latest.map(RouterUser::server).filter(s -> !s.isBlank()).orElse(saved.server());
+        String uptime = latest.map(RouterUser::limitUptime).orElse(sameForm ? saved.limitUptime() : "");
+        long bytes = latest.map(RouterUser::limitBytes).orElse(sameForm ? saved.limitBytes() : 0L);
+        org.netpilot.model.GenerationSettings one = new org.netpilot.model.GenerationSettings(1, saved.format(),
+                saved.prefix(), saved.suffix(), saved.codeLength(), saved.passwordStyle(), saved.passwordLength(),
+                saved.sharedPassword(), profile, server, uptime == null ? "" : uptime, Math.max(0, bytes));
+        if (one.validate().isEmpty()) {
+            return one;
+        }
+        // a limit the form would not accept (written in WinBox, say): the package's limits only
+        return new org.netpilot.model.GenerationSettings(1, saved.format(), saved.prefix(), saved.suffix(),
+                saved.codeLength(), saved.passwordStyle(), saved.passwordLength(), saved.sharedPassword(), profile,
+                server, "", 0);
+    }
+
     private static boolean sellable(String router, RouterUser u, Set<String> online, Map<String, String> holders) {
         return !u.builtIn() && u.neverUsed() && !u.disabled() && !online.contains(u.name())
                 && BatchTag.parse(u.comment()).isPresent()

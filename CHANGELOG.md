@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- App protection and roles: an owner PIN and an optional cashier PIN (Settings › App protection). The cashier
+  sells one card at a time with the quick sale (a card is created on the router and sold in the same step when
+  none is ready), sees the cards and who is online, sends WhatsApp messages and takes payments from points of
+  sale, seeing only their balance; every payment prints a receipt. Batches, reprints, deleting, packages,
+  reports, card design, developer tools, branches, alerts and settings are the owner's, checked when each
+  action runs, not only hidden. Lock screen, Ctrl+L to lock, back to the cashier after a set idle time. Wrong
+  PINs wait longer each time (at most 15 minutes, kept across restarts); a one-time recovery code resets a
+  forgotten owner PIN; changing a PIN or turning protection off asks for the owner PIN again
 - Router alerts: high CPU, low memory, router not responding, restarted, interface down, hotspot server stopped
   and DNS open to the internet; each told once when it starts and once when it ends, with the bell in the top
   bar (the alert list), a message and a Windows notification. Branches can be watched in the background with

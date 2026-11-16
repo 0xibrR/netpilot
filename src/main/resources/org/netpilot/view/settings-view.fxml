@@ -69,6 +69,13 @@
             <Label text="%backup.help" styleClass="muted" wrapText="true"/>
         </VBox>
 
+        <!-- app protection (owner and cashier PINs): filled in by ProtectionSettings -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="%protection.title" styleClass="card-title"/>
+            <Label text="%protection.help" styleClass="muted" wrapText="true"/>
+            <VBox fx:id="protectionBox" spacing="10"/>
+        </VBox>
+
         <!-- router alerts: filled in by SettingsController.initAlerts -->
         <VBox styleClass="card" spacing="10">
             <Label text="%alert.settings.title" styleClass="card-title"/>

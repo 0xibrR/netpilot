@@ -38,6 +38,7 @@ import org.netpilot.i18n.Messages;
 import org.netpilot.model.ActiveSession;
 import org.netpilot.model.DataSize;
 import org.netpilot.model.HotspotUser;
+import org.netpilot.model.Role.Permission;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterUser;
 import org.netpilot.model.UserFilter;
@@ -166,6 +167,32 @@ public class RouterUsersController {
     void setCustomerActions(Consumer<RouterUser> link, Consumer<RouterUser> send) {
         this.linkCustomer = link;
         this.sendToCustomer = send;
+    }
+
+    /** Checks the role when an action runs (and says so when refused); nothing is allowed until set. */
+    private java.util.function.Predicate<Permission> allowed = p -> false;
+
+    void setAccess(java.util.function.Predicate<Permission> allowedCheck) {
+        this.allowed = allowedCheck;
+    }
+
+    /**
+     * The cashier sees the cards, links customers and sends WhatsApp messages; printing and
+     * reprinting, handing over and changing cards on the router are the owner's.
+     */
+    void roleChanged(org.netpilot.model.Role role) {
+        show(role.can(Permission.MANAGE_CARDS), enableButton, disableButton, disconnectButton, deleteButton,
+                deleteExpiredButton);
+        show(role.can(Permission.REPRINT_CARDS), printButton, receiptButton);
+        show(role.can(Permission.MANAGE_RESELLERS), handoverButton);
+        show(role.can(Permission.MESSAGE_CUSTOMERS), customerButton, whatsAppButton);
+    }
+
+    private static void show(boolean visible, Button... buttons) {
+        for (Button b : buttons) {
+            b.setVisible(visible);
+            b.setManaged(visible);
+        }
     }
 
     @FXML
@@ -315,6 +342,9 @@ public class RouterUsersController {
 
     @FXML
     private void onEnable() {
+        if (!allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
         List<RouterUser> selected = selected();
         bulk(Messages.get("users.enabling", selected.size()),
                 () -> context.routerUserActions().enable(client, selected));
@@ -322,6 +352,9 @@ public class RouterUsersController {
 
     @FXML
     private void onDisable() {
+        if (!allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
         List<RouterUser> selected = selected();
         bulk(Messages.get("users.disabling", selected.size()),
                 () -> context.routerUserActions().disable(client, selected));
@@ -329,6 +362,9 @@ public class RouterUsersController {
 
     @FXML
     private void onDisconnect() {
+        if (!allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
         List<ActiveSession> sessions = selected().stream()
                 .flatMap(u -> sessionsByUser.getOrDefault(u.name(), List.of()).stream())
                 .toList();
@@ -342,6 +378,9 @@ public class RouterUsersController {
 
     @FXML
     private void onDelete() {
+        if (!allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
         List<RouterUser> selected = selected();
         String names = selected.stream().limit(8).map(RouterUser::name).collect(Collectors.joining(", "))
                 + (selected.size() > 8 ? ", …" : "");
@@ -359,6 +398,9 @@ public class RouterUsersController {
      */
     @FXML
     private void onDeleteExpired() {
+        if (!allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
         List<RouterUser> expired = RouterUserActions.expired(users);
         if (expired.isEmpty()) {
             Dialogs.info(stage(), Messages.get("users.deleteExpired.none.title"),
@@ -394,6 +436,9 @@ public class RouterUsersController {
 
     @FXML
     private void onHandover() {
+        if (!allowed.test(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         handover.accept(selected());
     }
 
@@ -404,6 +449,9 @@ public class RouterUsersController {
 
     /** Reads the selected cards' passwords, then hands them to the A4 or the receipt printer. */
     private void printSelected(Consumer<List<HotspotUser>> target) {
+        if (!allowed.test(Permission.REPRINT_CARDS)) {
+            return; // passwords are not even read for a role that may not print
+        }
         List<RouterUser> selected = selected();
         run(Messages.get("users.readingPasswords", selected.size()),
                 () -> context.routerUserActions().voucherUsers(client, selected), vouchers -> {

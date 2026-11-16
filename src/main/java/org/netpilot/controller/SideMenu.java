@@ -63,6 +63,8 @@ final class SideMenu {
     private final ToggleGroup toggles = new ToggleGroup();
     private final Map<String, ToggleButton> buttons = new LinkedHashMap<>();
     private final Map<String, VBox> groupOf = new LinkedHashMap<>();
+    /** Each group's whole box (header and entries), to hide a group left with no entry. */
+    private final Map<VBox, VBox> groupBoxOf = new LinkedHashMap<>();
 
     /**
      * @param open called with the page and section when an entry is clicked
@@ -126,7 +128,25 @@ final class SideMenu {
         // "⌄" when open; "›" when folded (shown as "‹" in right-to-left, pointing into the menu)
         items.visibleProperty().addListener((obs, was, unfolded) -> chevron.setText(unfolded ? "⌄" : "›"));
         fold(items, false);
-        return new VBox(header, items);
+        VBox box = new VBox(header, items);
+        groupBoxOf.put(items, box);
+        return box;
+    }
+
+    /**
+     * Shows only the entries this role may open (app protection); a group left empty hides too.
+     */
+    void restrict(java.util.function.Predicate<PageId> allowed) {
+        for (ToggleButton button : buttons.values()) {
+            boolean show = allowed.test(PageId.valueOf(keyOf(button).substring(0, keyOf(button).indexOf('/'))));
+            button.setVisible(show);
+            button.setManaged(show);
+        }
+        groupBoxOf.forEach((items, box) -> {
+            boolean any = items.getChildren().stream().anyMatch(javafx.scene.Node::isManaged);
+            box.setVisible(any);
+            box.setManaged(any);
+        });
     }
 
     private ToggleButton entryButton(Entry entry, javafx.scene.Node graphic, String style,

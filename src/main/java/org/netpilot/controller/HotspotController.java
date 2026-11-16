@@ -48,6 +48,7 @@ import org.netpilot.model.ActiveSession;
 import org.netpilot.model.DataSize;
 import org.netpilot.model.HotspotProfile;
 import org.netpilot.model.HotspotServer;
+import org.netpilot.model.Role.Permission;
 import org.netpilot.model.RouterDuration;
 import org.netpilot.model.RouterResource;
 import org.netpilot.model.RouterUser;
@@ -242,6 +243,21 @@ public class HotspotController implements Page {
     @Override
     public void attach(Workspace shared) {
         this.workspace = shared;
+        usersController.setAccess(shared::allowed);
+    }
+
+    /** The cashier sees the cards and who is online, but cannot change packages or disconnect anyone. */
+    @Override
+    public void roleChanged(org.netpilot.model.Role role) {
+        boolean packages = role.can(Permission.MANAGE_PACKAGES);
+        for (Button b : List.of(newProfileButton, editProfileButton, deleteProfileButton)) {
+            b.setVisible(packages);
+            b.setManaged(packages);
+        }
+        boolean cards = role.can(Permission.MANAGE_CARDS);
+        kickButton.setVisible(cards);
+        kickButton.setManaged(cards);
+        usersController.roleChanged(role);
     }
 
     @Override
@@ -603,6 +619,9 @@ public class HotspotController implements Page {
      * already used cannot be sold again, so it never goes into a point of sale's stock.
      */
     private void handOver(String routerKey, List<RouterUser> selected) {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
         List<ResellerAccounts.Card> unused = selected.stream()
                 .filter(u -> !u.builtIn() && u.neverUsed())
                 .map(u -> new ResellerAccounts.Card(routerKey, u.name(), u.profile()))
@@ -619,6 +638,9 @@ public class HotspotController implements Page {
 
     /** Links, changes or removes the customer's number of one card. */
     private void linkCustomer(String routerKey, RouterUser card) {
+        if (!workspace.allowed(Permission.MESSAGE_CUSTOMERS)) {
+            return;
+        }
         java.util.Optional<org.netpilot.model.Customer> current;
         try {
             current = context.customerRepository().find(routerKey, card.name());
@@ -679,7 +701,7 @@ public class HotspotController implements Page {
     @FXML
     private void onNewProfile() {
         RouterClient target = client;
-        if (target == null) {
+        if (target == null || !workspace.allowed(Permission.MANAGE_PACKAGES)) {
             return;
         }
         ProfileEditor.show(workspace.window(), null).ifPresent(profile -> run(() -> {
@@ -709,7 +731,7 @@ public class HotspotController implements Page {
     private void onEditProfile() {
         RouterClient target = client;
         HotspotProfile selected = profilesTable.getSelectionModel().getSelectedItem();
-        if (target == null || selected == null) {
+        if (target == null || selected == null || !workspace.allowed(Permission.MANAGE_PACKAGES)) {
             return;
         }
         ProfileEditor.show(workspace.window(), selected).ifPresent(profile -> run(() -> {
@@ -722,7 +744,8 @@ public class HotspotController implements Page {
     private void onDeleteProfile() {
         RouterClient target = client;
         HotspotProfile selected = profilesTable.getSelectionModel().getSelectedItem();
-        if (target == null || selected == null || selected.builtIn()) {
+        if (target == null || selected == null || selected.builtIn()
+                || !workspace.allowed(Permission.MANAGE_PACKAGES)) {
             return;
         }
         if (!Dialogs.confirm(workspace.window(), Messages.get("profile.delete.title", selected.name()),
@@ -759,7 +782,7 @@ public class HotspotController implements Page {
     private void onDisconnectSessions() {
         RouterClient target = client;
         List<ActiveSession> selected = List.copyOf(activeTable.getSelectionModel().getSelectedItems());
-        if (target == null || selected.isEmpty()) {
+        if (target == null || selected.isEmpty() || !workspace.allowed(Permission.MANAGE_CARDS)) {
             return;
         }
         String names = selected.stream().map(ActiveSession::user).limit(10).collect(Collectors.joining(", "))

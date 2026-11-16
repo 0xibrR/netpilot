@@ -852,3 +852,47 @@
 .button.alert-bell.alert-new .icon {
     -fx-stroke: white;
 }
+
+/* App protection: who is using NetPilot (top bar) and the lock screen */
+.menu-button.role-chip {
+    -fx-background-radius: 12;
+    -fx-font-weight: bold;
+}
+
+.menu-button.role-chip.role-owner {
+    -fx-background-color: #1f6feb;
+}
+
+.menu-button.role-chip.role-owner > .label {
+    -fx-text-fill: white;
+}
+
+.menu-button.role-chip.role-owner .icon {
+    -fx-stroke: white;
+}
+
+.menu-button.role-chip.role-cashier {
+    -fx-background-color: -np-card;
+    -fx-border-color: -np-border;
+    -fx-border-radius: 12;
+}
+
+.lock-screen {
+    -fx-background-color: -np-bg;
+    -fx-padding: 40;
+}
+
+.lock-screen .password-field {
+    -fx-font-size: 20px;
+}
+
+.text-field.recovery-code {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
+
+.protection-status {
+    -fx-font-weight: bold;
+}
