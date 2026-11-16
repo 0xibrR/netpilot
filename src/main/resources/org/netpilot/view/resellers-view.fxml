@@ -27,6 +27,7 @@
                 <Button fx:id="paymentButton" text="%reseller.payment" onAction="#onPayment"/>
                 <Button fx:id="voidButton" text="%reseller.void" onAction="#onVoid"/>
                 <Button fx:id="exportButton" text="%reseller.export" onAction="#onExport"/>
+                <Button fx:id="exportAllButton" text="%reseller.exportAll" onAction="#onExportAll"/>
             </FlowPane>
         </VBox>
     </top>

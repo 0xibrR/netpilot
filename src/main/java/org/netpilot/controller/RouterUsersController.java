@@ -186,6 +186,37 @@ public class RouterUsersController {
         show(role.can(Permission.REPRINT_CARDS), printButton, receiptButton);
         show(role.can(Permission.MANAGE_RESELLERS), handoverButton);
         show(role.can(Permission.MESSAGE_CUSTOMERS), customerButton, whatsAppButton);
+        show(role.can(Permission.REPORTS), exportCardsButton);
+    }
+
+    @FXML
+    private Button exportCardsButton;
+
+    /** The cards the list shows now (filters applied) in Excel, without passwords. */
+    @FXML
+    private void onExportCards() {
+        if (!allowed.test(Permission.REPORTS) || client == null) {
+            return;
+        }
+        List<RouterUser> shown = visible.stream().filter(u -> !u.builtIn()).toList();
+        if (shown.isEmpty()) {
+            Dialogs.info(stage(), Messages.get("users.exportExcel"), Messages.get("users.exportExcel.none"));
+            return;
+        }
+        String router = client.endpoint().address();
+        Set<String> online = Set.copyOf(sessionsByUser.keySet());
+        Map<String, String> ends = Map.copyOf(expiries);
+        ExportFiles.choose(stage(), Messages.get("users.exportExcel"),
+                Messages.get("users.exportExcel.file", LocalDate.now()), false).ifPresent(target -> {
+                    try {
+                        org.netpilot.service.CardListExport.write(router, shown, online, ends,
+                                context.customerRepository().all(), target.file());
+                        context.hostServices().showDocument(target.file().toUri().toString());
+                    } catch (java.io.IOException e) {
+                        LOG.log(System.Logger.Level.WARNING, "Cannot export the card list", e);
+                        Dialogs.error(stage(), Messages.get("users.exportExcel"), e.getMessage());
+                    }
+                });
     }
 
     private static void show(boolean visible, Button... buttons) {

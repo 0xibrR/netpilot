@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Excel export (.xlsx, no extra library): Earnings and sales (summary, batches, packages, daily revenue and
+  the branches side by side), a point of sale's statement and movements, all points of sale on one sheet, and
+  the card list as filtered (without passwords). Amounts and dates are real numbers Excel can add up, Arabic
+  sheets read right to left, the header stays in view with a filter. CSV stays available for the report and
+  the statement; owner only
 - App protection and roles: an owner PIN and an optional cashier PIN (Settings › App protection). The cashier
   sells one card at a time with the quick sale (a card is created on the router and sold in the same step when
   none is ready), sees the cards and who is online, sends WhatsApp messages and takes payments from points of

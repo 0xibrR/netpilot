@@ -33,7 +33,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.GridPane;
-import javafx.stage.FileChooser;
 import org.netpilot.AppContext;
 import org.netpilot.NetPilotApp;
 import org.netpilot.i18n.Messages;
@@ -81,6 +80,8 @@ public class ResellersController implements Page {
     private Button voidButton;
     @FXML
     private Button exportButton;
+    @FXML
+    private Button exportAllButton;
     @FXML
     private TableView<Statement> resellersTable;
     @FXML
@@ -142,7 +143,8 @@ public class ResellersController implements Page {
                 commissionColumn, paidColumn)) {
             c.setVisible(full);
         }
-        for (Button b : List.of(addButton, editButton, handoverButton, returnButton, voidButton, exportButton)) {
+        for (Button b : List.of(addButton, editButton, handoverButton, returnButton, voidButton, exportButton,
+                exportAllButton)) {
             b.setVisible(full);
             b.setManaged(full);
         }
@@ -192,6 +194,7 @@ public class ResellersController implements Page {
         paymentButton.setGraphic(Icons.of(Icons.CHECK));
         voidButton.setGraphic(Icons.of(Icons.CROSS));
         exportButton.setGraphic(Icons.of(Icons.DOWNLOAD));
+        exportAllButton.setGraphic(Icons.of(Icons.DOWNLOAD));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
         updateRouterButtons();
     }
@@ -581,7 +584,7 @@ public class ResellersController implements Page {
         });
     }
 
-    /** The selected point of sale's statement and full history as CSV (opens in Excel). */
+    /** The selected point of sale's statement and full history, in Excel (or CSV). */
     @FXML
     private void onExport() {
         if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
@@ -591,13 +594,21 @@ public class ResellersController implements Page {
         if (s == null) {
             return;
         }
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(Messages.get("reseller.export"));
-        chooser.setInitialFileName(Messages.get("reseller.export.file", s.reseller().name().replaceAll(
-                "[\\\\/:*?\"<>|]", "_"), LocalDate.now()));
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
-        File file = chooser.showSaveDialog(window());
-        if (file == null) {
+        Optional<ExportFiles.Target> target = ExportFiles.choose(window(), Messages.get("reseller.export"),
+                Messages.get("reseller.export.file", s.reseller().name(), LocalDate.now()), true);
+        if (target.isEmpty()) {
+            return;
+        }
+        File file = target.get().file().toFile();
+        if (target.get().excel()) {
+            try {
+                org.netpilot.service.ResellerExport.statement(s, file.toPath());
+                workspace.toast("✓ " + Messages.get("reseller.exported", file.getName()));
+                context.hostServices().showDocument(file.toURI().toString());
+            } catch (IOException e) {
+                LOG.log(System.Logger.Level.WARNING, "Cannot export the statement", e);
+                Dialogs.error(window(), Messages.get("reseller.export"), e.getMessage());
+            }
             return;
         }
         try (Writer out = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
@@ -624,6 +635,29 @@ public class ResellersController implements Page {
             LOG.log(System.Logger.Level.WARNING, "Cannot export the statement", e);
             Dialogs.error(window(), Messages.get("reseller.export"), e.getMessage());
         }
+    }
+
+    /** Every point of sale in one Excel sheet: what each received, sold, paid and still owes. */
+    @FXML
+    private void onExportAll() {
+        if (!workspace.allowed(Permission.MANAGE_RESELLERS)) {
+            return;
+        }
+        List<Statement> all = List.copyOf(resellersTable.getItems());
+        if (all.isEmpty()) {
+            return;
+        }
+        ExportFiles.choose(window(), Messages.get("reseller.exportAll"),
+                Messages.get("reseller.exportAll.file", LocalDate.now()), false).ifPresent(target -> {
+                    try {
+                        org.netpilot.service.ResellerExport.all(all, target.file());
+                        workspace.toast("✓ " + Messages.get("reseller.exported", target.file().getFileName()));
+                        context.hostServices().showDocument(target.file().toUri().toString());
+                    } catch (IOException e) {
+                        LOG.log(System.Logger.Level.WARNING, "Cannot export the points of sale", e);
+                        Dialogs.error(window(), Messages.get("reseller.exportAll"), e.getMessage());
+                    }
+                });
     }
 
     /** The currency most package prices use, for a point of sale with no history yet. */

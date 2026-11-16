@@ -203,17 +203,22 @@ public class ReportsController implements Page {
         if (report == null) {
             return;
         }
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(Messages.get("reports.exportTitle"));
-        chooser.setInitialFileName("netpilot-report-" + LocalDate.now() + ".csv");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
-        File file = chooser.showSaveDialog(stage());
-        if (file == null) {
+        java.util.Optional<ExportFiles.Target> target = ExportFiles.choose(stage(), Messages.get("reports.exportTitle"),
+                "netpilot-report-" + LocalDate.now(), true);
+        if (target.isEmpty()) {
             return;
         }
+        java.nio.file.Path file = target.get().file();
         try {
-            context.reportExporter().export(report, file.toPath());
-            context.hostServices().showDocument(file.toURI().toString());
+            if (target.get().excel()) {
+                org.netpilot.service.BranchReport branches = org.netpilot.service.BranchReport.build(
+                        context.reportService(), history, workspace.settings().router().branches(),
+                        context.stockReadings().all(), this.template.get(), periodBox.getValue(), LocalDate.now());
+                context.reportExporter().exportXlsx(report, java.util.Optional.of(branches), file);
+            } else {
+                context.reportExporter().export(report, file);
+            }
+            context.hostServices().showDocument(file.toUri().toString());
         } catch (IOException e) {
             LOG.log(System.Logger.Level.ERROR, "Report export failed", e);
             Dialogs.error(stage(), Messages.get("error.exportFailed"), e.getMessage());
