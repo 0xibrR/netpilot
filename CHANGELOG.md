@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Changed
+- The update download shows its size the usual way (1.3 MiB, not 1324.9 KiB); router figures keep WinBox's style
+
 ## [1.3.0] - 2026-11-16
 
 ### Added

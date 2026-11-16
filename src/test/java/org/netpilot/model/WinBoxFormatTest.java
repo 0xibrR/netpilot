@@ -22,6 +22,16 @@ class WinBoxFormatTest {
     }
 
     @Test
+    void downloadsSwitchUnitsAt1024() {
+        assertEquals("0 B", DataSize.formatFile(-5));
+        assertEquals("1023 B", DataSize.formatFile(1023));
+        assertEquals("1.0 KiB", DataSize.formatFile(1024));
+        assertEquals("1.3 MiB", DataSize.formatFile(Math.round(1324.9 * 1024)), "not 1324.9 KiB");
+        assertEquals("38.6 MiB", DataSize.formatFile(Math.round(38.6 * MIB)));
+        assertEquals("1.5 GiB", DataSize.formatFile(Math.round(1.5 * 1024 * MIB)));
+    }
+
+    @Test
     void uptimesLookLikeWinBox() {
         assertEquals("2d 09:56:36", RouterDuration.clock(Duration.parse("P2DT9H56M36S")));
         assertEquals("13d 06:09:00", RouterDuration.clock(Duration.parse("P13DT6H9M")));

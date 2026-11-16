@@ -28,4 +28,22 @@ public final class DataSize {
         }
         return String.format(Locale.ROOT, "%.1f %s", value, UNITS[unit]);
     }
+
+    /**
+     * A file's size the usual way, for downloads: the next unit from 1024 of the one before
+     * ({@code 1023 B}, {@code 1.0 KiB}, {@code 1.3 MiB}, {@code 38.6 MiB}). Router figures keep
+     * {@link #format}, so they match WinBox.
+     */
+    public static String formatFile(long bytes) {
+        if (bytes < 1024) {
+            return Math.max(0, bytes) + " B";
+        }
+        double value = bytes;
+        int unit = 0;
+        while (unit < UNITS.length - 1 && value >= 1024.0) {
+            value /= 1024;
+            unit++;
+        }
+        return String.format(Locale.ROOT, "%.1f %s", value, UNITS[unit]);
+    }
 }

@@ -112,8 +112,8 @@ final class UpdateFlow {
                 Path installer = checker.download(release, AppPaths.updateDownloads(), (done, total) -> {
                     updateProgress(done, total > 0 ? total : -1);
                     updateMessage(total > 0
-                            ? Messages.get("update.progress", DataSize.format(done), DataSize.format(total))
-                            : DataSize.format(done));
+                            ? Messages.get("update.progress", DataSize.formatFile(done), DataSize.formatFile(total))
+                            : DataSize.formatFile(done));
                 }, cancelled::get);
                 updateMessage(Messages.get("update.backingUp"));
                 updateProgress(-1, 1);
