@@ -101,6 +101,7 @@ final class BranchesWindow {
                     Messages.get("branch.remove.title", selected.name()), Messages.get("branch.remove.body"))) {
                 workspace.updateSettings(s -> s.withRouter(s.router().withoutBranch(selected.id())));
                 forgetPassword(workspace, selected.endpoint());
+                workspace.updateSettings(s -> s.withAlerts(s.alerts().watching(selected.id(), false)));
                 reload.run();
                 changed.run();
             }
@@ -199,7 +200,10 @@ final class BranchesWindow {
         form.addRow(3, new Label(Messages.get("branch.user")), user);
         form.addRow(4, new Label(Messages.get("branch.password")), password);
         form.addRow(5, new Label(Messages.get("branch.color")), colorRow);
-        form.add(problem, 0, 6, 2, 1);
+        CheckBox watch = new CheckBox(Messages.get("branch.watch"));
+        watch.setSelected(existing.map(b -> workspace.settings().alerts().watched().contains(b.id())).orElse(false));
+        form.add(watch, 1, 6);
+        form.add(problem, 0, 7, 2, 1);
 
         Dialog<Branch> dialog = new Dialog<>();
         dialog.initOwner(workspace.window());
@@ -227,6 +231,8 @@ final class BranchesWindow {
                         ? nextColor(workspace)
                         : (String) colors.getSelectedToggle().getUserData();
                 result[0] = new Branch(id, name.getText(), endpoint, color);
+                boolean watched = watch.isSelected();
+                workspace.updateSettings(s -> s.withAlerts(s.alerts().watching(id, watched)));
                 if (existing.isPresent() && !existing.get().address().equals(endpoint.address())) {
                     Dialogs.info(workspace.window(), Messages.get("branch.moved.title"),
                             Messages.get("branch.moved.body", existing.get().address(), endpoint.address()));

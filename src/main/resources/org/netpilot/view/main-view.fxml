@@ -30,6 +30,12 @@
                 </items>
             </MenuButton>
             <Region HBox.hgrow="ALWAYS"/>
+            <!-- router alerts: the number of new ones; click for the list -->
+            <Button fx:id="alertsButton" styleClass="chrome-button, alert-bell">
+                <tooltip>
+                    <Tooltip text="%alert.title"/>
+                </tooltip>
+            </Button>
             <Button fx:id="themeButton" styleClass="chrome-button" onAction="#onToggleTheme">
                 <tooltip>
                     <Tooltip text="%main.toggleTheme"/>

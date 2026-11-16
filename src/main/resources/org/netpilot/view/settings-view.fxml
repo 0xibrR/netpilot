@@ -69,6 +69,13 @@
             <Label text="%backup.help" styleClass="muted" wrapText="true"/>
         </VBox>
 
+        <!-- router alerts: filled in by SettingsController.initAlerts -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="%alert.settings.title" styleClass="card-title"/>
+            <Label text="%alert.settings.help" styleClass="muted" wrapText="true"/>
+            <VBox fx:id="alertsBox" spacing="8"/>
+        </VBox>
+
         <VBox styleClass="card" spacing="10">
             <Label text="%notify.settings.title" styleClass="card-title"/>
             <Label text="%notify.settings.help" styleClass="muted" wrapText="true"/>

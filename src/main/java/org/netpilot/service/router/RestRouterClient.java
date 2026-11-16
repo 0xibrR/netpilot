@@ -412,6 +412,65 @@ final class RestRouterClient implements RouterClient {
     }
 
     @Override
+    public List<org.netpilot.model.InterfaceState> interfaces() throws RouterException {
+        List<org.netpilot.model.InterfaceState> out = new ArrayList<>();
+        for (JsonNode item : array(get("/interface", "name,type,running,disabled"), "interfaces")) {
+            String name = text(item, "name");
+            if (!name.isEmpty()) {
+                out.add(new org.netpilot.model.InterfaceState(name, text(item, "type"),
+                        "true".equals(text(item, "running")), "true".equals(text(item, "disabled"))));
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    /**
+     * A rule in the {@code input} chain that drops or rejects UDP (or any protocol) to port 53 and is
+     * not disabled. Whether it covers only the internet side is not judged: any such rule counts,
+     * which keeps the check simple and never cries wolf over a rule the user wrote on purpose.
+     */
+    @Override
+    public boolean firewallBlocksDns() throws RouterException {
+        for (JsonNode rule : array(get("/ip/firewall/filter", "chain,action,protocol,dst-port,disabled"),
+                "firewall rules")) {
+            String action = text(rule, "action");
+            String protocol = text(rule, "protocol");
+            if ("input".equals(text(rule, "chain")) && ("drop".equals(action) || "reject".equals(action))
+                    && (protocol.isEmpty() || "udp".equals(protocol)) && !"true".equals(text(rule, "disabled"))
+                    && covers53(text(rule, "dst-port"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@code 53}, {@code 53,123}, {@code 1-1024}: whether port 53 is in it. No port at all is every
+     * port, as in the usual "drop everything not from the LAN" rule.
+     */
+    static boolean covers53(String ports) {
+        if (ports.isBlank()) {
+            return true;
+        }
+        for (String part : ports.split(",")) {
+            String p = part.strip();
+            try {
+                if (p.contains("-")) {
+                    String[] range = p.split("-", 2);
+                    if (Integer.parseInt(range[0].strip()) <= 53 && Integer.parseInt(range[1].strip()) >= 53) {
+                        return true;
+                    }
+                } else if (!p.isEmpty() && Integer.parseInt(p) == 53) {
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                // a named port list: not judged
+            }
+        }
+        return false;
+    }
+
+    @Override
     public List<LogEntry> log() throws RouterException {
         List<LogEntry> lines = new ArrayList<>();
         for (JsonNode item : array(get("/log", ".id,time,topics,message"), "log")) {

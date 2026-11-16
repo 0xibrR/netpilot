@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Router alerts: high CPU, low memory, router not responding, restarted, interface down, hotspot server stopped
+  and DNS open to the internet; each told once when it starts and once when it ends, with the bell in the top
+  bar (the alert list), a message and a Windows notification. Branches can be watched in the background with
+  their remembered password. Settings › Router alerts sets what is watched and the thresholds; read only
 - Branches: several routers by name and colour; switch between them from the Router menu (at once with a
   remembered password), manage them in Router › Manage branches. Earnings and sales shows every branch side by
   side and, with "All branches", their sales together; stock shows each branch's last reading. The monthly PDF

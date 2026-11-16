@@ -68,6 +68,9 @@ public class MainController implements RouterSession.Listener {
     @FXML
     private MenuButton routerMenu;
     @FXML
+    private Button alertsButton;
+    private AlertCenter alerts;
+    @FXML
     private MenuItem reloadItem;
     @FXML
     private MenuItem disconnectItem;
@@ -129,6 +132,8 @@ public class MainController implements RouterSession.Listener {
         disconnectItem.disableProperty().bind(router.connectedProperty().not());
         routerMenu.setGraphic(Icons.of(Icons.ROUTER));
         router.setBranches(address -> workspace.settings().router().branchAt(address));
+        alerts = new AlertCenter(workspace, router, alertsButton);
+        alerts.start();
         buildRouterMenu();
         themeButton.setGraphic(Icons.of(Icons.MOON));
         versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
@@ -159,10 +164,12 @@ public class MainController implements RouterSession.Listener {
     public void close() {
         detach();
         router.close();
+        org.netpilot.platform.DesktopNotifier.close(); // its tray icon would keep the app running
     }
 
     /** Stops timers and saves page state, but keeps the router connected (language switch). */
     public void detach() {
+        alerts.stop();
         resourcePoller.stop();
         liveUpdates.stop();
         clock.stop();
@@ -460,11 +467,15 @@ public class MainController implements RouterSession.Listener {
             polling = false;
             if (router.client().orElse(null) == target) {
                 showResources(task.getValue());
+                alerts.resource(target.endpoint().address(), task.getValue());
             }
         });
         task.setOnFailed(e -> {
             polling = false;
             LOG.log(System.Logger.Level.DEBUG, "Cannot read router resources", task.getException());
+            if (router.client().orElse(null) == target) {
+                alerts.resourceFailed(target.endpoint().address());
+            }
         });
         Thread thread = new Thread(task, "netpilot-router-resources");
         thread.setDaemon(true);

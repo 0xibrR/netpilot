@@ -47,6 +47,7 @@ final class Icons {
     static final String GLOBE = "M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0 M3.6 9h16.8 M3.6 15h16.8 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18";
     static final String LOG = "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M9 13h6 M9 17h6";
     static final String LINE_CHART = "M3 3v18h18 M7 15l4-4 3 3 6-6";
+    static final String BELL = "M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.94 1.94 0 0 0 3.4 0";
     static final String CHEVRON_UP = "M6 15l6-6 6 6";
     static final String CHEVRON_DOWN = "M6 9l6 6 6-6";
 

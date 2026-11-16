@@ -120,4 +120,38 @@ class NetworkToolsTest {
         assertEquals(List.of("hotspot", "info", "debug"), log.getFirst().topics());
         assertEquals(LogEntry.Severity.ERROR, log.get(1).severity());
     }
+
+    @Test
+    void readsInterfacesForTheAlerts() throws Exception {
+        router.route("/rest/interface", 200, "[{\"name\":\"ether1\",\"type\":\"ether\",\"running\":\"true\","
+                + "\"disabled\":\"false\"},{\"name\":\"wlan1\",\"type\":\"wlan\",\"running\":\"false\","
+                + "\"disabled\":\"true\"}]");
+
+        List<org.netpilot.model.InterfaceState> interfaces = client.interfaces();
+
+        assertEquals(2, interfaces.size());
+        assertTrue(interfaces.getFirst().running());
+        assertTrue(interfaces.get(1).disabled());
+    }
+
+    @Test
+    void aFirewallRuleThatDropsDnsOrEverythingCountsAsBlocking() throws Exception {
+        router.route("/rest/ip/firewall/filter", 200, "[{\"chain\":\"forward\",\"action\":\"drop\"},"
+                + "{\"chain\":\"input\",\"action\":\"accept\",\"protocol\":\"udp\",\"dst-port\":\"53\"}]");
+        assertFalse(client.firewallBlocksDns(), "accepting 53, or dropping only forwarded traffic, does not block");
+
+        router.route("/rest/ip/firewall/filter", 200,
+                "[{\"chain\":\"input\",\"action\":\"drop\",\"protocol\":\"udp\",\"dst-port\":\"53\",\"disabled\":\"true\"}]");
+        assertFalse(client.firewallBlocksDns(), "a disabled rule does not count");
+
+        router.route("/rest/ip/firewall/filter", 200,
+                "[{\"chain\":\"input\",\"action\":\"drop\",\"in-interface-list\":\"!LAN\"}]");
+        assertTrue(client.firewallBlocksDns(), "the usual drop-everything-not-from-the-LAN rule blocks it");
+
+        assertTrue(RestRouterClient.covers53("53"));
+        assertTrue(RestRouterClient.covers53("22,53,123"));
+        assertTrue(RestRouterClient.covers53("1-1024"));
+        assertFalse(RestRouterClient.covers53("80,443"));
+        assertFalse(RestRouterClient.covers53("dns"), "a named port is not judged");
+    }
 }

@@ -68,6 +68,11 @@ public final class AppPaths {
         return dataDirectory().resolve("branch-stock.properties");
     }
 
+    /** The router alerts noticed (the latest 500). */
+    public static Path alertsFile() {
+        return dataDirectory().resolve("alerts.csv");
+    }
+
     /** {@code ~/Documents/NetPilot} when a Documents folder exists, otherwise {@code ~/NetPilot}. */
     public static Path defaultOutputDirectory() {
         return AppDirectories.current().documents();

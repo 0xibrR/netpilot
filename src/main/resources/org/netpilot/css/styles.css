@@ -840,3 +840,15 @@
     -fx-border-color: -np-text;
     -fx-border-width: 2;
 }
+
+/* The alerts bell: amber with the number when there are new alerts */
+.button.alert-bell.alert-new {
+    -fx-background-color: #e08a00;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12;
+}
+
+.button.alert-bell.alert-new .icon {
+    -fx-stroke: white;
+}

@@ -117,6 +117,15 @@ public interface RouterClient extends AutoCloseable {
     /** The router's log, oldest line first (read only). */
     java.util.List<org.netpilot.model.LogEntry> log() throws RouterException;
 
+    /** The router's interfaces with their link state (read only), for the alerts. */
+    java.util.List<org.netpilot.model.InterfaceState> interfaces() throws RouterException;
+
+    /**
+     * Whether a firewall rule drops or rejects DNS (port 53) coming in to the router, so it does
+     * not answer DNS questions from the internet. Read only.
+     */
+    boolean firewallBlocksDns() throws RouterException;
+
     @Override
     void close();
 }

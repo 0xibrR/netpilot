@@ -151,7 +151,32 @@ public class SettingsRepository {
                         p.getProperty("notify.countryCode", d.notifications().countryCode()),
                         p.getProperty("notify.cardTemplate", ""),
                         p.getProperty("notify.reminderTemplate", ""),
-                        intValue(p, "notify.remindHours", d.notifications().remindHours())));
+                        intValue(p, "notify.remindHours", d.notifications().remindHours())),
+                loadAlerts(p, d.alerts()));
+    }
+
+    /** {@code alert.on} lists the alerts that are on; a missing key means all of them (the default). */
+    private static org.netpilot.model.AlertSettings loadAlerts(Properties p, org.netpilot.model.AlertSettings d) {
+        java.util.Set<org.netpilot.model.Alert.Kind> on = java.util.EnumSet.noneOf(org.netpilot.model.Alert.Kind.class);
+        String list = p.getProperty("alert.on");
+        if (list == null) {
+            on.addAll(d.enabled());
+        } else {
+            for (String name : list.split(",")) {
+                try {
+                    on.add(org.netpilot.model.Alert.Kind.valueOf(name.strip()));
+                } catch (IllegalArgumentException e) {
+                    // an alert from another version: skipped
+                }
+            }
+        }
+        java.util.Set<String> watched = new java.util.HashSet<>(java.util.Arrays.asList(
+                p.getProperty("alert.watched", "").split(",")));
+        watched.removeIf(String::isBlank);
+        return new org.netpilot.model.AlertSettings(on, intValue(p, "alert.cpuPercent", d.cpuPercent()),
+                intValue(p, "alert.cpuMinutes", d.cpuMinutes()), intValue(p, "alert.memoryPercent", d.memoryPercent()),
+                booleanValue(p, "alert.desktop", d.desktop()),
+                intValue(p, "alert.backgroundMinutes", d.backgroundMinutes()), watched);
     }
 
     private static CleanupSettings loadCleanup(Properties p, CleanupSettings d) {
@@ -399,6 +424,14 @@ public class SettingsRepository {
         p.setProperty("notify.cardTemplate", settings.notifications().cardTemplate());
         p.setProperty("notify.reminderTemplate", settings.notifications().reminderTemplate());
         p.setProperty("notify.remindHours", String.valueOf(settings.notifications().remindHours()));
+        org.netpilot.model.AlertSettings alerts = settings.alerts();
+        p.setProperty("alert.on", String.join(",", alerts.enabled().stream().map(Enum::name).sorted().toList()));
+        p.setProperty("alert.cpuPercent", String.valueOf(alerts.cpuPercent()));
+        p.setProperty("alert.cpuMinutes", String.valueOf(alerts.cpuMinutes()));
+        p.setProperty("alert.memoryPercent", String.valueOf(alerts.memoryPercent()));
+        p.setProperty("alert.desktop", String.valueOf(alerts.desktop()));
+        p.setProperty("alert.backgroundMinutes", String.valueOf(alerts.backgroundMinutes()));
+        p.setProperty("alert.watched", String.join(",", alerts.watched().stream().sorted().toList()));
 
         FileSupport.createParentDirectories(file);
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");

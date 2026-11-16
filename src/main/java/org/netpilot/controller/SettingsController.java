@@ -167,6 +167,106 @@ public class SettingsController implements Page {
         autoBackupCheck.selectedProperty().addListener((obs, old, on) -> saveAutoBackup(on));
         cleanupTimeBox.valueProperty().addListener((obs, old, time) -> saveCleanup());
         initNotifications();
+        initAlerts();
+    }
+
+    // ------------------------------------------------------------------ router alerts
+
+    @FXML
+    private javafx.scene.layout.VBox alertsBox;
+    private final java.util.Map<org.netpilot.model.Alert.Kind, javafx.scene.control.CheckBox> alertChecks = new java.util.EnumMap<>(
+            org.netpilot.model.Alert.Kind.class);
+    private javafx.scene.control.Spinner<Integer> cpuSpinner;
+    private javafx.scene.control.Spinner<Integer> cpuMinutesSpinner;
+    private javafx.scene.control.Spinner<Integer> memorySpinner;
+    private javafx.scene.control.Spinner<Integer> backgroundSpinner;
+    private javafx.scene.control.CheckBox desktopCheck;
+
+    /** One check box per alert, the thresholds, Windows notifications and the background check interval. */
+    private void initAlerts() {
+        javafx.scene.layout.FlowPane kinds = new javafx.scene.layout.FlowPane(16, 8);
+        for (org.netpilot.model.Alert.Kind kind : org.netpilot.model.Alert.Kind.values()) {
+            javafx.scene.control.CheckBox box = new javafx.scene.control.CheckBox(
+                    Messages.get("alert.settings.kind." + kind.name()));
+            box.selectedProperty().addListener((obs, old, on) -> saveAlerts());
+            alertChecks.put(kind, box);
+            kinds.getChildren().add(box);
+        }
+        cpuSpinner = alertSpinner(50, 100, org.netpilot.model.AlertSettings.DEFAULT_CPU);
+        cpuMinutesSpinner = alertSpinner(1, 60, org.netpilot.model.AlertSettings.DEFAULT_CPU_MINUTES);
+        memorySpinner = alertSpinner(1, 50, org.netpilot.model.AlertSettings.DEFAULT_MEMORY);
+        backgroundSpinner = alertSpinner(1, 120, org.netpilot.model.AlertSettings.DEFAULT_BACKGROUND_MINUTES);
+        desktopCheck = new javafx.scene.control.CheckBox(Messages.get("alert.settings.desktop"));
+        desktopCheck.selectedProperty().addListener((obs, old, on) -> saveAlerts());
+        if (!org.netpilot.platform.DesktopNotifier.supported()) {
+            desktopCheck.setDisable(true);
+        }
+        Label watchHint = new Label(Messages.get("alert.settings.watchHint"));
+        watchHint.getStyleClass().add("muted");
+        watchHint.setWrapText(true);
+        alertsBox.getChildren().setAll(kinds,
+                row(Messages.get("alert.settings.cpu"), cpuSpinner, Messages.get("alert.settings.cpuFor"),
+                        cpuMinutesSpinner, Messages.get("alert.settings.minutes")),
+                row(Messages.get("alert.settings.memory"), memorySpinner, "%"),
+                desktopCheck,
+                row(Messages.get("alert.settings.background"), backgroundSpinner,
+                        Messages.get("alert.settings.minutes")),
+                watchHint);
+    }
+
+    private javafx.scene.control.Spinner<Integer> alertSpinner(int min, int max, int value) {
+        javafx.scene.control.Spinner<Integer> spinner = new javafx.scene.control.Spinner<>(min, max, value);
+        spinner.setEditable(true);
+        spinner.setPrefWidth(90);
+        spinner.setMinWidth(90);
+        spinner.focusedProperty().addListener((obs, was, focused) -> {
+            if (!focused) {
+                spinner.increment(0); // typed numbers count without pressing Enter
+            }
+        });
+        spinner.valueProperty().addListener((obs, old, v) -> saveAlerts());
+        return spinner;
+    }
+
+    /** A row of labels and controls; strings become labels that never shrink. */
+    private static javafx.scene.layout.HBox row(Object... parts) {
+        javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(8);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        for (Object part : parts) {
+            if (part instanceof String text) {
+                Label label = new Label(text);
+                label.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+                row.getChildren().add(label);
+            } else {
+                row.getChildren().add((javafx.scene.Node) part);
+            }
+        }
+        return row;
+    }
+
+    private void showAlerts() {
+        org.netpilot.model.AlertSettings a = workspace.settings().alerts();
+        alertChecks.forEach((kind, box) -> box.setSelected(a.on(kind)));
+        cpuSpinner.getValueFactory().setValue(a.cpuPercent());
+        cpuMinutesSpinner.getValueFactory().setValue(a.cpuMinutes());
+        memorySpinner.getValueFactory().setValue(a.memoryPercent());
+        backgroundSpinner.getValueFactory().setValue(a.backgroundMinutes());
+        desktopCheck.setSelected(a.desktop());
+    }
+
+    private void saveAlerts() {
+        if (loading || workspace == null) {
+            return;
+        }
+        java.util.Set<org.netpilot.model.Alert.Kind> on = java.util.EnumSet.noneOf(org.netpilot.model.Alert.Kind.class);
+        alertChecks.forEach((kind, box) -> {
+            if (box.isSelected()) {
+                on.add(kind);
+            }
+        });
+        workspace.updateSettings(s -> s.withAlerts(new org.netpilot.model.AlertSettings(on, cpuSpinner.getValue(),
+                cpuMinutesSpinner.getValue(), memorySpinner.getValue(), desktopCheck.isSelected(),
+                backgroundSpinner.getValue(), s.alerts().watched())));
     }
 
     // ------------------------------------------------------------------ customer messages
@@ -280,6 +380,7 @@ public class SettingsController implements Page {
             showBackup();
             showUpdates();
             showNotifications();
+            showAlerts();
         } finally {
             loading = false;
         }
