@@ -195,6 +195,17 @@ public final class PinVault {
         save(p);
     }
 
+    /** Whether the cashier must open a shift before selling or taking payments. */
+    public synchronized boolean requireShift() {
+        return "true".equals(load().getProperty("requireShift", "false"));
+    }
+
+    public synchronized void setRequireShift(boolean required) throws IOException {
+        Properties p = load();
+        p.setProperty("requireShift", String.valueOf(required));
+        save(p);
+    }
+
     /** Turns protection off; the owner PIN is asked again. */
     public synchronized void disable(char[] ownerPin) throws IOException {
         requireOwner(ownerPin);

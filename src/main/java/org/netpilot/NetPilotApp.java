@@ -140,6 +140,9 @@ public class NetPilotApp extends Application {
             if (type == HistoryController.class) {
                 return new HistoryController(context);
             }
+            if (type == org.netpilot.controller.ShiftsController.class) {
+                return new org.netpilot.controller.ShiftsController(context);
+            }
             if (type == RouterConnectionController.class) {
                 return new RouterConnectionController(context);
             }

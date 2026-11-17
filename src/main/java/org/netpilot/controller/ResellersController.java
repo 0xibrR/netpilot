@@ -495,6 +495,9 @@ public class ResellersController implements Page {
         if (!workspace.allowed(Permission.RESELLER_PAYMENT)) {
             return;
         }
+        if (!workspace.shifts().readyForCash()) {
+            return;
+        }
         Statement selected = resellersTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             return;
@@ -536,6 +539,7 @@ public class ResellersController implements Page {
                     if (saved.isPresent()) {
                         workspace.toast("✓ " + Messages.get("payment.saved", new Money(value, currency).format()));
                         printReceipt(selected.reseller(), saved.get(), new Money(value, currency));
+                        workspace.shifts().changed();
                     }
                     reload();
                 }));
@@ -579,6 +583,7 @@ public class ResellersController implements Page {
                 Dialogs.info(window(), Messages.get("reseller.void"), Messages.get("payment.void.already"));
             } else {
                 workspace.toast("✓ " + Messages.get("payment.voided", amountText));
+                workspace.shifts().changed();
             }
             reload();
         });

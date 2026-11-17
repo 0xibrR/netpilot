@@ -72,6 +72,8 @@ public class MainController implements RouterSession.Listener {
     private AlertCenter alerts;
     @FXML
     private MenuButton roleButton;
+    @FXML
+    private Label shiftChip;
     private AppLock lock;
     private final java.util.function.Consumer<org.netpilot.model.Role> roleListener = this::roleChanged;
     @FXML
@@ -139,6 +141,7 @@ public class MainController implements RouterSession.Listener {
         alerts = new AlertCenter(workspace, router, alertsButton);
         alerts.start();
         setUpLive();
+        setUpShiftChip();
         buildRouterMenu();
         themeButton.setGraphic(Icons.of(Icons.MOON));
         versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
@@ -170,6 +173,24 @@ public class MainController implements RouterSession.Listener {
                 lock.start(scene, atLaunch);
             }
         });
+    }
+
+    // ------------------------------------------------------------------ cash drawer
+
+    /** The open shift and its expected cash in the top bar; a click opens Home, where it is handled. */
+    private void setUpShiftChip() {
+        workspace.shifts().onChange(this::showShiftChip);
+        shiftChip.setOnMouseClicked(e -> show(PageId.DASHBOARD));
+        shiftChip.setGraphic(Icons.of(Icons.CLOCK));
+        showShiftChip();
+    }
+
+    private void showShiftChip() {
+        java.util.Optional<String> text = workspace.shifts().figures()
+                .map(f -> Messages.get("shift.chip", workspace.shifts().money(f.expected())));
+        shiftChip.setText(text.orElse(""));
+        shiftChip.setVisible(text.isPresent());
+        shiftChip.setManaged(text.isPresent());
     }
 
     // ------------------------------------------------------------------ live updates

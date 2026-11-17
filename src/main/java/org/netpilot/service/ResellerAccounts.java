@@ -397,6 +397,11 @@ public final class ResellerAccounts {
         return logged(repository.append(List.of(voided))).stream().findFirst();
     }
 
+    /** Every ledger entry, oldest first (read only), e.g. for the money taken during a shift. */
+    public List<LedgerEvent> ledger() throws IOException {
+        return repository.ledger();
+    }
+
     /** Figures of every point of sale, by name. */
     public List<Statement> statements() throws IOException {
         List<LedgerEvent> ledger = repository.ledger();

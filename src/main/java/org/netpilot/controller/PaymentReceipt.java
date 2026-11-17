@@ -68,10 +68,15 @@ final class PaymentReceipt {
 
     /** Prints the receipt in the background, or shows it when no receipt printer is chosen. */
     static void deliver(Workspace workspace, ReceiptContent content) {
+        deliver(workspace, content, Messages.get("payment.receipt.title"));
+    }
+
+    /** The same for any receipt; {@code title} heads the window when it is shown on screen. */
+    static void deliver(Workspace workspace, ReceiptContent content, String title) {
         ReceiptSettings settings = workspace.settings().receipt();
         WritableImage receipt = ReceiptPrinter.render(content, settings, Optional.empty());
         if (settings.printer().isEmpty()) {
-            show(workspace, receipt);
+            show(workspace, receipt, title);
             return;
         }
         Task<Void> task = new Task<>() {
@@ -87,14 +92,14 @@ final class PaymentReceipt {
         task.setOnFailed(e -> {
             LOG.log(System.Logger.Level.WARNING, "Payment receipt not printed", task.getException());
             // the payment is saved; the receipt is shown so it can still be handed over
-            show(workspace, receipt);
+            show(workspace, receipt, title);
         });
         Thread thread = new Thread(task, "netpilot-payment-receipt");
         thread.setDaemon(true);
         thread.start();
     }
 
-    private static void show(Workspace workspace, WritableImage receipt) {
+    private static void show(Workspace workspace, WritableImage receipt, String title) {
         ImageView view = new ImageView(receipt);
         view.setPreserveRatio(true);
         view.setFitWidth(Math.min(receipt.getWidth(), 360));
@@ -107,7 +112,7 @@ final class PaymentReceipt {
         Dialog<Void> dialog = new Dialog<>();
         dialog.initOwner(workspace.window());
         dialog.setTitle(NetPilotApp.NAME);
-        dialog.setHeaderText(Messages.get("payment.receipt.title"));
+        dialog.setHeaderText(title);
         dialog.getDialogPane().getButtonTypes()
                 .setAll(new ButtonType(Messages.get("button.ok"), ButtonBar.ButtonData.OK_DONE));
         dialog.getDialogPane().setContent(content);

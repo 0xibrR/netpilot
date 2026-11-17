@@ -60,6 +60,15 @@ final class Workspace {
     }
 
     private final LiveLink live = new LiveLink();
+    private ShiftCenter shifts;
+
+    /** The cash drawer: shifts, withdrawals and closings. */
+    ShiftCenter shifts() {
+        if (shifts == null) {
+            shifts = new ShiftCenter(this);
+        }
+        return shifts;
+    }
 
     /** The router's live updates (RouterOS API), for pages to follow. */
     LiveLink live() {

@@ -73,6 +73,11 @@ public final class AppPaths {
         return dataDirectory().resolve("alerts.csv");
     }
 
+    /** Cashier shifts: openings, withdrawals and closings, never rewritten in place. */
+    public static Path shiftsFile() {
+        return dataDirectory().resolve("shifts.csv");
+    }
+
     /** App protection: PIN fingerprints and wrong-try counts; never part of a backup. */
     public static Path securityFile() {
         return dataDirectory().resolve("security.properties");

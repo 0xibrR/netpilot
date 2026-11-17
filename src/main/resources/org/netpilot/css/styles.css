@@ -919,3 +919,22 @@
 .status-bar .live.live-instant {
     -fx-font-weight: bold;
 }
+
+/* cashier shifts: the open shift in the top bar; cash missing in red, over in amber */
+.top-bar .label.shift-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.18);
+    -fx-background-radius: 12;
+    -fx-padding: 3 10 3 10;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.table-cell.shift-short {
+    -fx-text-fill: #d1242f;
+    -fx-font-weight: bold;
+}
+
+.table-cell.shift-over {
+    -fx-text-fill: #bf8700;
+    -fx-font-weight: bold;
+}

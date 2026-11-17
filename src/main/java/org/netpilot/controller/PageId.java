@@ -20,6 +20,7 @@ enum PageId {
     RESELLERS("resellers-view.fxml", Icons.STORE, false, Permission.RESELLER_PAYMENT),
     REPORTS("reports-view.fxml", Icons.CHART, true, Permission.REPORTS),
     HISTORY("history-view.fxml", Icons.HISTORY, false, Permission.REPORTS),
+    SHIFTS("shifts-view.fxml", Icons.CLOCK, false, Permission.REPORTS),
     PING("ping-view.fxml", Icons.PULSE, true, Permission.DEVELOPER_TOOLS),
     TRACEROUTE("traceroute-view.fxml", Icons.ROUTE, true, Permission.DEVELOPER_TOOLS),
     DNS("dns-view.fxml", Icons.GLOBE, true, Permission.DEVELOPER_TOOLS),

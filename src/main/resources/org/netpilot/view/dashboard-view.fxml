@@ -60,6 +60,8 @@
             <Label fx:id="routerDetails" styleClass="muted"/>
         </VBox>
 
+        <!-- the cash drawer: open, withdraw, close (built by DashboardController.showShift) -->
+        <VBox fx:id="shiftCard" styleClass="card" spacing="8"/>
         <!-- one button per priced package: the oldest unused card is printed and recorded as sold -->
         <VBox fx:id="quickSaleCard" styleClass="card" spacing="8" visible="false" managed="false">
             <HBox alignment="CENTER_LEFT" spacing="8">

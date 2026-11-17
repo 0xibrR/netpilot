@@ -85,7 +85,17 @@ final class ProtectionSettings {
         Label tips = new Label(Messages.get("protection.tips"));
         tips.getStyleClass().add("muted");
         tips.setWrapText(true);
-        box.getChildren().setAll(status, buttons, idleRow, tips);
+        javafx.scene.control.CheckBox requireShift = new javafx.scene.control.CheckBox(
+                Messages.get("protection.requireShift"));
+        requireShift.setSelected(vault().requireShift());
+        requireShift.selectedProperty().addListener((obs, was, on) -> {
+            try {
+                vault().setRequireShift(on);
+            } catch (IOException ex) {
+                LOG.log(System.Logger.Level.WARNING, "Cannot save the shift rule", ex);
+            }
+        });
+        box.getChildren().setAll(status, buttons, idleRow, requireShift, tips);
     }
 
     private void enable() {

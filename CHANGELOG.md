@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Cashier shifts: start a shift with the cash in the drawer, take cash out with a reason, and close it with
+  the cash counted; the expected cash (float + counter sales + point-of-sale payments - cash taken out) and the
+  difference show, and a closing receipt prints. The open shift and its expected cash show on Home and in the
+  top bar. Reports and finance > Shifts (owner) lists every shift with missing cash in red, closes a forgotten shift,
+  reprints receipts and exports to Excel. Optionally the cashier must start a shift before selling
 - Live updates through the RouterOS API (port 8728, or 8729 with HTTPS): customers logging in and out, new
   cards, interfaces going down and router log lines show the moment they happen, and the router's load every
   second, instead of every few seconds; much less load on the router. Settings › Live updates turns it on or

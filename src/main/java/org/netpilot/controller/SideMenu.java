@@ -51,7 +51,8 @@ final class SideMenu {
             new Group("nav.group.finance", Icons.FINANCE, List.of(
                     new Entry("nav.RESELLERS", PageId.RESELLERS, null),
                     new Entry("nav.cards.sales", PageId.REPORTS, null),
-                    new Entry("nav.HISTORY", PageId.HISTORY, null))),
+                    new Entry("nav.HISTORY", PageId.HISTORY, null),
+                    new Entry("nav.SHIFTS", PageId.SHIFTS, null))),
             // diagnostics through the router; more tools join this group
             new Group("nav.group.dev", Icons.TERMINAL, List.of(
                     new Entry("nav.PING", PageId.PING, null),

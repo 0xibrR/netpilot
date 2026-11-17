@@ -31,6 +31,8 @@
             </MenuButton>
             <Region HBox.hgrow="ALWAYS"/>
             <!-- app protection: who is using NetPilot (owner or cashier); hidden when protection is off -->
+            <!-- the open shift and the cash expected in the drawer; click for Home -->
+            <Label fx:id="shiftChip" styleClass="shift-chip" visible="false" managed="false"/>
             <MenuButton fx:id="roleButton" styleClass="chrome-button, role-chip" visible="false" managed="false"/>
             <!-- router alerts: the number of new ones; click for the list -->
             <Button fx:id="alertsButton" styleClass="chrome-button, alert-bell">

@@ -116,6 +116,8 @@ public class DashboardController implements Page {
         });
         shared.live().onOnline(liveDebounce::playFromStart);
         shared.live().onCards(liveDebounce::playFromStart);
+        shared.shifts().onChange(this::showShift);
+        showShift();
         showOffline();
         // the daily update check, a little after start so it never slows the window down
         javafx.animation.PauseTransition wait = new javafx.animation.PauseTransition(UPDATE_CHECK_DELAY);
@@ -145,6 +147,48 @@ public class DashboardController implements Page {
     private static void show(javafx.scene.Node node, boolean visible) {
         node.setVisible(visible);
         node.setManaged(visible);
+    }
+
+    // ------------------------------------------------------------------ cash drawer
+
+    @FXML
+    private VBox shiftCard;
+
+    /** The shift card: open one, or the open shift with its expected cash, withdraw and close. */
+    private void showShift() {
+        ShiftCenter shifts = workspace.shifts();
+        Label title = new Label(Messages.get("shift.title"));
+        title.getStyleClass().add("card-title");
+        java.util.Optional<org.netpilot.model.Shift> open = shifts.current();
+        if (open.isEmpty()) {
+            Label none = new Label(Messages.get("shift.none"));
+            none.getStyleClass().add("muted");
+            Button start = new Button(Messages.get("shift.open"), Icons.of(Icons.CLOCK));
+            start.setOnAction(e -> shifts.openShift());
+            javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, none, new javafx.scene.layout.Region(),
+                    start);
+            javafx.scene.layout.HBox.setHgrow(row.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            shiftCard.getChildren().setAll(title, row);
+            return;
+        }
+        org.netpilot.model.Shift shift = open.get();
+        Label since = new Label(Messages.get("shift.since", shift.opened().format(ShiftCenter.TIME),
+                ShiftCenter.roleName(shift.openedBy())));
+        since.getStyleClass().add("muted");
+        Label expected = new Label(shifts.figures().map(f -> Messages.get("shift.expected", shifts.money(f.expected())))
+                .orElse(""));
+        expected.getStyleClass().add("stat-value");
+        Button withdraw = new Button(Messages.get("shift.withdraw"));
+        withdraw.setOnAction(e -> shifts.withdraw());
+        Button close = new Button(Messages.get("shift.close"), Icons.of(Icons.CHECK));
+        close.getStyleClass().add("primary");
+        close.setOnAction(e -> shifts.closeShift());
+        javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, expected, new javafx.scene.layout.Region(),
+                withdraw, close);
+        javafx.scene.layout.HBox.setHgrow(row.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        shiftCard.getChildren().setAll(title, since, row);
     }
 
     // ------------------------------------------------------------------ update banner
@@ -502,6 +546,7 @@ public class DashboardController implements Page {
         };
         task.setOnSucceeded(e -> {
             LOG.log(System.Logger.Level.INFO, "Pending direct sale of card {0} settled", card);
+            workspace.shifts().changed();
             onRefresh();
         });
         task.setOnFailed(e -> {
@@ -554,6 +599,9 @@ public class DashboardController implements Page {
         RouterClient target = client;
         if (target == null || selling || !workspace.allowed(org.netpilot.model.Role.Permission.QUICK_SALE)) {
             return;
+        }
+        if (!workspace.shifts().readyForCash()) {
+            return; // the owner asks the cashier to open a shift first
         }
         // a number typed for this sale is checked first: a wrong one stops before a card is taken
         String typed = quickSalePhone.getText() == null ? "" : quickSalePhone.getText().strip();
@@ -690,6 +738,7 @@ public class DashboardController implements Page {
             LOG.log(System.Logger.Level.INFO, "Quick sale: card {0} ({1})", sold.card().username(),
                     sold.card().profile());
             workspace.toast("✓ " + Messages.get("quickSale.sold", sold.card().profile(), sold.card().username()));
+            workspace.shifts().changed();
             salePhone.ifPresent(phone -> {
                 String router = client == null ? "" : client.endpoint().address();
                 if (!router.isEmpty() && CustomerContact.link(workspace, router, sold.card().username(), phone)) {
