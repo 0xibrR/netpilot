@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-17
+
 ### Added
 - Cashier shifts: start a shift with the cash in the drawer, take cash out with a reason, and close it with
   the cash counted; the expected cash (float + counter sales + point-of-sale payments - cash taken out) and the
