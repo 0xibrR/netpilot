@@ -138,6 +138,7 @@ public class MainController implements RouterSession.Listener {
         router.setBranches(address -> workspace.settings().router().branchAt(address));
         alerts = new AlertCenter(workspace, router, alertsButton);
         alerts.start();
+        setUpLive();
         buildRouterMenu();
         themeButton.setGraphic(Icons.of(Icons.MOON));
         versionLabel.setText(NetPilotApp.NAME + " " + NetPilotApp.VERSION);
@@ -161,6 +162,7 @@ public class MainController implements RouterSession.Listener {
             router.autoConnect(workspace.settings().router(), workspace::toast);
         } else if (router.client().isPresent()) {
             startLiveTimers();
+            router.client().ifPresent(c -> workspace.live().start(c, workspace.settings().router()));
         }
         root.sceneProperty().addListener((obs, old, scene) -> {
             if (scene != null) {
@@ -168,6 +170,36 @@ public class MainController implements RouterSession.Listener {
                 lock.start(scene, atLaunch);
             }
         });
+    }
+
+    // ------------------------------------------------------------------ live updates
+
+    /**
+     * The router's live updates: its load every second in the status bar, interface changes to the
+     * alerts at once, and the status bar label says whether updates are live or read every few
+     * seconds.
+     */
+    private void setUpLive() {
+        LiveLink live = workspace.live();
+        live.onResource(resource -> router.client().ifPresent(client -> {
+            showResources(resource);
+            alerts.resource(client.endpoint().address(), resource);
+        }));
+        live.onInterfaces(alerts::interfacesChanged);
+        live.statusProperty().addListener((obs, old, status) -> showLiveState());
+        showLiveState();
+    }
+
+    private void showLiveState() {
+        boolean instant = workspace.live().live();
+        liveLabel.setText(Messages.get(instant ? "status.live.instant" : "status.live"));
+        liveLabel.setTooltip(new javafx.scene.control.Tooltip(Messages.get(instant
+                ? "status.live.instant.tooltip"
+                : "status.live.tooltip")));
+        liveLabel.getStyleClass().remove("live-instant");
+        if (instant) {
+            liveLabel.getStyleClass().add("live-instant");
+        }
     }
 
     // ------------------------------------------------------------------ app protection
@@ -200,6 +232,7 @@ public class MainController implements RouterSession.Listener {
 
     /** Stops timers and saves page state, but keeps the router connected (language switch). */
     public void detach() {
+        workspace.live().stop();
         context.access().removeListener(roleListener);
         lock.stop();
         alerts.stop();
@@ -419,6 +452,7 @@ public class MainController implements RouterSession.Listener {
 
     @Override
     public void routerConnected(RouterClient client, String name) {
+        workspace.live().start(client, workspace.settings().router());
         rememberBranch(client);
         buildRouterMenu();
         router.showBranch();
@@ -436,6 +470,7 @@ public class MainController implements RouterSession.Listener {
 
     @Override
     public void routerDisconnected() {
+        workspace.live().stop();
         buildRouterMenu();
         resourcePoller.stop();
         liveUpdates.stop();
@@ -448,6 +483,8 @@ public class MainController implements RouterSession.Listener {
         }
     }
 
+    private int quietTicks;
+
     private void tickVisiblePage() {
         if (current == null || router.client().isEmpty() || !(window() instanceof javafx.stage.Stage stage)
                 || stage.isIconified()) {
@@ -455,6 +492,9 @@ public class MainController implements RouterSession.Listener {
         }
         // profiles and servers feed several pages (Create cards, Voucher design, Hotspot), so they are
         // kept current whichever page is open; listeners hear only about real changes
+        if (workspace.live().live() && ++quietTicks % 6 != 0) {
+            return; // live: changes arrive by themselves; a look every 30 seconds is the safety net
+        }
         router.refreshQuietly();
         LoadedPage page = pages.get(current);
         if (page != null && page.view().isVisible()) {
@@ -526,6 +566,9 @@ public class MainController implements RouterSession.Listener {
     /** Reads CPU, memory and uptime in the background; skipped while the previous read runs. */
     private void pollResources() {
         cleanUpIfDue();
+        if (workspace.live().live()) {
+            return; // the load arrives every second through the live connection
+        }
         Optional<RouterClient> client = router.client();
         if (client.isEmpty() || polling) {
             return;

@@ -75,6 +75,24 @@ public class DashboardController implements Page {
     @FXML
     private VBox stockRows;
 
+    private final javafx.animation.PauseTransition liveDebounce = new javafx.animation.PauseTransition(
+            javafx.util.Duration.millis(1500));
+
+    /** This page is the one shown and the window is not minimised. */
+    private boolean onScreen() {
+        if (refreshButton.getScene() == null
+                || !(refreshButton.getScene().getWindow() instanceof javafx.stage.Stage stage)
+                || stage.isIconified() || !stage.isShowing()) {
+            return false;
+        }
+        for (javafx.scene.Node node = refreshButton; node != null; node = node.getParent()) {
+            if (!node.isVisible()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public DashboardController(AppContext context) {
         this.context = context;
     }
@@ -89,6 +107,15 @@ public class DashboardController implements Page {
         designQuick.setGraphic(Icons.of(Icons.PALETTE));
         refreshButton.setGraphic(Icons.of(Icons.REFRESH));
         CountryBox.setUpRemembering(quickSaleCountry, shared);
+        // live updates: a login, a logout or new cards refresh the figures (once for a burst)
+        liveDebounce.setOnFinished(e -> {
+            if (client != null && !loading && onScreen()) {
+                quiet = true;
+                onRefresh();
+            }
+        });
+        shared.live().onOnline(liveDebounce::playFromStart);
+        shared.live().onCards(liveDebounce::playFromStart);
         showOffline();
         // the daily update check, a little after start so it never slows the window down
         javafx.animation.PauseTransition wait = new javafx.animation.PauseTransition(UPDATE_CHECK_DELAY);

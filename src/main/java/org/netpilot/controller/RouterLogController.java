@@ -126,6 +126,12 @@ public class RouterLogController implements Page {
         this.workspace = shared;
         shared.router().client().ifPresent(c -> client = c);
         updateState();
+        // live updates: new lines appear as the router writes them (after the page's first read)
+        shared.live().onLog(entry -> {
+            if (client != null && !lines.isEmpty()) {
+                append(feed.add(List.of(entry)));
+            }
+        });
     }
 
     @Override

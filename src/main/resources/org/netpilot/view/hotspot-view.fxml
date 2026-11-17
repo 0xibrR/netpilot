@@ -36,7 +36,7 @@
                         <TextField fx:id="activeSearch" promptText="%hotspot.live.search" prefColumnCount="18"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <ProgressIndicator fx:id="activeProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
-                        <Label text="%hotspot.live.refreshEvery" styleClass="muted"/>
+                        <Label fx:id="intervalLabel" text="%hotspot.live.refreshEvery" styleClass="muted"/>
                         <ComboBox fx:id="intervalBox" prefWidth="120"/>
                     </HBox>
                     <Label fx:id="activeProblem" styleClass="status-error" wrapText="true" visible="false" managed="false">

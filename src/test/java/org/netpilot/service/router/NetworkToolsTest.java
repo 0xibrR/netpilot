@@ -55,6 +55,22 @@ class NetworkToolsTest {
     }
 
     @Test
+    void readsTheApiPortSetOnTheRouter() throws Exception {
+        // the connection rows RouterOS lists under a service are dynamic and never count
+        router.route("/rest/ip/service", 200, "[{\"name\":\"api\",\"port\":\"19932\",\"disabled\":\"false\"},"
+                + "{\"name\":\"api\",\"port\":\"19932\",\"dynamic\":\"true\"},"
+                + "{\"name\":\"api-ssl\",\"port\":\"8729\",\"disabled\":\"true\"}]");
+
+        assertEquals(java.util.OptionalInt.of(19932), client.apiServicePort(false));
+        assertEquals(java.util.OptionalInt.empty(), client.apiServicePort(true), "api-ssl is off");
+
+        router.route("/rest/ip/service", 200, "[{\"name\":\"api\",\"port\":\"x\"}]");
+        assertEquals(java.util.OptionalInt.empty(), client.apiServicePort(false));
+        router.route("/rest/ip/service", 200, "[]");
+        assertEquals(java.util.OptionalInt.empty(), client.apiServicePort(false));
+    }
+
+    @Test
     void readsTheDnsSettings() throws Exception {
         router.route("/rest/ip/dns", 200, "{\"servers\":\"8.8.8.8,1.1.1.1\",\"dynamic-servers\":\"192.168.1.1\","
                 + "\"allow-remote-requests\":\"true\"}");

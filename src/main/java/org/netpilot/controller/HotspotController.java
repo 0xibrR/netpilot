@@ -96,6 +96,8 @@ public class HotspotController implements Page {
     @FXML
     private ComboBox<Integer> intervalBox;
     @FXML
+    private Label intervalLabel;
+    @FXML
     private HBox chartHeader;
     @FXML
     private StackPane chartIcon;
@@ -244,6 +246,25 @@ public class HotspotController implements Page {
     public void attach(Workspace shared) {
         this.workspace = shared;
         usersController.setAccess(shared::allowed);
+        // live updates: who is online and the card list change the moment the router says so
+        shared.live().onOnline(() -> {
+            if (client != null && onScreen()) {
+                readLive(false);
+            }
+            usersController.liveRefresh();
+        });
+        shared.live().onCards(usersController::liveRefresh);
+        // with live updates, logins and logouts are instant; the interval only paces speeds, data and the chart
+        shared.live().statusProperty().addListener((obs, old, status) -> showIntervalLabel());
+        showIntervalLabel();
+    }
+
+    private void showIntervalLabel() {
+        boolean live = workspace.live().live();
+        intervalLabel.setText(Messages.get(live ? "hotspot.live.instant" : "hotspot.live.refreshEvery"));
+        intervalLabel.setTooltip(live
+                ? new javafx.scene.control.Tooltip(Messages.get("hotspot.live.instant.tooltip"))
+                : null);
     }
 
     /** The cashier sees the cards and who is online, but cannot change packages or disconnect anyone. */

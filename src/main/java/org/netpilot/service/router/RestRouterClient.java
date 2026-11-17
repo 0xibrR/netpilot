@@ -55,8 +55,15 @@ final class RestRouterClient implements RouterClient {
     private final String authorizationHeader;
     private final Duration requestTimeout;
     private final URI baseUri;
+    private final ApiLogin apiLogin;
 
     RestRouterClient(RouterEndpoint endpoint, HttpClient http, String authorizationHeader, Duration requestTimeout) {
+        this(endpoint, http, authorizationHeader, requestTimeout, null);
+    }
+
+    RestRouterClient(RouterEndpoint endpoint, HttpClient http, String authorizationHeader, Duration requestTimeout,
+            ApiLogin apiLogin) {
+        this.apiLogin = apiLogin;
         this.endpoint = Objects.requireNonNull(endpoint);
         this.http = Objects.requireNonNull(http);
         this.authorizationHeader = Objects.requireNonNull(authorizationHeader);
@@ -145,6 +152,24 @@ final class RestRouterClient implements RouterClient {
             }
         }
         return ends;
+    }
+
+    @Override
+    public java.util.OptionalInt apiServicePort(boolean tls) throws RouterException {
+        String wanted = tls ? "api-ssl" : "api";
+        for (JsonNode item : array(get("/ip/service", "name,port,disabled,dynamic"), "services")) {
+            if (wanted.equals(text(item, "name")) && !"true".equals(text(item, "dynamic"))) {
+                if ("true".equals(text(item, "disabled"))) {
+                    return java.util.OptionalInt.empty();
+                }
+                try {
+                    return java.util.OptionalInt.of(Integer.parseInt(text(item, "port")));
+                } catch (NumberFormatException e) {
+                    return java.util.OptionalInt.empty();
+                }
+            }
+        }
+        return java.util.OptionalInt.empty();
     }
 
     @Override
@@ -486,6 +511,14 @@ final class RestRouterClient implements RouterClient {
     @Override
     public void close() {
         http.close();
+        if (apiLogin != null) {
+            apiLogin.close();
+        }
+    }
+
+    @Override
+    public java.util.Optional<ApiLogin> apiLogin() {
+        return java.util.Optional.ofNullable(apiLogin);
     }
 
     private JsonNode get(String path, String proplist) throws RouterException {

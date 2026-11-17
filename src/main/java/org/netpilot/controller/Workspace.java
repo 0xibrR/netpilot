@@ -59,6 +59,18 @@ final class Workspace {
         return context;
     }
 
+    private final LiveLink live = new LiveLink();
+
+    /** The router's live updates (RouterOS API), for pages to follow. */
+    LiveLink live() {
+        return live;
+    }
+
+    /** Live updates were turned on or off, or their port changed: starts them again as now set. */
+    void restartLive() {
+        router.client().ifPresentOrElse(c -> live.start(c, settings.router()), live::stop);
+    }
+
     private java.util.function.BooleanSupplier locked = () -> false;
 
     /** Tells whether the lock screen is up (set by the main window). */

@@ -126,6 +126,22 @@ public interface RouterClient extends AutoCloseable {
      */
     boolean firewallBlocksDns() throws RouterException;
 
+    /**
+     * The session's login for a RouterOS API connection (live updates), while the session is open;
+     * empty for clients that have none.
+     */
+    /**
+     * The port of the router's {@code api} service ({@code api-ssl} with {@code tls}) as set in
+     * IP > Services, when it is turned on; empty when it is off or cannot be read. Read only.
+     */
+    default java.util.OptionalInt apiServicePort(boolean tls) throws RouterException {
+        return java.util.OptionalInt.empty();
+    }
+
+    default java.util.Optional<ApiLogin> apiLogin() {
+        return java.util.Optional.empty();
+    }
+
     @Override
     void close();
 }

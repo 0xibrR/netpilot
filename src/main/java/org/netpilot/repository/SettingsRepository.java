@@ -313,7 +313,7 @@ public class SettingsRepository {
             }
         }
         return new RouterSettings(endpoint, trusted, booleanValue(p, "router.autoConnect", defaults.autoConnect()),
-                loadBranches(p));
+                loadBranches(p), booleanValue(p, "router.live", true), intValue(p, "router.livePort", 0));
     }
 
     private static final String BRANCH_PREFIX = "router.branch.";
@@ -380,6 +380,8 @@ public class SettingsRepository {
         p.setProperty("router.https", String.valueOf(router.https()));
         p.setProperty("router.username", router.username());
         p.setProperty("router.autoConnect", String.valueOf(settings.router().autoConnect()));
+        p.setProperty("router.live", String.valueOf(settings.router().live()));
+        p.setProperty("router.livePort", String.valueOf(settings.router().livePort()));
         settings.router().trustedFingerprints()
                 .forEach((address, fingerprint) -> p.setProperty(TRUST_PREFIX + address, fingerprint));
         saveBranches(p, settings.router().branches());

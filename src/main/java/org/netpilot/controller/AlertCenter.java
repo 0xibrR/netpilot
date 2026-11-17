@@ -100,6 +100,11 @@ final class AlertCenter {
     }
 
     /** Interfaces and hotspot servers of the connected router; the DNS check every ten minutes. */
+    /** An interface changed (live update): check interfaces and hotspot servers now. */
+    void interfacesChanged() {
+        router.client().ifPresent(this::readDetails);
+    }
+
     private void readDetails(RouterClient client) {
         if (detailRunning) {
             return;

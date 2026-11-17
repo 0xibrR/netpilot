@@ -73,7 +73,8 @@ public final class RouterConnector {
             }
 
             RestRouterClient client = new RestRouterClient(endpoint, builder.build(),
-                    basicAuthorization(endpoint.username(), password), requestTimeout);
+                    basicAuthorization(endpoint.username(), password), requestTimeout,
+                    new ApiLogin(endpoint.host(), endpoint.username(), password, trustedFingerprint));
             try {
                 return new Connection(client, client.info());
             } catch (RouterException | RuntimeException e) {

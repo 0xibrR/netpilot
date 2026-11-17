@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Added
+- Live updates through the RouterOS API (port 8728, or 8729 with HTTPS): customers logging in and out, new
+  cards, interfaces going down and router log lines show the moment they happen, and the router's load every
+  second, instead of every few seconds; much less load on the router. Settings › Live updates turns it on or
+  off and shows its state with the router-side steps; without the API service NetPilot reads every few seconds
+  as before, and the connection comes back by itself after a drop
+
 ### Changed
 - The Router and Owner/Cashier menus are readable in the light theme (their text was white on white)
 - The card list toolbar wraps onto a second row in a narrow window instead of cutting the button texts

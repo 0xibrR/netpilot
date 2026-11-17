@@ -914,3 +914,8 @@
 .protection-status {
     -fx-font-weight: bold;
 }
+
+/* live updates through the RouterOS API: the status bar label in bold */
+.status-bar .live.live-instant {
+    -fx-font-weight: bold;
+}

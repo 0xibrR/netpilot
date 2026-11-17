@@ -69,6 +69,12 @@
             <Label text="%backup.help" styleClass="muted" wrapText="true"/>
         </VBox>
 
+        <!-- live updates through the RouterOS API: filled in by LiveSettings -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="%live.settings.title" styleClass="card-title"/>
+            <VBox fx:id="liveBox" spacing="8"/>
+        </VBox>
+
         <!-- app protection (owner and cashier PINs): filled in by ProtectionSettings -->
         <VBox styleClass="card" spacing="10">
             <Label text="%protection.title" styleClass="card-title"/>
