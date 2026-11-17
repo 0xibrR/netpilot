@@ -265,6 +265,10 @@ public class HotspotController implements Page {
         intervalLabel.setTooltip(live
                 ? new javafx.scene.control.Tooltip(Messages.get("hotspot.live.instant.tooltip"))
                 : null);
+        // no seconds to choose while live: a number there would look like how often logins show up
+        intervalBox.setVisible(!live);
+        intervalBox.setManaged(!live);
+        scheduleLive();
     }
 
     /** The cashier sees the cards and who is online, but cannot change packages or disconnect anyone. */
@@ -447,7 +451,10 @@ public class HotspotController implements Page {
     static final int DEFAULT_INTERVAL = 5;
 
     private void scheduleLive() {
-        int seconds = intervalBox.getValue() == null ? DEFAULT_INTERVAL : intervalBox.getValue();
+        // live: logins arrive by themselves; speeds and the chart are read every second while the tab shows
+        int seconds = workspace != null && workspace.live().live()
+                ? 1
+                : intervalBox.getValue() == null ? DEFAULT_INTERVAL : intervalBox.getValue();
         liveTimer.stop();
         liveTimer.getKeyFrames().setAll(new KeyFrame(javafx.util.Duration.seconds(seconds), e -> liveTick()));
         liveTimer.setCycleCount(Animation.INDEFINITE);

@@ -38,7 +38,8 @@ final class LiveSettings {
         port.setText(router.livePort() > 0 ? String.valueOf(router.livePort()) : "");
         loading = false;
         port.setPromptText(Messages.get("live.settings.portAuto"));
-        port.setPrefColumnCount(6);
+        port.setPrefColumnCount(9);
+        port.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE); // never narrower than its hint
         port.setTextFormatter(new TextFormatter<String>(c -> c.getControlNewText().matches("\\d{0,5}") ? c : null));
         port.disableProperty().bind(enabled.selectedProperty().not());
         enabled.selectedProperty().addListener((obs, was, on) -> save());
