@@ -350,6 +350,24 @@
     -fx-text-fill: white;
 }
 
+/* Menus opened from the top bar (Router, Owner/Cashier) are ordinary light or dark popups:
+   their text follows the theme, not the white of the bar, or it vanishes on a white menu */
+.top-bar .context-menu .menu-item .label {
+    -fx-text-fill: -fx-text-background-color;
+}
+
+.top-bar .context-menu .menu-item:focused .label {
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+.top-bar .context-menu .menu-item .icon {
+    -fx-stroke: -fx-text-background-color;
+}
+
+.top-bar .context-menu .menu-item:focused .icon {
+    -fx-stroke: -fx-selection-bar-text;
+}
+
 .brand {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
