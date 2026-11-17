@@ -13,26 +13,26 @@
 
     <top>
         <VBox>
-            <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="4">
-                <Button fx:id="enableButton" text="%users.enable" onAction="#onEnable" styleClass="tool-button"/>
-                <Button fx:id="disableButton" text="%users.disable" onAction="#onDisable" styleClass="tool-button"/>
-                <Button fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect" styleClass="tool-button"/>
-                <Button fx:id="deleteButton" text="%users.delete" onAction="#onDelete" styleClass="tool-button, danger"/>
-                <Button fx:id="deleteExpiredButton" text="%users.deleteExpired" onAction="#onDeleteExpired"
+            <!-- wraps onto a second row when the window is narrow; buttons never shrink or cut their text -->
+            <FlowPane styleClass="toolbar" alignment="CENTER_LEFT" hgap="4" vgap="4">
+                <Button minWidth="-Infinity" fx:id="enableButton" text="%users.enable" onAction="#onEnable" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="disableButton" text="%users.disable" onAction="#onDisable" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="deleteButton" text="%users.delete" onAction="#onDelete" styleClass="tool-button, danger"/>
+                <Button minWidth="-Infinity" fx:id="deleteExpiredButton" text="%users.deleteExpired" onAction="#onDeleteExpired"
                         styleClass="tool-button, danger"/>
-                <Button fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="tool-button"/>
-                <Button fx:id="receiptButton" text="%users.receipt" onAction="#onPrintReceipt" styleClass="tool-button"/>
-                <Button fx:id="handoverButton" text="%users.handover" onAction="#onHandover" styleClass="tool-button"/>
-                <Separator orientation="VERTICAL"/>
-                <Button fx:id="customerButton" text="%notify.users.link" onAction="#onLinkCustomer" styleClass="tool-button"/>
-                <Button fx:id="whatsAppButton" text="%notify.users.send" onAction="#onSendToCustomer" styleClass="tool-button"/>
-                <Separator orientation="VERTICAL"/>
-                <Button fx:id="exportCardsButton" text="%users.exportExcel" onAction="#onExportCards" styleClass="tool-button"/>
-                <Button text="%users.selectAll" onAction="#onSelectAll" styleClass="tool-button"/>
-                <Region HBox.hgrow="ALWAYS"/>
+                <Button minWidth="-Infinity" fx:id="printButton" text="%users.print" onAction="#onPrint" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="receiptButton" text="%users.receipt" onAction="#onPrintReceipt" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="handoverButton" text="%users.handover" onAction="#onHandover" styleClass="tool-button"/>
+                <Separator orientation="VERTICAL" prefHeight="22"/>
+                <Button minWidth="-Infinity" fx:id="customerButton" text="%notify.users.link" onAction="#onLinkCustomer" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" fx:id="whatsAppButton" text="%notify.users.send" onAction="#onSendToCustomer" styleClass="tool-button"/>
+                <Separator orientation="VERTICAL" prefHeight="22"/>
+                <Button minWidth="-Infinity" fx:id="exportCardsButton" text="%users.exportExcel" onAction="#onExportCards" styleClass="tool-button"/>
+                <Button minWidth="-Infinity" text="%users.selectAll" onAction="#onSelectAll" styleClass="tool-button"/>
                 <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
-                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="tool-button"/>
-            </HBox>
+                <Button minWidth="-Infinity" fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="tool-button"/>
+            </FlowPane>
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <TextField fx:id="searchField" promptText="%users.search" prefColumnCount="18"/>
                 <ComboBox fx:id="batchBox" prefWidth="270"/>
