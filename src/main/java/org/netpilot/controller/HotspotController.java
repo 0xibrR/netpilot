@@ -666,13 +666,14 @@ public class HotspotController implements Page {
     // ------------------------------------------------------------------ one card (like WinBox)
 
     /** What the card window needs, read in the background. */
-    private record CardContext(org.netpilot.model.CardDetails details, Optional<String> nameLock,
+    private record CardContext(String router, org.netpilot.model.CardDetails details, Optional<String> nameLock,
             boolean handedOver) {
     }
 
     /**
-     * Opens one card's window. Its name stays locked when records hang on it (used, with a point of
-     * sale, reserved at the counter or linked to a customer): they are all kept by card name.
+     * Opens one user's window. Its name can change, and its usage history and customer number move
+     * with it; it stays locked only for users with a point of sale or at the counter, whose ledger
+     * is never rewritten.
      */
     private void editCard(RouterClient target, String routerKey, RouterUser card) {
         if (!workspace.allowed(Permission.MANAGE_CARDS)) {
@@ -681,17 +682,13 @@ public class HotspotController implements Page {
         run(() -> {
             org.netpilot.model.CardDetails details = target.cardDetails(card.routerId());
             String holder = context.resellerAccounts().holders().get(ResellerAccounts.key(routerKey, details.name()));
-            boolean customer = context.customerRepository().find(routerKey, details.name()).isPresent();
-            Optional<String> lock = !details.neverUsed()
-                    ? Optional.of(Messages.get("card.edit.lock.used"))
-                    : holder != null && holder.equals(ResellerAccounts.COUNTER)
-                            ? Optional.of(Messages.get("card.edit.lock.counter"))
-                            : holder != null
-                                    ? Optional.of(Messages.get("card.edit.lock.shop"))
-                                    : customer
-                                            ? Optional.of(Messages.get("card.edit.lock.customer"))
-                                            : Optional.empty();
-            return new CardContext(details, lock, holder != null && !holder.equals(ResellerAccounts.COUNTER));
+            Optional<String> lock = holder == null
+                    ? Optional.empty()
+                    : Optional.of(Messages.get(holder.equals(ResellerAccounts.COUNTER)
+                            ? "card.edit.lock.counter"
+                            : "card.edit.lock.shop"));
+            return new CardContext(routerKey, details, lock,
+                    holder != null && !holder.equals(ResellerAccounts.COUNTER));
         }, ctx -> {
             List<String> servers = new java.util.ArrayList<>(List.of("all"));
             List<String> profileNames = new java.util.ArrayList<>();
@@ -722,6 +719,11 @@ public class HotspotController implements Page {
         }
         run(() -> {
             target.updateCard(ctx.details().routerId(), changes);
+            if (changes.containsKey("name")) {
+                // earnings and the customer number follow the new name, so nothing is counted twice
+                org.netpilot.service.UserRename.moveRecords(context.usageRepository(), context.customerRepository(),
+                        ctx.router(), ctx.details().name(), changes.get("name"));
+            }
             return changes.keySet();
         }, keys -> {
             // which settings changed is logged; their values (a password) never are

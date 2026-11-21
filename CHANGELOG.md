@@ -6,10 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
-- Edit a card like WinBox: double-click it in Manage users (or Edit) for its window with General (enabled,
+- Edit a user like WinBox: double-click it in Manage users (or Edit) for its window with General (enabled,
   comment, server, name, password, package, fixed IP and MAC), Limits (time and data) and Statistics (time and
-  data used, Reset counters). Only what changed is sent. The name stays locked when records hang on it (used,
-  with a point of sale, at the counter, or linked to a customer); owner only
+  data used, Reset counters). Only what changed is sent; owner only. A used user can be renamed: its usage
+  history and customer number move to the new name, so the earnings report does not count it twice. The name
+  stays locked only for users held by a point of sale or sold at the counter (their ledger is never rewritten).
+  The fixed IP and MAC fields show an example, and hints are easier to read in the dark theme
 
 ### Changed
 - Faster with years of records: the points-of-sale ledger is read from disk once and kept in memory until the

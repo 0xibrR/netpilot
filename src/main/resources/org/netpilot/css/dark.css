@@ -57,9 +57,9 @@
     -fx-text-fill: #ff7b72;
 }
 
-/* Empty-field hints ("empty = no limit"): brighter than secondary text, so they read on dark fields */
+/* Empty-field hints ("empty = no limit"): readable on dark fields, yet dimmer than a typed value */
 .text-field, .password-field, .text-area, .combo-box-base .text-field, .spinner .text-field {
-    -fx-prompt-text-fill: #b8c1cd;
+    -fx-prompt-text-fill: #9aa5b4;
 }
 
 .live-chart .default-color1.chart-series-line {

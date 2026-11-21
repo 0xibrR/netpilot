@@ -61,7 +61,7 @@ final class CardEditor {
         TextField name = new TextField(card.name());
         Label nameNote = new Label();
         nameNote.getStyleClass().add("muted");
-        nameNote.setWrapText(true);
+        wrapped(nameNote);
         options.nameLock().ifPresent(reason -> {
             name.setEditable(false);
             name.setDisable(true);
@@ -87,11 +87,11 @@ final class CardEditor {
         ComboBox<String> profile = editableBox(options.profiles(), card.profile());
         Label profileNote = new Label(options.handedOver() ? Messages.get("card.edit.profileHandedOver") : "");
         profileNote.getStyleClass().add("muted");
-        profileNote.setWrapText(true);
+        wrapped(profileNote);
         TextField address = new TextField(card.address());
-        address.setPromptText("10.10.0.50");
+        address.setPromptText(Messages.get("card.edit.address.prompt"));
         TextField mac = new TextField(card.macAddress());
-        mac.setPromptText("AA:BB:CC:DD:EE:FF");
+        mac.setPromptText(Messages.get("card.edit.mac.prompt"));
 
         GridPane general = grid();
         int r = 0;
@@ -251,6 +251,16 @@ final class CardEditor {
         box.getEditor().setText(value);
         box.setMaxWidth(Double.MAX_VALUE);
         return box;
+    }
+
+    /**
+     * A note under a field that wraps onto more lines instead of ending in "…": a grid measures a
+     * wrapping label as one long line unless it has a width to wrap at.
+     */
+    private static void wrapped(Label note) {
+        note.setWrapText(true);
+        note.setMaxWidth(320);
+        note.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
     }
 
     private static GridPane grid() {
