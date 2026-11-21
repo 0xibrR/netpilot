@@ -21,6 +21,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
   Settings › Cloud backup shows the last copy and backs up now; Home warns after two days without one, and
   Restore opens the cloud copies first, also on a new computer
 
+### Fixed
+- The side menu scrolls when it is taller than the window, so every page stays reachable
+
 ## [1.3.1] - 2026-11-17
 
 ### Added

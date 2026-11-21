@@ -52,11 +52,14 @@
     </top>
 
     <left>
-        <VBox fx:id="sideMenu" styleClass="side-menu" prefWidth="190" spacing="2">
-            <padding>
-                <Insets top="8" bottom="8"/>
-            </padding>
-        </VBox>
+        <!-- scrolls when the menu (groups unfolded) is taller than the window -->
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="side-menu-scroll" prefWidth="190" minWidth="190">
+            <VBox fx:id="sideMenu" styleClass="side-menu" spacing="2">
+                <padding>
+                    <Insets top="8" bottom="8"/>
+                </padding>
+            </VBox>
+        </ScrollPane>
     </left>
 
     <center>

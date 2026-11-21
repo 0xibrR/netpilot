@@ -938,3 +938,40 @@
     -fx-text-fill: #bf8700;
     -fx-font-weight: bold;
 }
+
+/* the side menu scrolls when it is taller than the window; the scroll area takes the menu's colours */
+.scroll-pane.side-menu-scroll, .scroll-pane.side-menu-scroll > .viewport {
+    -fx-background-color: -np-chrome-bg;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.scroll-pane.side-menu-scroll {
+    -fx-border-color: transparent -np-chrome-border transparent transparent;
+}
+
+.scroll-pane.side-menu-scroll .side-menu {
+    -fx-border-color: transparent;
+}
+
+.scroll-pane.side-menu-scroll .scroll-bar:vertical {
+    -fx-pref-width: 8;
+    -fx-background-color: transparent;
+}
+
+.scroll-pane.side-menu-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: -np-chrome-border;
+    -fx-background-radius: 4;
+}
+
+.scroll-pane.side-menu-scroll .scroll-bar .increment-button,
+.scroll-pane.side-menu-scroll .scroll-bar .decrement-button {
+    -fx-pref-height: 0;
+    -fx-padding: 0;
+}
+
+.scroll-pane.side-menu-scroll .scroll-bar .increment-arrow,
+.scroll-pane.side-menu-scroll .scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
