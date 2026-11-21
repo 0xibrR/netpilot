@@ -48,4 +48,12 @@
         <Method name="bundle"/>
         <Bug pattern="MS_EXPOSE_REP"/>
     </Match>
+    <!--
+        The hotspot pages are sent to the router: they must be the same bytes whichever computer builds
+        them, so their templates use a plain newline on purpose (%n would give Windows line endings on Windows only).
+    -->
+    <Match>
+        <Class name="org.netpilot.service.LoginPageBuilder"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
 </FindBugsFilter>

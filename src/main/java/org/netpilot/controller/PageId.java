@@ -17,6 +17,7 @@ enum PageId {
     GENERATE("generate-view.fxml", Icons.TICKET, false, Permission.CREATE_BATCHES),
     HOTSPOT("hotspot-view.fxml", Icons.USERS, true, Permission.VIEW_USERS),
     DESIGN("voucher-design-view.fxml", Icons.PALETTE, false, Permission.CARD_DESIGN),
+    LOGIN_PAGE("login-page-view.fxml", Icons.GLOBE, false, Permission.CARD_DESIGN),
     RESELLERS("resellers-view.fxml", Icons.STORE, false, Permission.RESELLER_PAYMENT),
     REPORTS("reports-view.fxml", Icons.CHART, true, Permission.REPORTS),
     HISTORY("history-view.fxml", Icons.HISTORY, false, Permission.REPORTS),

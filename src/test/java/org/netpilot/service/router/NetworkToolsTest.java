@@ -55,6 +55,29 @@ class NetworkToolsTest {
     }
 
     @Test
+    void hotspotPageFoldersAndFilesGoThroughRest() throws Exception {
+        router.route("/rest/ip/hotspot", 200, "[{\"name\":\"hs1\",\"profile\":\"hsprof1\"}]");
+        router.route("/rest/ip/hotspot/profile", 200, "[{\".id\":\"*1\",\"name\":\"hsprof1\",\"html-directory\":"
+                + "\"flash/hotspot\"},{\".id\":\"*2\",\"name\":\"unused\",\"html-directory\":\"hotspot\"}]");
+        assertEquals(List.of(new RouterClient.PageProfile("*1", "hsprof1", "flash/hotspot")),
+                client.hotspotPageProfiles(), "only profiles a server uses");
+
+        router.route("/rest/ip/hotspot/profile/*1", 200, "{}");
+        client.setPageFolder("*1", "netpilot-hotspot");
+        assertThrows(IllegalArgumentException.class, () -> client.setPageFolder("1; drop", "x"));
+
+        router.route("/rest/file", 200, "[{\".id\":\"*4\",\"name\":\"netpilot-hotspot\",\"type\":\"directory\"},"
+                + "{\".id\":\"*5\",\"name\":\"netpilot-hotspot/login.html\",\"size\":\"1234\"}]");
+        router.route("/rest/file/*5", 200, "{}");
+        client.writeTextFile("netpilot-hotspot/login.html", "<html></html>");
+        assertEquals(1234, client.fileSize("netpilot-hotspot/login.html"));
+        assertEquals(-1, client.fileSize("netpilot-hotspot/none.html"));
+
+        router.route("/rest/tool/fetch", 200, "[{\"status\":\"finished\"}]");
+        client.fetchFile("http://10.0.0.5:5000/x/login.html", "netpilot-hotspot/login.html");
+    }
+
+    @Test
     void readsTheApiPortSetOnTheRouter() throws Exception {
         // the connection rows RouterOS lists under a service are dynamic and never count
         router.route("/rest/ip/service", 200, "[{\"name\":\"api\",\"port\":\"19932\",\"disabled\":\"false\"},"

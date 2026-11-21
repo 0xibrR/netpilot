@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 ## [Unreleased]
 
 ### Added
+- Hotspot login page (Hotspot › Login page, owner): design what customers see before logging in without any
+  code: a glass card on the network's colours with the logo, a live clock, a scrolling message, tabs for the
+  packages and the points of sale (with call buttons), call and WhatsApp buttons, "remember the card", and
+  matching after-login, status (time and data left as tiles), logout and error pages; in Arabic or English.
+  Preview it in the browser and send it to the router: it goes into its own folder (flash/netpilot-hotspot on
+  routers with flash), the router's own pages stay untouched, and "Back to the previous page" restores them.
+  CHAP login and QR auto-login keep working; router errors are said in Arabic; nothing loads from the internet
 - Cloud backup: an encrypted copy every day to a folder OneDrive, Google Drive for desktop or Dropbox keeps in
   sync (found by itself), so the records survive a broken or stolen laptop; NetPilot never needs the cloud
   account. The backup password is chosen once and remembered on this computer only; the newest 14 copies stay.

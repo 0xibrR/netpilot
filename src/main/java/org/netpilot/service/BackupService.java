@@ -75,7 +75,7 @@ public final class BackupService {
 
     private static final Pattern DATA_FILE = Pattern.compile(
             "settings\\.properties|history\\.csv|usage\\.csv|resellers\\.csv|reseller-ledger\\.csv|customers\\.csv"
-                    + "|shifts\\.csv|voucher-(logo|background)\\.(png|jpg)");
+                    + "|shifts\\.csv|login-page\\.properties|voucher-(logo|background)\\.(png|jpg)");
     private static final byte[] MAGIC = "NPBK-AES1".getBytes(StandardCharsets.US_ASCII);
     private static final int ITERATIONS = 310_000;
     private static final int SALT = 16;

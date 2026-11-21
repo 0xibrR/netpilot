@@ -154,6 +154,85 @@ final class RestRouterClient implements RouterClient {
         return ends;
     }
 
+    private static final String PAGE_PROFILES = "/ip/hotspot/profile";
+
+    @Override
+    public List<PageProfile> hotspotPageProfiles() throws RouterException {
+        java.util.Set<String> used = new java.util.HashSet<>();
+        for (JsonNode server : array(get("/ip/hotspot", "profile"), "hotspot servers")) {
+            used.add(text(server, "profile"));
+        }
+        List<PageProfile> profiles = new ArrayList<>();
+        for (JsonNode item : array(get(PAGE_PROFILES, ".id,name,html-directory"), "hotspot server profiles")) {
+            if (used.contains(text(item, "name"))) {
+                profiles.add(new PageProfile(text(item, ".id"), text(item, "name"), text(item, "html-directory")));
+            }
+        }
+        return List.copyOf(profiles);
+    }
+
+    @Override
+    public void setPageFolder(String routerId, String folder) throws RouterException {
+        requireRouterId(routerId);
+        String path = PAGE_PROFILES + "/" + routerId;
+        byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("html-directory", folder));
+        send(path, HttpRequest.newBuilder(URI.create(baseUri + path)).header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofByteArray(body)));
+    }
+
+    /** The file's RouterOS id and size, when it exists. */
+    private java.util.Optional<JsonNode> file(String name) throws RouterException {
+        String query = "/file?name=" + java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8)
+                + "&.proplist=.id,name,size,type";
+        JsonNode found = send("/file", HttpRequest.newBuilder(URI.create(baseUri + query)).GET());
+        for (JsonNode item : array(found, "files")) {
+            if (name.equals(text(item, "name"))) {
+                return java.util.Optional.of(item);
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
+    @Override
+    public void writeTextFile(String name, String contents) throws RouterException {
+        int slash = name.lastIndexOf('/');
+        if (slash > 0 && file(name.substring(0, slash)).isEmpty()) {
+            byte[] folder = JSON.writeValueAsBytes(JSON.createObjectNode().put("name", name.substring(0, slash))
+                    .put("type", "directory"));
+            send("/file", HttpRequest.newBuilder(URI.create(baseUri + "/file"))
+                    .header("Content-Type", "application/json").PUT(HttpRequest.BodyPublishers.ofByteArray(folder)));
+        }
+        java.util.Optional<JsonNode> existing = file(name);
+        if (existing.isPresent()) {
+            String path = "/file/" + text(existing.get(), ".id");
+            byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("contents", contents));
+            send(path, HttpRequest.newBuilder(URI.create(baseUri + path)).header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofByteArray(body)));
+            return;
+        }
+        byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("name", name).put("contents", contents));
+        send("/file", HttpRequest.newBuilder(URI.create(baseUri + "/file")).header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(body)));
+    }
+
+    @Override
+    public boolean hasFlashStorage() throws RouterException {
+        return file("flash").map(f -> "disk".equals(text(f, "type"))).orElse(false);
+    }
+
+    @Override
+    public long fileSize(String name) throws RouterException {
+        return file(name).map(f -> number(f, "size")).orElse(-1L);
+    }
+
+    @Override
+    public void fetchFile(String url, String name) throws RouterException {
+        byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("url", url).put("dst-path", name)
+                .put("mode", "http").put("check-certificate", "no"));
+        send("/tool/fetch", HttpRequest.newBuilder(URI.create(baseUri + "/tool/fetch"))
+                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofByteArray(body)));
+    }
+
     @Override
     public java.util.OptionalInt apiServicePort(boolean tls) throws RouterException {
         String wanted = tls ? "api-ssl" : "api";

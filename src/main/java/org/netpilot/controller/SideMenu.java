@@ -46,7 +46,8 @@ final class SideMenu {
                     new Entry("nav.GENERATE", PageId.GENERATE, null),
                     // one page holds the card list, who is online (tab) and the search box
                     new Entry("nav.cards.users", PageId.HOTSPOT, HotspotController.USERS),
-                    new Entry("nav.DESIGN", PageId.DESIGN, null))),
+                    new Entry("nav.DESIGN", PageId.DESIGN, null),
+                    new Entry("nav.LOGIN_PAGE", PageId.LOGIN_PAGE, null))),
             // money and records: kept on this computer, so they work without the router too
             new Group("nav.group.finance", Icons.FINANCE, List.of(
                     new Entry("nav.RESELLERS", PageId.RESELLERS, null),

@@ -127,10 +127,6 @@ public interface RouterClient extends AutoCloseable {
     boolean firewallBlocksDns() throws RouterException;
 
     /**
-     * The session's login for a RouterOS API connection (live updates), while the session is open;
-     * empty for clients that have none.
-     */
-    /**
      * The port of the router's {@code api} service ({@code api-ssl} with {@code tls}) as set in
      * IP > Services, when it is turned on; empty when it is off or cannot be read. Read only.
      */
@@ -138,8 +134,49 @@ public interface RouterClient extends AutoCloseable {
         return java.util.OptionalInt.empty();
     }
 
+    /**
+     * The session's login for a RouterOS API connection (live updates), while the session is open;
+     * empty for clients that have none.
+     */
     default java.util.Optional<ApiLogin> apiLogin() {
         return java.util.Optional.empty();
+    }
+
+    /**
+     * A hotspot server profile (IP > Hotspot > Server Profiles) and the folder its login pages
+     * come from.
+     */
+    record PageProfile(String routerId, String name, String folder) {
+    }
+
+    /** The server profiles the hotspot servers use, with their page folders. Read only. */
+    default java.util.List<PageProfile> hotspotPageProfiles() throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
+    /** Makes a server profile take its pages from {@code folder}. */
+    default void setPageFolder(String routerId, String folder) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
+    /** Creates or replaces a text file in the router's storage (its folder is made when missing). */
+    default void writeTextFile(String name, String contents) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
+    /** Whether the router keeps files on a {@code flash} disk (files outside it are lost on restart). */
+    default boolean hasFlashStorage() throws RouterException {
+        return false;
+    }
+
+    /** A file's size in bytes, or -1 when there is no such file. Read only. */
+    default long fileSize(String name) throws RouterException {
+        return -1;
+    }
+
+    /** Has the router download {@code url} into the file {@code name}. */
+    default void fetchFile(String url, String name) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
     }
 
     @Override

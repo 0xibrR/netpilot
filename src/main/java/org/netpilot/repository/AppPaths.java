@@ -78,6 +78,11 @@ public final class AppPaths {
         return dataDirectory().resolve("shifts.csv");
     }
 
+    /** The hotspot login page design, and each router's page folder before NetPilot's. */
+    public static Path loginPageFile() {
+        return dataDirectory().resolve("login-page.properties");
+    }
+
     /** App protection: PIN fingerprints and wrong-try counts; never part of a backup. */
     public static Path securityFile() {
         return dataDirectory().resolve("security.properties");

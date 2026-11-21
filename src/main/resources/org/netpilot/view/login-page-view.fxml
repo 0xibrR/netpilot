@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Hotspot login page (owner): what customers see before logging in, sent to the router.
+     Texts: %key refers to org/netpilot/i18n/messages_*.properties -->
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.netpilot.controller.LoginPageController"
+            styleClass="page">
+
+    <top>
+        <HBox alignment="CENTER_LEFT">
+            <Label text="%nav.LOGIN_PAGE" styleClass="page-title"/>
+            <padding>
+                <Insets top="16" right="20" bottom="6" left="20"/>
+            </padding>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="page-scroll">
+            <VBox spacing="14">
+                <padding>
+                    <Insets top="8" right="20" bottom="20" left="20"/>
+                </padding>
+                <VBox styleClass="card" spacing="10">
+                    <Label text="%loginPage.look" styleClass="card-title"/>
+                    <GridPane hgap="12" vgap="10">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="150"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="%loginPage.titleField" GridPane.rowIndex="0"/>
+                        <TextField fx:id="titleField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="%loginPage.welcome" GridPane.rowIndex="1"/>
+                        <TextField fx:id="welcomeField" promptText="%loginPage.welcome.prompt" GridPane.rowIndex="1"
+                                   GridPane.columnIndex="1"/>
+                        <Label text="%loginPage.color" GridPane.rowIndex="2"/>
+                        <ColorPicker fx:id="colorPicker" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="%loginPage.language" GridPane.rowIndex="3"/>
+                        <ComboBox fx:id="languageBox" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <Label text="%loginPage.phone" GridPane.rowIndex="4"/>
+                        <TextField fx:id="phoneField" promptText="%loginPage.phone.prompt" GridPane.rowIndex="4"
+                                   GridPane.columnIndex="1"/>
+                        <Label text="%loginPage.whatsApp" GridPane.rowIndex="5"/>
+                        <TextField fx:id="whatsAppField" promptText="%loginPage.whatsApp.prompt" GridPane.rowIndex="5"
+                                   GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <CheckBox fx:id="logoCheck" text="%loginPage.showLogo"/>
+                    <CheckBox fx:id="pricesCheck" text="%loginPage.showPrices"/>
+                    <CheckBox fx:id="sellersCheck" text="%loginPage.showSellers" wrapText="true"/>
+                    <CheckBox fx:id="passwordCheck" text="%loginPage.passwordField" wrapText="true"/>
+                </VBox>
+
+                <VBox styleClass="card" spacing="10">
+                    <Label text="%loginPage.router" styleClass="card-title"/>
+                    <Label fx:id="stateLabel" styleClass="protection-status" wrapText="true"/>
+                    <FlowPane hgap="8" vgap="8">
+                        <Button fx:id="previewButton" text="%loginPage.preview" onAction="#onPreview" minWidth="-Infinity"/>
+                        <Button fx:id="publishButton" text="%loginPage.publish" onAction="#onPublish" styleClass="primary"
+                                minWidth="-Infinity"/>
+                        <Button fx:id="revertButton" text="%loginPage.revert" onAction="#onRevert" minWidth="-Infinity"/>
+                    </FlowPane>
+                    <Label text="%loginPage.help" styleClass="muted" wrapText="true"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

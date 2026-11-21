@@ -143,6 +143,9 @@ public class NetPilotApp extends Application {
             if (type == org.netpilot.controller.ShiftsController.class) {
                 return new org.netpilot.controller.ShiftsController(context);
             }
+            if (type == org.netpilot.controller.LoginPageController.class) {
+                return new org.netpilot.controller.LoginPageController(context);
+            }
             if (type == RouterConnectionController.class) {
                 return new RouterConnectionController(context);
             }
