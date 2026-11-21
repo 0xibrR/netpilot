@@ -69,6 +69,12 @@
             <Label text="%backup.help" styleClass="muted" wrapText="true"/>
         </VBox>
 
+        <!-- encrypted daily copy to a folder OneDrive / Google Drive / Dropbox keeps in sync: CloudSettings -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="%cloud.title" styleClass="card-title"/>
+            <VBox fx:id="cloudBox" spacing="8"/>
+        </VBox>
+
         <!-- live updates through the RouterOS API: filled in by LiveSettings -->
         <VBox styleClass="card" spacing="10">
             <Label text="%live.settings.title" styleClass="card-title"/>

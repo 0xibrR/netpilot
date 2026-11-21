@@ -643,6 +643,7 @@ public class MainController implements RouterSession.Listener {
         clockLabel.setText(java.time.LocalDateTime.now().format(CLOCK));
         if (++seconds % 60 == 1) {
             backUpIfDue(); // once a minute is plenty for a daily backup; also right after start
+            workspace.cloudBackup().runIfDue();
         }
     }
 

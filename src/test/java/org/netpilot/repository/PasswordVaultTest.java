@@ -61,6 +61,21 @@ class PasswordVaultTest {
     }
 
     @Test
+    void theBackupPasswordIsKeptApartFromRouterPasswords() throws Exception {
+        PasswordVault vault = new PasswordVault(dir.resolve("credentials"), new FakeProtector(true));
+        assertFalse(vault.hasBackupPassword());
+        vault.save(HEX, "router".toCharArray());
+        vault.saveBackupPassword("backup-كلمة".toCharArray());
+
+        assertTrue(vault.hasBackupPassword());
+        assertArrayEquals("backup-كلمة".toCharArray(), vault.loadBackupPassword().orElseThrow());
+        assertArrayEquals("router".toCharArray(), vault.load(HEX).orElseThrow(), "the router password is untouched");
+        vault.forgetBackupPassword();
+        assertFalse(vault.hasBackupPassword());
+        assertTrue(vault.has(HEX));
+    }
+
+    @Test
     void remembersPerRouterAndUserWithoutStoringPlainText() throws Exception {
         Path file = dir.resolve("credentials");
         PasswordVault vault = new PasswordVault(file, new FakeProtector(true));

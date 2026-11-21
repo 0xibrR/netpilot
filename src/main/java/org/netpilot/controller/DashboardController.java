@@ -117,6 +117,7 @@ public class DashboardController implements Page {
         shared.live().onOnline(liveDebounce::playFromStart);
         shared.live().onCards(liveDebounce::playFromStart);
         shared.shifts().onChange(this::showShift);
+        shared.cloudBackup().onChange(this::showCloudWarning);
         showShift();
         showOffline();
         // the daily update check, a little after start so it never slows the window down
@@ -139,6 +140,7 @@ public class DashboardController implements Page {
         show(generateQuick, role.can(org.netpilot.model.Role.Permission.CREATE_BATCHES));
         show(reportsQuick, money);
         show(designQuick, role.can(org.netpilot.model.Role.Permission.CARD_DESIGN));
+        showCloudWarning();
         if (client != null) {
             onRefresh(); // redraws the stock lines with or without "Create cards"
         }
@@ -147,6 +149,31 @@ public class DashboardController implements Page {
     private static void show(javafx.scene.Node node, boolean visible) {
         node.setVisible(visible);
         node.setManaged(visible);
+    }
+
+    // ------------------------------------------------------------------ cloud backup
+
+    @FXML
+    private javafx.scene.layout.HBox cloudWarning;
+
+    /** The owner is told when the cloud copy is on but none was made for two days. */
+    private void showCloudWarning() {
+        org.netpilot.model.BackupSettings backup = workspace.settings().backup();
+        boolean show = workspace.can(org.netpilot.model.Role.Permission.SETTINGS)
+                && backup.cloudOverdue(java.time.LocalDateTime.now());
+        if (show) {
+            Label text = new Label(backup.lastCloud()
+                    .map(t -> Messages.get("cloud.overdue", t.format(ShiftCenter.TIME)))
+                    .orElse(Messages.get("cloud.overdueNever")));
+            text.setWrapText(true);
+            javafx.scene.layout.HBox.setHgrow(text, javafx.scene.layout.Priority.ALWAYS);
+            text.setMaxWidth(Double.MAX_VALUE);
+            Button open = new Button(Messages.get("nav.SETTINGS"), Icons.of(Icons.SETTINGS));
+            open.setOnAction(e -> workspace.show(PageId.SETTINGS));
+            cloudWarning.getChildren().setAll(text, open);
+        }
+        cloudWarning.setVisible(show);
+        cloudWarning.setManaged(show);
     }
 
     // ------------------------------------------------------------------ cash drawer
@@ -284,6 +311,7 @@ public class DashboardController implements Page {
     @Override
     public void shown() {
         onRefresh();
+        showCloudWarning();
     }
 
     /** Live figures without the busy indicator. */

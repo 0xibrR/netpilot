@@ -294,6 +294,59 @@ class BackupServiceTest {
     }
 
     @Test
+    void cloudCopiesAreAlwaysEncryptedAndTheNewest14Stay() throws Exception {
+        Path cloud = temp.resolve("OneDrive");
+        assertThrows(IllegalArgumentException.class, () -> service.createCloud(cloud, null));
+        assertThrows(IllegalArgumentException.class, () -> service.createCloud(cloud, new char[0]));
+
+        Path first = service.createCloud(cloud, PASSWORD);
+        assertEquals(cloud.resolve(BackupService.CLOUD_SUBFOLDER), first.getParent());
+        assertTrue(first.getFileName().toString().endsWith(".npbackup"));
+        assertTrue(BackupService.encrypted(first), "never a plain copy in the cloud");
+        assertThrows(BackupException.class, () -> service.check(first, "wrong-password".toCharArray()));
+        assertTrue(service.check(first, PASSWORD).backup().encrypted());
+
+        for (int i = 0; i < BackupService.KEEP_AUTOMATIC + 3; i++) {
+            clock.advance(Duration.ofDays(1));
+            service.createCloud(cloud, PASSWORD);
+        }
+        try (var copies = Files.list(cloud.resolve(BackupService.CLOUD_SUBFOLDER))) {
+            assertEquals(BackupService.KEEP_AUTOMATIC, copies.filter(c -> c.getFileName().toString()
+                    .startsWith("NetPilot-cloud-")).count(), "the oldest went");
+        }
+    }
+
+    @Test
+    void cloudCopiesAreDueDailyAndOverdueAfterTwoDays() throws Exception {
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 11, 21, 10, 0);
+        org.netpilot.model.BackupSettings off = org.netpilot.model.BackupSettings.defaults();
+        assertFalse(off.cloud());
+        assertFalse(off.cloudDue(now));
+        assertFalse(off.cloudOverdue(now), "nothing to warn about when it is off");
+
+        org.netpilot.model.BackupSettings on = off.withCloud("  C:\\Users\\me\\OneDrive  ");
+        assertEquals("C:\\Users\\me\\OneDrive", on.cloudFolder());
+        assertTrue(on.cloudDue(now));
+        assertTrue(on.cloudOverdue(now), "on but never made");
+        org.netpilot.model.BackupSettings today = on.cloudRan(now.minusHours(1));
+        assertFalse(today.cloudDue(now));
+        assertTrue(today.cloudDue(now.plusDays(1)));
+        assertFalse(today.cloudOverdue(now.plusDays(1)), "one day without a copy is no warning yet");
+        assertTrue(today.cloudOverdue(now.plusDays(3)));
+        assertEquals(today.lastCloud(), today.ran(now).withAutomatic(true, "D:\\").lastCloud(),
+                "the local backup settings keep the cloud ones");
+        assertFalse(today.withCloud("").cloud());
+
+        org.netpilot.repository.SettingsRepository repository = new org.netpilot.repository.SettingsRepository(
+                temp.resolve("settings.properties"));
+        repository.save(repository.load().withBackup(today));
+        org.netpilot.model.BackupSettings back = new org.netpilot.repository.SettingsRepository(
+                temp.resolve("settings.properties")).load().backup();
+        assertEquals("C:\\Users\\me\\OneDrive", back.cloudFolder());
+        assertEquals(today.lastCloud(), back.lastCloud());
+    }
+
+    @Test
     void automaticBackupsKeepTheNewestAndNeverDeleteWhenANewOneFails() throws Exception {
         for (int i = 0; i < BackupService.KEEP_AUTOMATIC + 2; i++) {
             service.createAutomatic(backups);

@@ -166,14 +166,37 @@ public final class BackupService {
      * newest {@link #KEEP_AUTOMATIC}. When the new backup fails, nothing is removed.
      */
     public Path createAutomatic(Path folder) throws IOException {
-        Path target = folder.resolve(AUTO_PREFIX + LocalDateTime.now(clock).format(STAMP) + ".zip");
-        create(target, null); // throws before any old backup is touched
-        List<Path> automatic = new ArrayList<>();
-        try (DirectoryStream<Path> files = Files.newDirectoryStream(folder, AUTO_PREFIX + "*.zip")) {
-            files.forEach(automatic::add);
+        return createDated(folder, AUTO_PREFIX, ".zip", null);
+    }
+
+    /** The subfolder of a synced cloud folder that holds NetPilot's backups. */
+    public static final String CLOUD_SUBFOLDER = "NetPilot backups";
+    private static final String CLOUD_PREFIX = "NetPilot-cloud-";
+
+    /**
+     * Makes a dated, encrypted backup in {@code cloudFolder/NetPilot backups} (a folder a cloud app
+     * keeps in sync), keeping the newest {@link #KEEP_AUTOMATIC}. Never written unencrypted: what
+     * leaves the computer is unreadable without the backup password.
+     *
+     * @throws IllegalArgumentException without a password
+     */
+    public Path createCloud(Path cloudFolder, char[] password) throws IOException {
+        if (password == null || password.length == 0) {
+            throw new IllegalArgumentException("A cloud backup is always encrypted");
         }
-        automatic.sort(Comparator.comparing(BackupService::name).reversed());
-        for (Path old : automatic.subList(Math.min(KEEP_AUTOMATIC, automatic.size()), automatic.size())) {
+        return createDated(cloudFolder.resolve(CLOUD_SUBFOLDER), CLOUD_PREFIX, ".npbackup", password);
+    }
+
+    private Path createDated(Path folder, String prefix, String extension, char[] password) throws IOException {
+        Files.createDirectories(folder);
+        Path target = folder.resolve(prefix + LocalDateTime.now(clock).format(STAMP) + extension);
+        create(target, password); // throws before any old backup is touched
+        List<Path> dated = new ArrayList<>();
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(folder, prefix + "*" + extension)) {
+            files.forEach(dated::add);
+        }
+        dated.sort(Comparator.comparing(BackupService::name).reversed());
+        for (Path old : dated.subList(Math.min(KEEP_AUTOMATIC, dated.size()), dated.size())) {
             Files.deleteIfExists(old);
         }
         return target;

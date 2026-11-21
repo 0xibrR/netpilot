@@ -184,6 +184,8 @@ public class SettingsController implements Page {
     private javafx.scene.layout.VBox protectionBox;
     @FXML
     private javafx.scene.layout.VBox liveBox;
+    @FXML
+    private javafx.scene.layout.VBox cloudBox;
     private final java.util.Map<org.netpilot.model.Alert.Kind, javafx.scene.control.CheckBox> alertChecks = new java.util.EnumMap<>(
             org.netpilot.model.Alert.Kind.class);
     private javafx.scene.control.Spinner<Integer> cpuSpinner;
@@ -375,6 +377,7 @@ public class SettingsController implements Page {
         this.backups = new BackupActions(shared, this::showBackup);
         new ProtectionSettings(shared, protectionBox).show();
         new LiveSettings(shared, liveBox).show();
+        new CloudSettings(shared, cloudBox).show();
         shown();
     }
 

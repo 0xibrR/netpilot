@@ -60,6 +60,16 @@ final class Workspace {
     }
 
     private final LiveLink live = new LiveLink();
+    private CloudBackup cloudBackup;
+
+    /** The daily encrypted copy to a cloud-synced folder. */
+    CloudBackup cloudBackup() {
+        if (cloudBackup == null) {
+            cloudBackup = new CloudBackup(this);
+        }
+        return cloudBackup;
+    }
+
     private ShiftCenter shifts;
 
     /** The cash drawer: shifts, withdrawals and closings. */

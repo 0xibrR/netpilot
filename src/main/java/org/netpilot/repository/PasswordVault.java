@@ -53,6 +53,26 @@ public final class PasswordVault {
         store.delete(key(endpoint));
     }
 
+    /** The key of the backup password: no router address has a space, so it never meets a router key. */
+    private static final String BACKUP_KEY = "backup password|cloud";
+
+    /** The remembered backup password (for the daily encrypted cloud copy), if any. */
+    public Optional<char[]> loadBackupPassword() {
+        return store.load(BACKUP_KEY);
+    }
+
+    public boolean hasBackupPassword() {
+        return store.has(BACKUP_KEY);
+    }
+
+    public void saveBackupPassword(char[] password) throws IOException {
+        store.save(BACKUP_KEY, password);
+    }
+
+    public void forgetBackupPassword() throws IOException {
+        store.delete(BACKUP_KEY);
+    }
+
     /** Same keys as earlier versions, so passwords remembered before are found. */
     private static String key(RouterEndpoint endpoint) {
         return endpoint.address() + "|" + endpoint.username();

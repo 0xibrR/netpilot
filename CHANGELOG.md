@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Added
+- Cloud backup: an encrypted copy every day to a folder OneDrive, Google Drive for desktop or Dropbox keeps in
+  sync (found by itself), so the records survive a broken or stolen laptop; NetPilot never needs the cloud
+  account. The backup password is chosen once and remembered on this computer only; the newest 14 copies stay.
+  Settings › Cloud backup shows the last copy and backs up now; Home warns after two days without one, and
+  Restore opens the cloud copies first, also on a new computer
+
 ## [1.3.1] - 2026-11-17
 
 ### Added

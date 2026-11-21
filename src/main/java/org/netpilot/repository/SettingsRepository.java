@@ -146,7 +146,8 @@ public class SettingsRepository {
                 loadCleanup(p, d.cleanup()),
                 intValue(p, "alert.lowStockBelow", d.lowStockBelow()),
                 new org.netpilot.model.BackupSettings(booleanValue(p, "backup.automatic", false),
-                        p.getProperty("backup.folder", ""), lastBackup(p)),
+                        p.getProperty("backup.folder", ""), lastBackup(p, "backup.last"),
+                        p.getProperty("backup.cloudFolder", ""), lastBackup(p, "backup.lastCloud")),
                 new org.netpilot.model.NotificationSettings(
                         p.getProperty("notify.countryCode", d.notifications().countryCode()),
                         p.getProperty("notify.cardTemplate", ""),
@@ -422,6 +423,9 @@ public class SettingsRepository {
         p.setProperty("backup.automatic", String.valueOf(settings.backup().enabled()));
         p.setProperty("backup.folder", settings.backup().folder());
         p.setProperty("backup.last", settings.backup().lastRun().map(java.time.LocalDateTime::toString).orElse(""));
+        p.setProperty("backup.cloudFolder", settings.backup().cloudFolder());
+        p.setProperty("backup.lastCloud",
+                settings.backup().lastCloud().map(java.time.LocalDateTime::toString).orElse(""));
         p.setProperty("notify.countryCode", settings.notifications().countryCode());
         p.setProperty("notify.cardTemplate", settings.notifications().cardTemplate());
         p.setProperty("notify.reminderTemplate", settings.notifications().reminderTemplate());
@@ -451,9 +455,9 @@ public class SettingsRepository {
         }
     }
 
-    private static java.util.Optional<java.time.LocalDateTime> lastBackup(Properties p) {
+    private static java.util.Optional<java.time.LocalDateTime> lastBackup(Properties p, String key) {
         try {
-            String value = p.getProperty("backup.last", "").strip();
+            String value = p.getProperty(key, "").strip();
             return value.isEmpty()
                     ? java.util.Optional.empty()
                     : java.util.Optional.of(java.time.LocalDateTime.parse(value));

@@ -122,6 +122,16 @@ final class BackupActions {
     void restore() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(Messages.get("backup.restore"));
+        // the cloud copies: from the folder chosen in Settings, or on a new computer from the first
+        // OneDrive / Google Drive / Dropbox folder that has NetPilot's backups
+        java.util.List<java.nio.file.Path> clouds = new java.util.ArrayList<>();
+        String chosen = workspace.settings().backup().cloudFolder();
+        if (!chosen.isEmpty()) {
+            clouds.add(java.nio.file.Path.of(chosen));
+        }
+        org.netpilot.service.CloudFolders.find().forEach(f -> clouds.add(f.path()));
+        clouds.stream().map(c -> c.resolve(BackupService.CLOUD_SUBFOLDER).toFile()).filter(java.io.File::isDirectory)
+                .findFirst().ifPresent(chooser::setInitialDirectory);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("backup.file.any"),
                 "*.zip", "*.npbackup"));
         File file = chooser.showOpenDialog(window());
