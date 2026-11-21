@@ -9,18 +9,26 @@ package org.netpilot.model;
  * @param whatsApp      a number (digits, with country code) for a WhatsApp button; empty for none
  * @param color         main colour as {@code #RRGGBB}
  * @param showPrices    show the packages and their prices
- * @param showLogo      show the card design's logo
+ * @param showLogo      show a logo: the page's own, else the card design's
  * @param passwordField ask for a password too (cards made with passwords)
  * @param language      the page's language
  * @param showSellers   list the points of sale (name and a call button) on their own tab
+ * @param logo          the page's own logo, a file name in NetPilot's data folder; empty for the card design's
  */
 public record LoginPageDesign(String title, String welcome, String phone, String whatsApp, String color,
-        boolean showPrices, boolean showLogo, boolean passwordField, Language language, boolean showSellers) {
+        boolean showPrices, boolean showLogo, boolean passwordField, Language language, boolean showSellers,
+        String logo) {
 
     /** Without the points of sale tab. */
     public LoginPageDesign(String title, String welcome, String phone, String whatsApp, String color,
             boolean showPrices, boolean showLogo, boolean passwordField, Language language) {
         this(title, welcome, phone, whatsApp, color, showPrices, showLogo, passwordField, language, false);
+    }
+
+    /** With the card design's logo. */
+    public LoginPageDesign(String title, String welcome, String phone, String whatsApp, String color,
+            boolean showPrices, boolean showLogo, boolean passwordField, Language language, boolean showSellers) {
+        this(title, welcome, phone, whatsApp, color, showPrices, showLogo, passwordField, language, showSellers, "");
     }
 
     /** The page's language. */
@@ -40,6 +48,8 @@ public record LoginPageDesign(String title, String welcome, String phone, String
                 ? color.toLowerCase(java.util.Locale.ROOT)
                 : DEFAULT_COLOR;
         language = language == null ? Language.ARABIC : language;
+        // only a plain file name: the logo always lives in NetPilot's own data folder
+        logo = logo == null || !logo.strip().matches("[A-Za-z0-9._-]{1,80}") || logo.contains("..") ? "" : logo.strip();
     }
 
     public static LoginPageDesign defaults() {

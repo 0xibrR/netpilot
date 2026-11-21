@@ -57,6 +57,14 @@ public class LoginPageController implements Page {
     @FXML
     private CheckBox logoCheck;
     @FXML
+    private Label logoLabel;
+    @FXML
+    private Button chooseLogoButton;
+    @FXML
+    private Button removeLogoButton;
+    /** The page's own logo (a file in the data folder), or empty for the card design's. */
+    private String ownLogo = "";
+    @FXML
     private CheckBox pricesCheck;
     @FXML
     private CheckBox passwordCheck;
@@ -110,6 +118,8 @@ public class LoginPageController implements Page {
         phoneField.setText(d.phone());
         whatsAppField.setText(d.whatsApp());
         logoCheck.setSelected(d.showLogo());
+        ownLogo = d.logo();
+        showLogo();
         pricesCheck.setSelected(d.showPrices());
         // cards made with passwords need the password field
         sellersCheck.setSelected(d.showSellers());
@@ -141,13 +151,14 @@ public class LoginPageController implements Page {
                 Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255));
         return new LoginPageDesign(titleField.getText(), welcomeField.getText(), phoneField.getText(),
                 whatsAppField.getText(), color, pricesCheck.isSelected(), logoCheck.isSelected(),
-                passwordCheck.isSelected(), languageBox.getValue(), sellersCheck.isSelected());
+                passwordCheck.isSelected(), languageBox.getValue(), sellersCheck.isSelected(), ownLogo);
     }
 
     private Map<String, String> pages(LoginPageDesign d) {
         VoucherTemplate card = workspace.settings().voucherTemplate();
-        Optional<Path> logo = Optional.ofNullable(card.logo())
-                .map(p -> p.isAbsolute() ? p : AppPaths.dataDirectory().resolve(p));
+        Optional<Path> logo = d.logo().isEmpty()
+                ? Optional.ofNullable(card.logo()).map(p -> p.isAbsolute() ? p : AppPaths.dataDirectory().resolve(p))
+                : Optional.of(AppPaths.dataDirectory().resolve(d.logo()));
         List<LoginPageBuilder.Seller> sellers = List.of();
         if (d.showSellers()) {
             try {
@@ -166,6 +177,71 @@ public class LoginPageController implements Page {
             store.save(d);
         } catch (IOException e) {
             LOG.log(System.Logger.Level.WARNING, "Cannot save the login page design", e);
+        }
+    }
+
+    /** Which logo the page shows: its own, or the card design's. */
+    private void showLogo() {
+        logoLabel.setText(ownLogo.isEmpty()
+                ? Messages.get("loginPage.logo.card")
+                : Messages.get("loginPage.logo.own"));
+        removeLogoButton.setDisable(ownLogo.isEmpty());
+        chooseLogoButton.setGraphic(Icons.of(Icons.FOLDER));
+    }
+
+    /** A logo for the page only, copied into NetPilot's data folder (so backups keep it). */
+    @FXML
+    private void onChooseLogo() {
+        if (!workspace.allowed(Permission.CARD_DESIGN)) {
+            return;
+        }
+        javafx.stage.FileChooser chooser = new javafx.stage.FileChooser();
+        chooser.setTitle(Messages.get("loginPage.chooseLogo"));
+        chooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter(
+                Messages.get("design.images"), "*.png", "*.jpg", "*.jpeg"));
+        java.io.File file = chooser.showOpenDialog(workspace.window());
+        if (file == null) {
+            return;
+        }
+        if (LoginPageBuilder.logo(file.toPath()).isEmpty()) {
+            Dialogs.error(workspace.window(), Messages.get("loginPage.chooseLogo"), Messages.get("loginPage.logo.bad"));
+            return;
+        }
+        String ext = file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".png") ? "png" : "jpg";
+        String name = "login-page-logo." + ext;
+        try {
+            removeLogoFiles();
+            Files.copy(file.toPath(), AppPaths.dataDirectory().resolve(name),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            ownLogo = name;
+            logoCheck.setSelected(true);
+            save(design());
+            showLogo();
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.WARNING, "Cannot copy the login page logo", e);
+            Dialogs.error(workspace.window(), Messages.get("loginPage.chooseLogo"), e.getMessage());
+        }
+    }
+
+    /** Back to the card design's logo. */
+    @FXML
+    private void onRemoveLogo() {
+        if (!workspace.allowed(Permission.CARD_DESIGN)) {
+            return;
+        }
+        try {
+            removeLogoFiles();
+        } catch (IOException e) {
+            LOG.log(System.Logger.Level.WARNING, "Cannot remove the login page logo", e);
+        }
+        ownLogo = "";
+        save(design());
+        showLogo();
+    }
+
+    private static void removeLogoFiles() throws IOException {
+        for (String ext : List.of("png", "jpg")) {
+            Files.deleteIfExists(AppPaths.dataDirectory().resolve("login-page-logo." + ext));
         }
     }
 

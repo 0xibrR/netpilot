@@ -124,6 +124,21 @@ class LoginPageBuilderTest {
     }
 
     @Test
+    void thePagesOwnLogoIsAPlainFileNameAndIsKept() throws Exception {
+        LoginPageDesign own = new LoginPageDesign("", "", "", "", "#123456", true, true, false, Language.ARABIC, false,
+                "login-page-logo.png");
+        assertEquals("login-page-logo.png", own.logo());
+        for (String bad : new String[]{"../secret.png", "C:\\x.png", "a/b.png", " ", "x".repeat(81)}) {
+            assertEquals("", new LoginPageDesign("", "", "", "", "#123456", true, true, false, Language.ARABIC, false,
+                    bad).logo(), "never a path out of the data folder: " + bad);
+        }
+        assertEquals("", LoginPageDesign.defaults().logo(), "the card design's logo by default");
+        LoginPageStore store = new LoginPageStore(dir.resolve("logo.properties"));
+        store.save(own);
+        assertEquals("login-page-logo.png", new LoginPageStore(dir.resolve("logo.properties")).design().logo());
+    }
+
+    @Test
     void theDesignIsSavedAndEachRoutersPreviousFolderRemembered() throws Exception {
         LoginPageStore store = new LoginPageStore(dir.resolve("login-page.properties"));
         assertEquals(LoginPageDesign.defaults(), store.design());

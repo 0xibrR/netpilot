@@ -41,7 +41,7 @@ public final class LoginPageStore {
                 p.getProperty("phone", d.phone()), p.getProperty("whatsApp", d.whatsApp()),
                 p.getProperty("color", d.color()), flag(p, "showPrices", d.showPrices()),
                 flag(p, "showLogo", d.showLogo()), flag(p, "passwordField", d.passwordField()), language,
-                flag(p, "showSellers", d.showSellers()));
+                flag(p, "showSellers", d.showSellers()), p.getProperty("logo", ""));
     }
 
     public synchronized void save(LoginPageDesign d) throws IOException {
@@ -56,6 +56,7 @@ public final class LoginPageStore {
         p.setProperty("passwordField", String.valueOf(d.passwordField()));
         p.setProperty("language", d.language().name());
         p.setProperty("showSellers", String.valueOf(d.showSellers()));
+        p.setProperty("logo", d.logo());
         write(p);
     }
 

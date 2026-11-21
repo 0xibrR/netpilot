@@ -50,6 +50,13 @@
                                    GridPane.columnIndex="1"/>
                     </GridPane>
                     <CheckBox fx:id="logoCheck" text="%loginPage.showLogo"/>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label fx:id="logoLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="chooseLogoButton" text="%loginPage.chooseLogo" onAction="#onChooseLogo"
+                                minWidth="-Infinity"/>
+                        <Button fx:id="removeLogoButton" text="%loginPage.removeLogo" onAction="#onRemoveLogo"
+                                minWidth="-Infinity"/>
+                    </HBox>
                     <CheckBox fx:id="pricesCheck" text="%loginPage.showPrices"/>
                     <CheckBox fx:id="sellersCheck" text="%loginPage.showSellers" wrapText="true"/>
                     <CheckBox fx:id="passwordCheck" text="%loginPage.passwordField" wrapText="true"/>
