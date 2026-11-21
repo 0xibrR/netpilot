@@ -179,6 +179,21 @@ public interface RouterClient extends AutoCloseable {
         throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
     }
 
+    /** One card in full, as WinBox's user window shows it (password included). Read only. */
+    default org.netpilot.model.CardDetails cardDetails(String routerId) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
+    /** Changes the given RouterOS properties of a card (only those, like WinBox's Apply). */
+    default void updateCard(String routerId, Map<String, String> changes) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
+    /** Sets a card's used time and data back to zero (WinBox's Reset Counters). */
+    default void resetCardCounters(String routerId) throws RouterException {
+        throw new RouterException(RouterException.Kind.NOT_SUPPORTED, "not supported");
+    }
+
     @Override
     void close();
 }

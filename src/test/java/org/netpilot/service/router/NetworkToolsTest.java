@@ -55,6 +55,28 @@ class NetworkToolsTest {
     }
 
     @Test
+    void oneCardIsReadChangedAndResetThroughRest() throws Exception {
+        router.route("/rest/ip/hotspot/user/*5", 200, "{\".id\":\"*5\",\"name\":\"48291\",\"password\":\"pw\","
+                + "\"server\":\"hs1\",\"profile\":\"1M\",\"comment\":\"NetPilot 2026-11-01 10:00 #aaaa\","
+                + "\"disabled\":\"false\",\"mac-address\":\"AA:BB:CC:DD:EE:FF\",\"limit-uptime\":\"0s\","
+                + "\"limit-bytes-total\":\"1048576\",\"uptime\":\"1h30m\",\"bytes-in\":\"100\",\"bytes-out\":\"2000\"}");
+        org.netpilot.model.CardDetails card = client.cardDetails("*5");
+        assertEquals("48291", card.name());
+        assertEquals("pw", card.password());
+        assertEquals("hs1", card.server());
+        assertEquals("", card.limitUptime(), "0s is no limit");
+        assertEquals(1_048_576L, card.limitBytes());
+        assertEquals(java.time.Duration.ofMinutes(90), card.uptime());
+        assertEquals(2000, card.bytesOut());
+        assertThrows(IllegalArgumentException.class, () -> client.cardDetails("*5/../x"));
+
+        client.updateCard("*5", java.util.Map.of("comment", "VIP", "limit-uptime", "1d"));
+        client.updateCard("*5", java.util.Map.of()); // nothing to send
+        router.route("/rest/ip/hotspot/user/reset-counters", 200, "[]");
+        client.resetCardCounters("*5");
+    }
+
+    @Test
     void hotspotPageFoldersAndFilesGoThroughRest() throws Exception {
         router.route("/rest/ip/hotspot", 200, "[{\"name\":\"hs1\",\"profile\":\"hsprof1\"}]");
         router.route("/rest/ip/hotspot/profile", 200, "[{\".id\":\"*1\",\"name\":\"hsprof1\",\"html-directory\":"

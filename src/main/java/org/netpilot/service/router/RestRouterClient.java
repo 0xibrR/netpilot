@@ -349,6 +349,45 @@ final class RestRouterClient implements RouterClient {
     }
 
     @Override
+    public org.netpilot.model.CardDetails cardDetails(String routerId) throws RouterException {
+        requireRouterId(routerId);
+        String path = USERS + "/" + routerId;
+        JsonNode u = send(path, HttpRequest.newBuilder(URI.create(baseUri + path + "?.proplist=.id,name,password,"
+                + "server,profile,comment,disabled,address,mac-address,limit-uptime,limit-bytes-total,uptime,"
+                + "bytes-in,bytes-out")).GET());
+        if (u.isArray()) {
+            u = u.isEmpty() ? JSON.createObjectNode() : u.get(0);
+        }
+        String limit = text(u, "limit-uptime");
+        return new org.netpilot.model.CardDetails(routerId, text(u, "name"), text(u, "password"), text(u, "server"),
+                text(u, "profile"), text(u, "comment"), "true".equals(text(u, "disabled")), text(u, "address"),
+                text(u, "mac-address"), "0s".equals(limit) ? "" : limit, number(u, "limit-bytes-total"),
+                RouterDuration.parse(text(u, "uptime")).orElse(java.time.Duration.ZERO), number(u, "bytes-in"),
+                number(u, "bytes-out"));
+    }
+
+    @Override
+    public void updateCard(String routerId, Map<String, String> changes) throws RouterException {
+        requireRouterId(routerId);
+        if (changes.isEmpty()) {
+            return;
+        }
+        ObjectNode body = JSON.createObjectNode();
+        changes.forEach(body::put);
+        String path = USERS + "/" + routerId;
+        send(path, HttpRequest.newBuilder(URI.create(baseUri + path)).header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(body))));
+    }
+
+    @Override
+    public void resetCardCounters(String routerId) throws RouterException {
+        requireRouterId(routerId);
+        byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put(".id", routerId));
+        send(USERS + "/reset-counters", HttpRequest.newBuilder(URI.create(baseUri + USERS + "/reset-counters"))
+                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofByteArray(body)));
+    }
+
+    @Override
     public void setHotspotUserDisabled(String routerId, boolean disabled) throws RouterException {
         requireRouterId(routerId);
         byte[] body = JSON.writeValueAsBytes(JSON.createObjectNode().put("disabled", String.valueOf(disabled)));

@@ -614,6 +614,7 @@ public class HotspotController implements Page {
         usersController.setHandover(selected -> handOver(routerKey, selected));
         usersController.setCustomerActions(card -> linkCustomer(routerKey, card),
                 card -> sendToCustomer(routerClient, routerKey, card));
+        usersController.setEditor(card -> editCard(routerClient, routerKey, card));
         if (tabs.getSelectionModel().getSelectedItem() == activeTab) {
             onRefreshActive();
         }
@@ -659,6 +660,74 @@ public class HotspotController implements Page {
                     Messages.get("handover.usedLeftOut", selected.size() - unused.size()));
         }
         HandoverFlow.start(workspace, workspace.window(), unused, null, () -> {
+        });
+    }
+
+    // ------------------------------------------------------------------ one card (like WinBox)
+
+    /** What the card window needs, read in the background. */
+    private record CardContext(org.netpilot.model.CardDetails details, Optional<String> nameLock,
+            boolean handedOver) {
+    }
+
+    /**
+     * Opens one card's window. Its name stays locked when records hang on it (used, with a point of
+     * sale, reserved at the counter or linked to a customer): they are all kept by card name.
+     */
+    private void editCard(RouterClient target, String routerKey, RouterUser card) {
+        if (!workspace.allowed(Permission.MANAGE_CARDS)) {
+            return;
+        }
+        run(() -> {
+            org.netpilot.model.CardDetails details = target.cardDetails(card.routerId());
+            String holder = context.resellerAccounts().holders().get(ResellerAccounts.key(routerKey, details.name()));
+            boolean customer = context.customerRepository().find(routerKey, details.name()).isPresent();
+            Optional<String> lock = !details.neverUsed()
+                    ? Optional.of(Messages.get("card.edit.lock.used"))
+                    : holder != null && holder.equals(ResellerAccounts.COUNTER)
+                            ? Optional.of(Messages.get("card.edit.lock.counter"))
+                            : holder != null
+                                    ? Optional.of(Messages.get("card.edit.lock.shop"))
+                                    : customer
+                                            ? Optional.of(Messages.get("card.edit.lock.customer"))
+                                            : Optional.empty();
+            return new CardContext(details, lock, holder != null && !holder.equals(ResellerAccounts.COUNTER));
+        }, ctx -> {
+            List<String> servers = new java.util.ArrayList<>(List.of("all"));
+            List<String> profileNames = new java.util.ArrayList<>();
+            workspace.router().lists().ifPresent(lists -> {
+                lists.servers().forEach(s -> servers.add(s.name()));
+                lists.profiles().forEach(p -> profileNames.add(p.name()));
+            });
+            CardEditor.show(workspace.window(), ctx.details(), new CardEditor.Options(servers, profileNames,
+                    ctx.nameLock(), ctx.handedOver(), () -> {
+                        target.resetCardCounters(card.routerId());
+                        LOG.log(System.Logger.Level.INFO, "Counters of card {0} reset", ctx.details().name());
+                        return target.cardDetails(card.routerId());
+                    })).ifPresent(edited -> saveCard(target, ctx, edited));
+        });
+    }
+
+    private void saveCard(RouterClient target, CardContext ctx, org.netpilot.model.CardDetails edited) {
+        Map<String, String> changes = new java.util.LinkedHashMap<>(ctx.details().changesTo(edited));
+        if (ctx.nameLock().isPresent()) {
+            changes.remove("name"); // checked again here, whatever the window allowed
+        }
+        if (changes.isEmpty()) {
+            return;
+        }
+        if (ctx.handedOver() && changes.containsKey("profile") && !Dialogs.confirm(workspace.window(),
+                Messages.get("card.edit.title", ctx.details().name()), Messages.get("card.edit.profileHandedOver"))) {
+            return;
+        }
+        run(() -> {
+            target.updateCard(ctx.details().routerId(), changes);
+            return changes.keySet();
+        }, keys -> {
+            // which settings changed is logged; their values (a password) never are
+            LOG.log(System.Logger.Level.INFO, "Card {0} changed: {1}", ctx.details().name(), keys);
+            workspace.toast("✓ " + Messages.get("card.edit.saved", edited.name()));
+            usersController.liveRefresh();
         });
     }
 

@@ -15,6 +15,7 @@
         <VBox>
             <!-- wraps onto a second row when the window is narrow; buttons never shrink or cut their text -->
             <FlowPane styleClass="toolbar" alignment="CENTER_LEFT" hgap="4" vgap="4">
+                <Button minWidth="-Infinity" fx:id="editButton" text="%users.edit" onAction="#onEdit" styleClass="tool-button"/>
                 <Button minWidth="-Infinity" fx:id="enableButton" text="%users.enable" onAction="#onEnable" styleClass="tool-button"/>
                 <Button minWidth="-Infinity" fx:id="disableButton" text="%users.disable" onAction="#onDisable" styleClass="tool-button"/>
                 <Button minWidth="-Infinity" fx:id="disconnectButton" text="%users.disconnect" onAction="#onDisconnect" styleClass="tool-button"/>

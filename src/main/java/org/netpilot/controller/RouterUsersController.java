@@ -163,6 +163,32 @@ public class RouterUsersController {
     /** Sends the selected card's details to its customer by WhatsApp (set by the Hotspot page). */
     private Consumer<RouterUser> sendToCustomer = card -> {
     };
+    /** Opens one card's window (set by the Hotspot page). */
+    private Consumer<RouterUser> editor = card -> {
+    };
+
+    void setEditor(Consumer<RouterUser> open) {
+        this.editor = open;
+    }
+
+    @FXML
+    private Button editButton;
+
+    /** The selected card's window: General, Limits, Statistics. */
+    @FXML
+    private void onEdit() {
+        List<RouterUser> one = selected();
+        if (one.size() == 1) {
+            edit(one.getFirst());
+        }
+    }
+
+    private void edit(RouterUser card) {
+        if (card.builtIn() || !allowed.test(Permission.MANAGE_CARDS)) {
+            return;
+        }
+        editor.accept(card);
+    }
 
     void setCustomerActions(Consumer<RouterUser> link, Consumer<RouterUser> send) {
         this.linkCustomer = link;
@@ -181,7 +207,7 @@ public class RouterUsersController {
      * reprinting, handing over and changing cards on the router are the owner's.
      */
     void roleChanged(org.netpilot.model.Role role) {
-        show(role.can(Permission.MANAGE_CARDS), enableButton, disableButton, disconnectButton, deleteButton,
+        show(role.can(Permission.MANAGE_CARDS), editButton, enableButton, disableButton, disconnectButton, deleteButton,
                 deleteExpiredButton);
         show(role.can(Permission.REPRINT_CARDS), printButton, receiptButton);
         show(role.can(Permission.MANAGE_RESELLERS), handoverButton);
@@ -272,6 +298,8 @@ public class RouterUsersController {
         var notOneCard = Bindings.createBooleanBinding(() -> selected().size() != 1,
                 usersTable.getSelectionModel().getSelectedItems());
         customerButton.disableProperty().bind(notOneCard.or(busy));
+        editButton.disableProperty().bind(notOneCard.or(busy));
+        editButton.setGraphic(Icons.of(Icons.SETTINGS));
         whatsAppButton.disableProperty().bind(notOneCard.or(busy));
         customerButton.setGraphic(Icons.of(Icons.USERS));
         whatsAppButton.setGraphic(Icons.of(Icons.SEND));
@@ -689,16 +717,25 @@ public class RouterUsersController {
     private void setUpTable() {
         usersTable.setRoot(root);
         usersTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        usersTable.setRowFactory(table -> new TreeTableRow<>() {
+        usersTable.setRowFactory(table -> {
+            TreeTableRow<Row> row = new TreeTableRow<>() {
 
-            @Override
-            protected void updateItem(Row item, boolean empty) {
-                super.updateItem(item, empty);
-                getStyleClass().remove("group-row");
-                if (!empty && item instanceof GroupRow) {
-                    getStyleClass().add("group-row");
+                @Override
+                protected void updateItem(Row item, boolean empty) {
+                    super.updateItem(item, empty);
+                    getStyleClass().remove("group-row");
+                    if (!empty && item instanceof GroupRow) {
+                        getStyleClass().add("group-row");
+                    }
                 }
-            }
+            };
+            // a double click opens the card, like WinBox
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && row.getItem() instanceof UserRow(RouterUser user)) {
+                    edit(user);
+                }
+            });
+            return row;
         });
 
         nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(switch (c.getValue().getValue()) {
