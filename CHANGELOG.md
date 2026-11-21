@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-21
+
 ### Added
 - Hotspot login page (Hotspot › Login page, owner): design what customers see before logging in without any
   code: a glass card on the network's colours with the logo, a live clock, a scrolling message, tabs for the
