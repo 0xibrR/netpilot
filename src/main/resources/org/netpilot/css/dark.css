@@ -81,3 +81,12 @@
 .table-row-cell.log-warning .table-cell {
     -fx-text-fill: #e3b341;
 }
+
+/* cashier shifts: missing / extra cash readable on the dark background */
+.table-cell.shift-short {
+    -fx-text-fill: #ff7b72;
+}
+
+.table-cell.shift-over {
+    -fx-text-fill: #e3b341;
+}

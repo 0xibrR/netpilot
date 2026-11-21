@@ -22,8 +22,8 @@
                 <Region HBox.hgrow="ALWAYS"/>
                 <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
                 <Label fx:id="countLabel" styleClass="muted"/>
-                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="flat"/>
-                <Button fx:id="saveButton" text="%log.save" onAction="#onSave"/>
+                <Button minWidth="-Infinity" fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh" styleClass="flat"/>
+                <Button minWidth="-Infinity" fx:id="saveButton" text="%log.save" onAction="#onSave"/>
             </HBox>
             <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
         </VBox>

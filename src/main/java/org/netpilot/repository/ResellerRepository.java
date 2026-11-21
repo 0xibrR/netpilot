@@ -75,6 +75,10 @@ public class ResellerRepository {
 
     /** The whole ledger in the order it was written. */
     public synchronized List<LedgerEvent> ledger() throws IOException {
+        Stamp now = stamp();
+        if (cached != null && now.equals(cachedStamp)) {
+            return cached; // nothing changed on disk since the last read
+        }
         List<LedgerEvent> out = new ArrayList<>();
         for (List<String> f : rows(ledgerFile, LEDGER_HEADER, 14)) {
             try {
@@ -88,7 +92,29 @@ public class ResellerRepository {
                         e.getMessage());
             }
         }
-        return out;
+        cached = List.copyOf(out);
+        cachedStamp = now;
+        return cached;
+    }
+
+    /**
+     * The ledger read last, kept while the file on disk is the same (same size and time), so the
+     * pages that ask for it often (every sale, every shift figure) never parse thousands of lines
+     * again. A restore, or another NetPilot writing to the file, changes the stamp and the file is
+     * read afresh.
+     */
+    private List<LedgerEvent> cached;
+    private Stamp cachedStamp;
+
+    /** What identifies one version of the ledger file. */
+    private record Stamp(boolean exists, long size, long modified) {
+    }
+
+    private Stamp stamp() throws IOException {
+        if (!Files.exists(ledgerFile)) {
+            return new Stamp(false, 0, 0);
+        }
+        return new Stamp(true, Files.size(ledgerFile), Files.getLastModifiedTime(ledgerFile).toMillis());
     }
 
     /**
@@ -98,7 +124,8 @@ public class ResellerRepository {
      */
     public synchronized List<LedgerEvent> append(Collection<LedgerEvent> events) throws IOException {
         Set<String> known = new HashSet<>();
-        ledger().forEach(e -> known.add(e.id()));
+        List<LedgerEvent> before = ledger();
+        before.forEach(e -> known.add(e.id()));
         List<LedgerEvent> added = new ArrayList<>();
         StringBuilder lines = new StringBuilder();
         if (!Files.exists(ledgerFile)) {
@@ -118,6 +145,11 @@ public class ResellerRepository {
             FileSupport.createParentDirectories(ledgerFile);
             Files.writeString(ledgerFile, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+            // the copy in memory follows what was just written, without reading the file again
+            List<LedgerEvent> now = new ArrayList<>(before);
+            now.addAll(added);
+            cached = List.copyOf(now);
+            cachedStamp = stamp();
         }
         return added;
     }

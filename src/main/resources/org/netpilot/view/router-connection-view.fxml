@@ -19,7 +19,7 @@
                         <Label text="%connect.neighbors" styleClass="card-title"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <ProgressIndicator fx:id="scanProgress" visible="false" managed="false" prefWidth="16" prefHeight="16"/>
-                        <Button fx:id="scanButton" text="%button.refresh" onAction="#onScan" styleClass="tool-button"/>
+                        <Button minWidth="-Infinity" fx:id="scanButton" text="%button.refresh" onAction="#onScan" styleClass="tool-button"/>
                     </HBox>
                     <TableView fx:id="neighborsTable" VBox.vgrow="ALWAYS" prefHeight="220">
                         <columnResizePolicy>
@@ -64,7 +64,7 @@
                             <HBox spacing="10" alignment="CENTER_LEFT">
                                 <CheckBox fx:id="rememberCheck" text="%connect.remember"/>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Button fx:id="forgetPasswordButton" text="%connect.forgetPassword" onAction="#onForgetPassword" styleClass="flat"/>
+                                <Button minWidth="-Infinity" fx:id="forgetPasswordButton" text="%connect.forgetPassword" onAction="#onForgetPassword" styleClass="flat"/>
                             </HBox>
                             <CheckBox fx:id="autoConnectCheck" text="%connect.autoConnect"/>
                         </VBox>
@@ -75,7 +75,7 @@
                         <Label text="%connect.certificate" styleClass="card-title"/>
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <Label fx:id="certificateLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                            <Button fx:id="forgetCertificateButton" text="%connect.forget" onAction="#onForgetCertificate"/>
+                            <Button minWidth="-Infinity" fx:id="forgetCertificateButton" text="%connect.forget" onAction="#onForgetCertificate"/>
                         </HBox>
                     </VBox>
 
@@ -93,9 +93,9 @@
 
     <bottom>
         <HBox styleClass="action-bar" alignment="CENTER_RIGHT" spacing="10">
-            <Button fx:id="testButton" text="%connect.test" onAction="#onTest"/>
-            <Button text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
-            <Button fx:id="connectButton" text="%connect.connect" onAction="#onConnect" defaultButton="true" styleClass="primary"/>
+            <Button minWidth="-Infinity" fx:id="testButton" text="%connect.test" onAction="#onTest"/>
+            <Button minWidth="-Infinity" text="%button.cancel" onAction="#onCancel" cancelButton="true"/>
+            <Button minWidth="-Infinity" fx:id="connectButton" text="%connect.connect" onAction="#onConnect" defaultButton="true" styleClass="primary"/>
             <padding>
                 <Insets top="10" right="16" bottom="10" left="16"/>
             </padding>

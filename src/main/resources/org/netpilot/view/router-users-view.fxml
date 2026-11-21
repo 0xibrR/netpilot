@@ -38,7 +38,7 @@
                 <ComboBox fx:id="batchBox" prefWidth="270"/>
                 <ComboBox fx:id="profileBox" prefWidth="130"/>
                 <ComboBox fx:id="statusBox" prefWidth="180"/>
-                <Button text="%users.clearFilters" onAction="#onClearFilters" styleClass="flat"/>
+                <Button minWidth="-Infinity" text="%users.clearFilters" onAction="#onClearFilters" styleClass="flat"/>
                 <padding>
                     <Insets top="8" right="10" bottom="8" left="10"/>
                 </padding>

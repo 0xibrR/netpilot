@@ -42,8 +42,8 @@
         <HBox styleClass="action-bar" alignment="CENTER_LEFT" spacing="10">
             <Label fx:id="summaryLabel" styleClass="muted"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="clearButton" text="%history.clear" onAction="#onClear"/>
-            <Button fx:id="openButton" text="%main.openFolder" onAction="#onOpenFolder"/>
+            <Button minWidth="-Infinity" fx:id="clearButton" text="%history.clear" onAction="#onClear"/>
+            <Button minWidth="-Infinity" fx:id="openButton" text="%main.openFolder" onAction="#onOpenFolder"/>
             <padding>
                 <Insets top="10" right="12" bottom="10" left="12"/>
             </padding>

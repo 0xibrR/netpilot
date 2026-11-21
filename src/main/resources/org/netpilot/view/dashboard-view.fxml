@@ -17,7 +17,7 @@
             <Label text="%nav.DASHBOARD" styleClass="page-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
-            <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+            <Button minWidth="-Infinity" fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
         </HBox>
 
         <!-- a newer NetPilot is published: shown by the daily update check -->
@@ -38,19 +38,19 @@
                     <Label text="1" styleClass="step-number"/>
                     <Label text="%dashboard.step1" styleClass="step-title" wrapText="true"/>
                     <Label text="%dashboard.step1.body" styleClass="muted" wrapText="true"/>
-                    <Button text="%menu.router.connect" onAction="#onConnect" styleClass="primary"/>
+                    <Button minWidth="-Infinity" text="%menu.router.connect" onAction="#onConnect" styleClass="primary"/>
                 </VBox>
                 <VBox styleClass="step-card" spacing="6" prefWidth="220">
                     <Label text="2" styleClass="step-number"/>
                     <Label text="%dashboard.step2" styleClass="step-title" wrapText="true"/>
                     <Label text="%dashboard.step2.body" styleClass="muted" wrapText="true"/>
-                    <Button text="%nav.DESIGN" onAction="#onDesign"/>
+                    <Button minWidth="-Infinity" text="%nav.DESIGN" onAction="#onDesign"/>
                 </VBox>
                 <VBox styleClass="step-card" spacing="6" prefWidth="220">
                     <Label text="3" styleClass="step-number"/>
                     <Label text="%dashboard.step3" styleClass="step-title" wrapText="true"/>
                     <Label text="%dashboard.step3.body" styleClass="muted" wrapText="true"/>
-                    <Button text="%nav.GENERATE" onAction="#onGenerate"/>
+                    <Button minWidth="-Infinity" text="%nav.GENERATE" onAction="#onGenerate"/>
                 </VBox>
             </FlowPane>
         </VBox>
@@ -133,10 +133,10 @@
         <VBox styleClass="card" spacing="10">
             <Label text="%dashboard.quick" styleClass="card-title"/>
             <FlowPane hgap="8" vgap="8">
-                <Button fx:id="generateQuick" text="%nav.GENERATE" onAction="#onGenerate" styleClass="primary"/>
-                <Button fx:id="hotspotQuick" text="%nav.cards.users" onAction="#onHotspot"/>
-                <Button fx:id="reportsQuick" text="%nav.REPORTS" onAction="#onReports"/>
-                <Button fx:id="designQuick" text="%nav.DESIGN" onAction="#onDesign"/>
+                <Button minWidth="-Infinity" fx:id="generateQuick" text="%nav.GENERATE" onAction="#onGenerate" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="hotspotQuick" text="%nav.cards.users" onAction="#onHotspot"/>
+                <Button minWidth="-Infinity" fx:id="reportsQuick" text="%nav.REPORTS" onAction="#onReports"/>
+                <Button minWidth="-Infinity" fx:id="designQuick" text="%nav.DESIGN" onAction="#onDesign"/>
             </FlowPane>
         </VBox>
     </VBox>

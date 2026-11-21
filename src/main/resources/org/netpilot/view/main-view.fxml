@@ -35,12 +35,12 @@
             <Label fx:id="shiftChip" styleClass="shift-chip" visible="false" managed="false"/>
             <MenuButton fx:id="roleButton" styleClass="chrome-button, role-chip" visible="false" managed="false"/>
             <!-- router alerts: the number of new ones; click for the list -->
-            <Button fx:id="alertsButton" styleClass="chrome-button, alert-bell">
+            <Button minWidth="-Infinity" fx:id="alertsButton" styleClass="chrome-button, alert-bell">
                 <tooltip>
                     <Tooltip text="%alert.title"/>
                 </tooltip>
             </Button>
-            <Button fx:id="themeButton" styleClass="chrome-button" onAction="#onToggleTheme">
+            <Button minWidth="-Infinity" fx:id="themeButton" styleClass="chrome-button" onAction="#onToggleTheme">
                 <tooltip>
                     <Tooltip text="%main.toggleTheme"/>
                 </tooltip>
@@ -67,7 +67,7 @@
             <VBox fx:id="notConnectedPane" styleClass="not-connected" alignment="CENTER" spacing="12" visible="false">
                 <Label text="%main.notConnected.title" styleClass="section-title"/>
                 <Label text="%main.notConnected.body" styleClass="muted" wrapText="true" maxWidth="420"/>
-                <Button text="%menu.router.connect" onAction="#onConnectRouter" styleClass="primary"/>
+                <Button minWidth="-Infinity" text="%menu.router.connect" onAction="#onConnectRouter" styleClass="primary"/>
             </VBox>
         </StackPane>
     </center>

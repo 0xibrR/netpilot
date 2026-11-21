@@ -171,6 +171,7 @@ public class DashboardController implements Page {
             Button open = new Button(Messages.get("nav.SETTINGS"), Icons.of(Icons.SETTINGS));
             open.setOnAction(e -> workspace.show(PageId.SETTINGS));
             cloudWarning.getChildren().setAll(text, open);
+            Styling.keepButtonsWhole(cloudWarning);
         }
         cloudWarning.setVisible(show);
         cloudWarning.setManaged(show);
@@ -196,6 +197,7 @@ public class DashboardController implements Page {
                     start);
             javafx.scene.layout.HBox.setHgrow(row.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            Styling.keepButtonsWhole(row);
             shiftCard.getChildren().setAll(title, row);
             return;
         }
@@ -215,6 +217,7 @@ public class DashboardController implements Page {
                 withdraw, close);
         javafx.scene.layout.HBox.setHgrow(row.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
         row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Styling.keepButtonsWhole(row);
         shiftCard.getChildren().setAll(title, since, row);
     }
 
@@ -403,6 +406,7 @@ public class DashboardController implements Page {
             });
             javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(10, text, gap, send);
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            Styling.keepButtonsWhole(row);
             reminderRows.getChildren().add(row);
         }
     }
@@ -551,6 +555,7 @@ public class DashboardController implements Page {
             back.setOnAction(e -> resolve(() -> sale.cancel(r), r.card().name()));
             javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(8, text, gap, handed, back);
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            Styling.keepButtonsWhole(row);
             quickSalePending.getChildren().add(row);
         }
         quickSalePending.setVisible(!pending.isEmpty());
@@ -798,6 +803,7 @@ public class DashboardController implements Page {
                 row.getChildren().add(create);
             }
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            Styling.keepButtonsWhole(row);
             stockRows.getChildren().add(row);
         }
         stockCard.setVisible(!low.isEmpty());

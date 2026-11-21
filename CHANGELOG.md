@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and versions
 
 ## [Unreleased]
 
+### Changed
+- Faster with years of records: the points-of-sale ledger is read from disk once and kept in memory until the
+  file changes, so sales, shift figures and statements no longer parse it again each time. A new test checks
+  10,000 cards and 50,000 ledger lines stay quick (filtering, the earnings report, stock, Excel export)
+- No button is cut off any more ("…"): every button keeps the width of its text, also on small windows; the
+  missing / extra cash of a shift is easier to read in the dark theme
+
 ## [1.4.0] - 2026-11-21
 
 ### Added

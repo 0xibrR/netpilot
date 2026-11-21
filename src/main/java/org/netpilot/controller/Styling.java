@@ -93,6 +93,18 @@ public final class Styling {
         }
     }
 
+    /**
+     * Buttons in a row built in code never shrink below their text (no "…"): the row's text wraps
+     * instead. Screens built from FXML say the same with {@code minWidth="-Infinity"}.
+     */
+    static void keepButtonsWhole(Parent row) {
+        for (javafx.scene.Node node : row.getChildrenUnmodifiable()) {
+            if (node instanceof javafx.scene.control.ButtonBase button) {
+                button.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+            }
+        }
+    }
+
     private static void refreshAll() {
         for (Window window : List.copyOf(Window.getWindows())) {
             Scene scene = window.getScene();

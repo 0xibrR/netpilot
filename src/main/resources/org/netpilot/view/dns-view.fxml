@@ -20,7 +20,7 @@
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="%dns.name"/>
                 <TextField fx:id="nameField" promptText="%dns.name.prompt" prefColumnCount="24" onAction="#onLookup"/>
-                <Button fx:id="lookupButton" text="%dns.lookup" onAction="#onLookup" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="lookupButton" text="%dns.lookup" onAction="#onLookup" styleClass="primary"/>
                 <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
                 <Label fx:id="resultLabel" styleClass="muted"/>
             </HBox>
@@ -39,7 +39,7 @@
                     <Label text="%dns.remoteRequests" styleClass="stat-title"/>
                     <Label fx:id="remoteValue" text="—"/>
                 </VBox>
-                <Button fx:id="reloadButton" text="%button.refresh" onAction="#onReloadSettings" styleClass="flat"/>
+                <Button minWidth="-Infinity" fx:id="reloadButton" text="%button.refresh" onAction="#onReloadSettings" styleClass="flat"/>
             </FlowPane>
             <Label fx:id="settingsHint" styleClass="muted" wrapText="true" visible="false" managed="false"/>
         </VBox>

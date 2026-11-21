@@ -113,6 +113,7 @@ final class BranchesWindow {
         down.setOnAction(e -> move(workspace, list, 1, reload, changed));
 
         HBox buttons = new HBox(6, add, edit, remove, up, down);
+        Styling.keepButtonsWhole(buttons);
         buttons.setAlignment(Pos.CENTER_LEFT);
         Label help = new Label(Messages.get("branch.help"));
         help.getStyleClass().add("muted");

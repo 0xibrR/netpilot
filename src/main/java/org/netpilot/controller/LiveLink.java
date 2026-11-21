@@ -74,7 +74,7 @@ final class LiveLink implements LiveFeed.Listener {
 
     private void begin(RouterClient client, int port, boolean tls) {
         client.apiLogin().ifPresent(login -> {
-            LOG.log(System.Logger.Level.INFO, "Live updates on API port {0}", port);
+            LOG.log(System.Logger.Level.INFO, "Live updates on API port {0}", String.valueOf(port));
             feed = new LiveFeed(login, port, tls, this);
             feed.start();
         });

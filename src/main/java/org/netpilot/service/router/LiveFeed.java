@@ -144,7 +144,7 @@ public final class LiveFeed implements AutoCloseable {
                 });
                 subscribe(connection);
                 setStatus(Status.of(State.LIVE));
-                LOG.log(System.Logger.Level.INFO, "Live updates on (port {0})", port);
+                LOG.log(System.Logger.Level.INFO, "Live updates on (port {0})", String.valueOf(port));
                 brokenWait = fast;
                 synchronized (ended) {
                     while (!done[0] && !closed) {

@@ -17,17 +17,17 @@
             <HBox alignment="CENTER_LEFT" spacing="10">
                 <Label text="%nav.RESELLERS" styleClass="page-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
+                <Button minWidth="-Infinity" fx:id="refreshButton" text="%button.refresh" onAction="#onRefresh"/>
             </HBox>
             <FlowPane hgap="8" vgap="8">
-                <Button fx:id="addButton" text="%reseller.add" onAction="#onAdd" styleClass="primary"/>
-                <Button fx:id="editButton" text="%reseller.edit" onAction="#onEdit"/>
-                <Button fx:id="handoverButton" text="%reseller.handover" onAction="#onHandover"/>
-                <Button fx:id="returnButton" text="%reseller.return" onAction="#onReturn"/>
-                <Button fx:id="paymentButton" text="%reseller.payment" onAction="#onPayment"/>
-                <Button fx:id="voidButton" text="%reseller.void" onAction="#onVoid"/>
-                <Button fx:id="exportButton" text="%reseller.export" onAction="#onExport"/>
-                <Button fx:id="exportAllButton" text="%reseller.exportAll" onAction="#onExportAll"/>
+                <Button minWidth="-Infinity" fx:id="addButton" text="%reseller.add" onAction="#onAdd" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="editButton" text="%reseller.edit" onAction="#onEdit"/>
+                <Button minWidth="-Infinity" fx:id="handoverButton" text="%reseller.handover" onAction="#onHandover"/>
+                <Button minWidth="-Infinity" fx:id="returnButton" text="%reseller.return" onAction="#onReturn"/>
+                <Button minWidth="-Infinity" fx:id="paymentButton" text="%reseller.payment" onAction="#onPayment"/>
+                <Button minWidth="-Infinity" fx:id="voidButton" text="%reseller.void" onAction="#onVoid"/>
+                <Button minWidth="-Infinity" fx:id="exportButton" text="%reseller.export" onAction="#onExport"/>
+                <Button minWidth="-Infinity" fx:id="exportAllButton" text="%reseller.exportAll" onAction="#onExportAll"/>
             </FlowPane>
         </VBox>
     </top>

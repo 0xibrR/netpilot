@@ -56,14 +56,14 @@
         <VBox styleClass="card" spacing="10">
             <Label text="%backup.title" styleClass="card-title"/>
             <HBox spacing="8">
-                <Button fx:id="backupNowButton" text="%backup.create" onAction="#onBackupNow" styleClass="primary"/>
-                <Button fx:id="restoreButton" text="%backup.restore" onAction="#onRestore"/>
+                <Button minWidth="-Infinity" fx:id="backupNowButton" text="%backup.create" onAction="#onBackupNow" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="restoreButton" text="%backup.restore" onAction="#onRestore"/>
             </HBox>
             <CheckBox fx:id="autoBackupCheck" text="%backup.auto" wrapText="true"/>
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <Label text="%backup.folder"/>
                 <Label fx:id="backupFolderLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS"/>
-                <Button text="%backup.chooseFolder" onAction="#onChooseBackupFolder"/>
+                <Button minWidth="-Infinity" text="%backup.chooseFolder" onAction="#onChooseBackupFolder"/>
             </HBox>
             <Label fx:id="lastBackupLabel" styleClass="muted" wrapText="true"/>
             <Label text="%backup.help" styleClass="muted" wrapText="true"/>
@@ -130,7 +130,7 @@
             <Label text="%menu.help.about" styleClass="card-title"/>
             <Label fx:id="aboutLabel" wrapText="true"/>
             <HBox spacing="8">
-                <Button text="%menu.help.github" onAction="#onOpenRepository"/>
+                <Button minWidth="-Infinity" text="%menu.help.github" onAction="#onOpenRepository"/>
             </HBox>
         </VBox>
     </VBox>

@@ -30,8 +30,8 @@
             <top>
                 <VBox>
                     <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="6">
-                        <Button fx:id="refreshActiveButton" text="%button.refresh" onAction="#onRefreshActive" styleClass="tool-button"/>
-                        <Button fx:id="kickButton" text="%users.disconnect" onAction="#onDisconnectSessions" styleClass="tool-button, danger"/>
+                        <Button minWidth="-Infinity" fx:id="refreshActiveButton" text="%button.refresh" onAction="#onRefreshActive" styleClass="tool-button"/>
+                        <Button minWidth="-Infinity" fx:id="kickButton" text="%users.disconnect" onAction="#onDisconnectSessions" styleClass="tool-button, danger"/>
                         <Separator orientation="VERTICAL"/>
                         <TextField fx:id="activeSearch" promptText="%hotspot.live.search" prefColumnCount="18"/>
                         <Region HBox.hgrow="ALWAYS"/>
@@ -127,9 +127,9 @@
         <BorderPane>
             <top>
                 <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="4">
-                    <Button fx:id="newProfileButton" text="%profile.new" onAction="#onNewProfile" styleClass="tool-button"/>
-                    <Button fx:id="editProfileButton" text="%profile.edit" onAction="#onEditProfile" styleClass="tool-button"/>
-                    <Button fx:id="deleteProfileButton" text="%users.delete" onAction="#onDeleteProfile" styleClass="tool-button, danger"/>
+                    <Button minWidth="-Infinity" fx:id="newProfileButton" text="%profile.new" onAction="#onNewProfile" styleClass="tool-button"/>
+                    <Button minWidth="-Infinity" fx:id="editProfileButton" text="%profile.edit" onAction="#onEditProfile" styleClass="tool-button"/>
+                    <Button minWidth="-Infinity" fx:id="deleteProfileButton" text="%users.delete" onAction="#onDeleteProfile" styleClass="tool-button, danger"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label text="%profile.toolbarHint" styleClass="muted"/>
                 </HBox>

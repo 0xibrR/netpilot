@@ -105,7 +105,7 @@
                         <Label text="%main.outputFolder" GridPane.rowIndex="2"/>
                         <HBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="1">
                             <TextField fx:id="outputDirField" editable="false" HBox.hgrow="ALWAYS"/>
-                            <Button text="…" onAction="#onBrowseOutputFolder"/>
+                            <Button minWidth="-Infinity" text="…" onAction="#onBrowseOutputFolder"/>
                         </HBox>
                     </GridPane>
                 </VBox>
@@ -146,11 +146,11 @@
             <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="20" prefHeight="20"/>
             <Label fx:id="statusLabel" text="%status.ready" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="%main.reset" onAction="#onResetSettings" styleClass="flat"/>
-            <Button fx:id="openFolderButton" text="%main.openFolder" onAction="#onOpenOutputFolder"/>
-            <Button fx:id="generateButton" text="%main.generate" onAction="#onGenerate" defaultButton="true"/>
-            <Button fx:id="exportButton" text="%main.export" onAction="#onExport"/>
-            <Button fx:id="sendButton" text="%main.send" onAction="#onSendToRouter" styleClass="primary">
+            <Button minWidth="-Infinity" text="%main.reset" onAction="#onResetSettings" styleClass="flat"/>
+            <Button minWidth="-Infinity" fx:id="openFolderButton" text="%main.openFolder" onAction="#onOpenOutputFolder"/>
+            <Button minWidth="-Infinity" fx:id="generateButton" text="%main.generate" onAction="#onGenerate" defaultButton="true"/>
+            <Button minWidth="-Infinity" fx:id="exportButton" text="%main.export" onAction="#onExport"/>
+            <Button minWidth="-Infinity" fx:id="sendButton" text="%main.send" onAction="#onSendToRouter" styleClass="primary">
                 <tooltip>
                     <Tooltip text="%main.send.tooltip"/>
                 </tooltip>

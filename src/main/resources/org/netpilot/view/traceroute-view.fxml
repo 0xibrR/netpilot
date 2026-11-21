@@ -21,8 +21,8 @@
                 <Label text="%ping.address"/>
                 <TextField fx:id="addressField" promptText="%ping.address.prompt" prefColumnCount="22"
                            onAction="#onStart"/>
-                <Button fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
-                <Button fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
+                <Button minWidth="-Infinity" fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
                 <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
                 <Label fx:id="summaryLabel" styleClass="muted"/>
             </HBox>

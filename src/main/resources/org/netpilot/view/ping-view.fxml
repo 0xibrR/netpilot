@@ -23,8 +23,8 @@
                            onAction="#onStart"/>
                 <Label text="%ping.count"/>
                 <ComboBox fx:id="countBox" prefWidth="130"/>
-                <Button fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
-                <Button fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
+                <Button minWidth="-Infinity" fx:id="startButton" text="%ping.start" onAction="#onStart" styleClass="primary"/>
+                <Button minWidth="-Infinity" fx:id="stopButton" text="%ping.stop" onAction="#onStop" disable="true"/>
                 <ProgressIndicator fx:id="progress" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
             </HBox>
             <Label fx:id="problemLabel" styleClass="status-error" wrapText="true" visible="false" managed="false"/>
