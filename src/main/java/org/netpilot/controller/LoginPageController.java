@@ -23,7 +23,7 @@ import org.netpilot.model.LoginPageDesign;
 import org.netpilot.model.Role.Permission;
 import org.netpilot.model.VoucherTemplate;
 import org.netpilot.repository.AppPaths;
-import org.netpilot.repository.LoginPageStore;
+import org.netpilot.repository.LoginPageRepository;
 import org.netpilot.service.LoginPageBuilder;
 import org.netpilot.service.router.HotspotPagePublisher;
 import org.netpilot.service.router.RouterClient;
@@ -37,7 +37,7 @@ public class LoginPageController implements Page {
     private static final System.Logger LOG = System.getLogger(LoginPageController.class.getName());
 
     private final AppContext context;
-    private final LoginPageStore store = new LoginPageStore(AppPaths.loginPageFile());
+    private final LoginPageRepository repository = new LoginPageRepository(AppPaths.loginPageFile());
     private Workspace workspace;
     private RouterClient client;
     private boolean busy;
@@ -107,7 +107,7 @@ public class LoginPageController implements Page {
     public void attach(Workspace shared) {
         this.workspace = shared;
         shared.router().client().ifPresent(c -> client = c);
-        LoginPageDesign d = store.design();
+        LoginPageDesign d = repository.design();
         VoucherTemplate card = shared.settings().voucherTemplate();
         titleField.setText(d.title());
         titleField.setPromptText(card.networkName());
@@ -174,7 +174,7 @@ public class LoginPageController implements Page {
 
     private void save(LoginPageDesign d) {
         try {
-            store.save(d);
+            repository.save(d);
         } catch (IOException e) {
             LOG.log(System.Logger.Level.WARNING, "Cannot save the login page design", e);
         }
@@ -284,7 +284,7 @@ public class LoginPageController implements Page {
         String router = target.endpoint().address();
         run(() -> {
             Map<String, String> before = HotspotPagePublisher.publish(target, files);
-            store.rememberPrevious(router, before);
+            repository.rememberPrevious(router, before);
             return Messages.get("loginPage.published");
         });
     }
@@ -302,8 +302,8 @@ public class LoginPageController implements Page {
         }
         String router = target.endpoint().address();
         run(() -> {
-            HotspotPagePublisher.revert(target, store.previous(router));
-            store.forgetPrevious(router);
+            HotspotPagePublisher.revert(target, repository.previous(router));
+            repository.forgetPrevious(router);
             return Messages.get("loginPage.reverted");
         });
     }

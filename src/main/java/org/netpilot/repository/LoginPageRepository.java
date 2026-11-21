@@ -17,14 +17,14 @@ import org.netpilot.model.LoginPageDesign;
  * The hotspot login page design, and for each router the page folder its hotspot profiles used
  * before NetPilot's, so "back to the previous page" restores exactly what was there.
  */
-public final class LoginPageStore {
+public final class LoginPageRepository {
 
-    private static final System.Logger LOG = System.getLogger(LoginPageStore.class.getName());
+    private static final System.Logger LOG = System.getLogger(LoginPageRepository.class.getName());
     private static final String PREVIOUS = "previous.";
 
     private final Path file;
 
-    public LoginPageStore(Path file) {
+    public LoginPageRepository(Path file) {
         this.file = Objects.requireNonNull(file);
     }
 

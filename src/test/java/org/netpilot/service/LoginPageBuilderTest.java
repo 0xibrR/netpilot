@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.netpilot.model.LoginPageDesign;
 import org.netpilot.model.LoginPageDesign.Language;
-import org.netpilot.repository.LoginPageStore;
+import org.netpilot.repository.LoginPageRepository;
 
 class LoginPageBuilderTest {
 
@@ -133,14 +133,14 @@ class LoginPageBuilderTest {
                     bad).logo(), "never a path out of the data folder: " + bad);
         }
         assertEquals("", LoginPageDesign.defaults().logo(), "the card design's logo by default");
-        LoginPageStore store = new LoginPageStore(dir.resolve("logo.properties"));
+        LoginPageRepository store = new LoginPageRepository(dir.resolve("logo.properties"));
         store.save(own);
-        assertEquals("login-page-logo.png", new LoginPageStore(dir.resolve("logo.properties")).design().logo());
+        assertEquals("login-page-logo.png", new LoginPageRepository(dir.resolve("logo.properties")).design().logo());
     }
 
     @Test
     void theDesignIsSavedAndEachRoutersPreviousFolderRemembered() throws Exception {
-        LoginPageStore store = new LoginPageStore(dir.resolve("login-page.properties"));
+        LoginPageRepository store = new LoginPageRepository(dir.resolve("login-page.properties"));
         assertEquals(LoginPageDesign.defaults(), store.design());
         LoginPageDesign mine = new LoginPageDesign("  شبكتي  ", "عرض\nاليوم", "x0599", "+970-599", "red", false,
                 false, true, Language.ENGLISH);
@@ -150,9 +150,9 @@ class LoginPageBuilderTest {
         assertEquals("970599", mine.whatsApp());
         assertEquals(LoginPageDesign.DEFAULT_COLOR, mine.color(), "not a colour: the default");
         store.save(mine);
-        assertEquals(mine, new LoginPageStore(dir.resolve("login-page.properties")).design());
+        assertEquals(mine, new LoginPageRepository(dir.resolve("login-page.properties")).design());
         java.nio.file.Files.writeString(dir.resolve("old.properties"), "language=BOTH");
-        assertEquals(Language.ARABIC, new LoginPageStore(dir.resolve("old.properties")).design().language(),
+        assertEquals(Language.ARABIC, new LoginPageRepository(dir.resolve("old.properties")).design().language(),
                 "a page saved with both languages opens as Arabic");
 
         store.rememberPrevious("10.0.0.1:80", Map.of("hsprof1", "hotspot", "other", "flash/hotspot"));
